@@ -1,0 +1,35 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.4.0'
+    id 'io.spring.dependency-management' version '1.1.6'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':module-common')
+    implementation project(':module-config')
+    implementation project(':module-user')
+    implementation project(':module-admin')
+    implementation project(':module-order')
+    implementation project(':module-product')
+
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
+
+//    implementation 'org.springdoc:springdoc-openapi-ui:1.8.0'
+
+}
+
+tasks.register("prepareKotlinBuildScriptModel"){}
