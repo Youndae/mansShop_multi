@@ -100,6 +100,9 @@ public class SecurityConfig {
                                                 "/api/search-pw"
                                         ).anonymous()
                                         .requestMatchers("/api/logout").authenticated()
+                                        .requestMatchers(
+                                                "/swagger-ui/**", "/v3/api-docs"
+                                        ).permitAll()
                                         .anyRequest().permitAll()
                 );
 

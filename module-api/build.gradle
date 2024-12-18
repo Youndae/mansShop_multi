@@ -24,9 +24,12 @@ dependencies {
     implementation project(':module-admin')
     implementation project(':module-order')
     implementation project(':module-product')
+    implementation project(':module-auth')
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
+
+
 
 //    implementation 'org.springdoc:springdoc-openapi-ui:1.8.0'
 

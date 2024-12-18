@@ -21,6 +21,8 @@ dependencies {
     implementation project(':module-common')
     implementation project(':module-config')
     implementation project(':module-user')
+
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
 }
 
 tasks.register("prepareKotlinBuildScriptModel"){}
