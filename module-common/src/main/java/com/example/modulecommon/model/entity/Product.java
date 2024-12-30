@@ -9,7 +9,9 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -45,7 +47,7 @@ public class Product {
     private LocalDate updatedAt;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
-    private final Set<ProductOption> productOptionSet = new HashSet<>();
+    private final List<ProductOption> productOptionSet = new ArrayList<>();
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
     private final Set<ProductThumbnail> productThumbnailSet = new HashSet<>();

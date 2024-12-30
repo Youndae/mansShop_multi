@@ -1,7 +1,8 @@
-package com.example.moduleproduct.repository;
+package com.example.moduleproduct.repository.product;
 
 import com.example.moduleproduct.model.dto.main.business.MainListDTO;
 import com.example.moduleproduct.model.dto.page.ProductPageDTO;
+import com.example.moduleproduct.repository.product.ProductDSLRepository;
 import com.querydsl.core.types.ConstructorExpression;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
@@ -22,7 +23,7 @@ import static com.example.modulecommon.model.entity.QProductOption.productOption
 
 @Repository
 @RequiredArgsConstructor
-public class ProductDSLRepositoryImpl implements ProductDSLRepository{
+public class ProductDSLRepositoryImpl implements ProductDSLRepository {
 
     private final JPAQueryFactory jpaQueryFactory;
 

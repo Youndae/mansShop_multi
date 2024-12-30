@@ -1,9 +1,9 @@
 package com.example.moduleproduct.repository;
 
-import com.example.modulecommon.model.dto.response.PagingListResponseDTO;
 import com.example.moduleproduct.ModuleProductApplication;
 import com.example.moduleproduct.model.dto.main.business.MainListDTO;
 import com.example.moduleproduct.model.dto.page.ProductPageDTO;
+import com.example.moduleproduct.repository.product.ProductRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

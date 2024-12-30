@@ -156,3 +156,12 @@
       이 경우 ApiResponse Annotation 하위에 위치하며 content 설정이 없어야 정상적으로 출력된다는 단점이 있다.   
       그리고 content 설정을 추가하면 아무런 데이터가 출력되지 않기 때문에 content 내부에서 media type 설정이 불가능하다는 점도 단점이었다.   
       하지만 최종적으로 이 방법을 선택해 처리하기로 했고, swagger가 제네릭을 제대로 처리할 수 있는 방안이 없다는 의견이 많았기에 추후 더 알아보고 개선하는 방법으로 마무리.
+
+<br/>
+
+- 24/12/30
+  - module-product 작업 중
+    - 서비스 코드 작성.
+    - Repository 테스트 코드 작성 및 테스트 중
+    - 이후 Service 테스트 코드 작성 및 테스트 필요.
+    - module-api에서 ProductController 메소드 작성.

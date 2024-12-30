@@ -5,7 +5,7 @@ import com.example.modulecommon.model.dto.response.PagingMappingDTO;
 import com.example.moduleproduct.model.dto.main.business.MainListDTO;
 import com.example.moduleproduct.model.dto.main.out.MainListResponseDTO;
 import com.example.moduleproduct.model.dto.page.ProductPageDTO;
-import com.example.moduleproduct.repository.ProductRepository;
+import com.example.moduleproduct.repository.product.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
