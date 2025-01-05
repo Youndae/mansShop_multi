@@ -165,3 +165,9 @@
     - Repository 테스트 코드 작성 및 테스트 중
     - 이후 Service 테스트 코드 작성 및 테스트 필요.
     - module-api에서 ProductController 메소드 작성.
+
+<br/>
+
+- 25/01/05
+  - module-product 테스트 코드 작성 및 테스트 완료.
+    - 각 테스트의 BeforeEach, Fixture 주석 추가.

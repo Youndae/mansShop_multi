@@ -34,6 +34,9 @@ public class ProductOptionRepositoryTest {
     @Autowired
     private ProductRepository productRepository;
 
+    /**
+     * 상품 옵션 리스트 조회 테스트를 위해 여러개의 ProductOption을 담고 있는 Product 생성 후 save
+     */
     @BeforeEach
     void init() {
         Product product = ProductFixture.createProductAndOption();

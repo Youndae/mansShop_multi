@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Builder
@@ -30,10 +32,18 @@ public class ProductQnA {
 
     private String qnaContent;
 
+    @OneToMany(mappedBy = "productQnA", cascade = CascadeType.ALL)
+    private final List<ProductQnAReply> productQnAReplies = new ArrayList<>();
+
     @CreationTimestamp
     private LocalDate createdAt;
 
     private boolean productQnAStat;
+
+    public void addProductQnAReply(ProductQnAReply reply) {
+        productQnAReplies.add(reply);
+        reply.setProductQnA(this);
+    }
 
     public void setProductQnAStat(boolean productQnAStat) {
         this.productQnAStat = productQnAStat;

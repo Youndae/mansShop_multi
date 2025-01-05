@@ -40,4 +40,8 @@ public class ProductQnAReply {
     public void setReplyContent(String content) {
         this.replyContent = content;
     }
+
+    public void setProductQnA(ProductQnA productQnA) {
+        this.productQnA = productQnA;
+    }
 }

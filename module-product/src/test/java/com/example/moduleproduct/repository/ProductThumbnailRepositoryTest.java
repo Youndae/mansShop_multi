@@ -32,6 +32,9 @@ public class ProductThumbnailRepositoryTest {
     @Autowired
     private ProductRepository productRepository;
 
+    /**
+     * 상품 썸네일 리스트 조회를 위해 ProductThumbnail을 담고 있는 Product Entity 생성 후 save
+     */
     @BeforeEach
     void init() {
         Product product = ProductFixture.createProductAndImage();

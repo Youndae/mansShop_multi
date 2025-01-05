@@ -32,6 +32,9 @@ public class ProductInfoImageRepositoryTest {
     @Autowired
     private ProductRepository productRepository;
 
+    /**
+     * 상품 정보 이미지를 확인하기 위해 ProductInfoImage Entity를 담고 있는 Product를 save
+     */
     @BeforeEach
     void init() {
         Product product = ProductFixture.createProductAndImage();

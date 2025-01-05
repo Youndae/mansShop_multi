@@ -8,6 +8,7 @@ import com.example.modulecommon.model.entity.ProductLike;
 import com.example.modulecommon.model.enumuration.OAuthProvider;
 import com.example.moduleproduct.ModuleProductApplication;
 import com.example.moduleproduct.fixture.ProductFixture;
+import com.example.moduleproduct.fixture.ProductLikeFixture;
 import com.example.moduleproduct.repository.product.ProductRepository;
 import com.example.moduleproduct.repository.productLike.ProductLikeRepository;
 import org.junit.jupiter.api.Assertions;
@@ -38,9 +39,13 @@ public class ProductLikeRepositoryTest {
     @Autowired
     private MemberRepository memberRepository;
 
+    /**
+     * 관심상품 등록 여부 조회를 위해 ProductLike Entity 생성.
+     * Member, Product Entity에 대한 데이터가 필요하기 때문에 save후 ProductLike save
+     */
     @BeforeEach
     void init() {
-        ProductLike productLike = ProductFixture.createSuccessLikeCountEntity();
+        ProductLike productLike = ProductLikeFixture.createSuccessLikeCountEntity();
         memberRepository.save(productLike.getMember());
         productRepository.save(productLike.getProduct());
         productLikeRepository.save(productLike);
@@ -50,9 +55,9 @@ public class ProductLikeRepositoryTest {
     @Test
     @DisplayName("사용자가 해당 상품을 관심상품으로 등록한 경우.")
     void userLikeToProduct() {
-        ProductLike dummyData = ProductFixture.createSuccessLikeCountEntity();
+        ProductLike entity = ProductLikeFixture.createSuccessLikeCountEntity();
 
-        int result = productLikeRepository.countByUserIdAndProductId(dummyData.getProduct().getId(), dummyData.getMember().getUserId());
+        int result = productLikeRepository.countByUserIdAndProductId(entity.getProduct().getId(), entity.getMember().getUserId());
 
         Assertions.assertEquals(1, result);
     }
@@ -60,9 +65,9 @@ public class ProductLikeRepositoryTest {
     @Test
     @DisplayName("사용자가 해당 상품을 관심상품으로 등록하지 않은 경우.")
     void userLikeToProductFail() {
-        ProductLike dummyData = ProductFixture.createFailLikeCountEntity();
+        ProductLike entity = ProductLikeFixture.createFailLikeCountEntity();
 
-        int result = productLikeRepository.countByUserIdAndProductId(dummyData.getProduct().getId(), dummyData.getMember().getUserId());
+        int result = productLikeRepository.countByUserIdAndProductId(entity.getProduct().getId(), entity.getMember().getUserId());
 
         Assertions.assertEquals(0, result);
     }
@@ -70,11 +75,11 @@ public class ProductLikeRepositoryTest {
     @Test
     @DisplayName("사용자의 관심상품 해제 후 조회 시 0이 반환")
     void userDeLike() {
-        ProductLike dummyData = ProductFixture.createSuccessLikeCountEntity();
+        ProductLike entity = ProductLikeFixture.createSuccessLikeCountEntity();
 
-        productLikeRepository.deleteByUserIdAndProductId(dummyData);
+        productLikeRepository.deleteByUserIdAndProductId(entity);
 
-        int result = productLikeRepository.countByUserIdAndProductId(dummyData.getProduct().getId(), dummyData.getMember().getUserId());
+        int result = productLikeRepository.countByUserIdAndProductId(entity.getProduct().getId(), entity.getMember().getUserId());
 
         Assertions.assertEquals(0, result);
     }
