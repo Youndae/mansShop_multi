@@ -14,7 +14,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +37,7 @@ public class MainService {
                                             Sort.by("createdAt").descending());
         Page<MainListDTO> list = productRepository.getProductClassificationAndSearchList(pageDTO, pageable);
         List<MainListResponseDTO> content = mappingMainListResponseDTO(list.getContent());
+
         PagingMappingDTO pagingMappingDTO = PagingMappingDTO.builder()
                                                             .totalElements(list.getTotalElements())
                                                             .totalPages(list.getTotalPages())
@@ -47,8 +50,11 @@ public class MainService {
 
     private List<MainListResponseDTO> mappingMainListResponseDTO(List<MainListDTO> dto) {
 
-        return dto.stream()
-                .map(MainListResponseDTO::new)
-                .toList();
+        return Optional.ofNullable(dto)
+                        .map(list -> list.stream()
+                                        .map(MainListResponseDTO::new)
+                                        .toList()
+                        )
+                        .orElse(null);
     }
 }

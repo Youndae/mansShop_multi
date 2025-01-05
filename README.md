@@ -171,3 +171,4 @@
 - 25/01/05
   - module-product Repository 테스트 코드 작성 및 테스트 완료.
     - 각 테스트의 BeforeEach, Fixture 주석 추가.
+  - module-product MainService 단위 테스트 코드 작성 및 테스트 완료.
