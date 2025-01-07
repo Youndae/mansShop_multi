@@ -1,69 +1,192 @@
 package com.example.moduleproduct.fixture;
 
+import com.example.modulecommon.model.dto.response.PagingMappingDTO;
 import com.example.modulecommon.model.entity.*;
-import com.example.modulecommon.model.enumuration.OAuthProvider;
 import com.example.modulecommon.model.enumuration.PageAmount;
+import com.example.moduleproduct.model.dto.main.business.MainListDTO;
+import com.example.moduleproduct.model.dto.main.out.MainListResponseDTO;
 import com.example.moduleproduct.model.dto.page.ProductPageDTO;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import com.example.moduleproduct.model.dto.product.business.ProductOptionDTO;
+import org.springframework.data.domain.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.IntStream;
+import java.util.Optional;
 
 public class ProductFixture {
+
 
     /**
      *
      * Create ProductList
-     * OUTER 5개와 1개의 TOP으로 분류된 6개의 Product Entity 리스트 반환
+     * OUTER 15개 TOP 5개 데이터 생성
+     * ProductOption의 경우 하나의 Product당 3개 존재.
+     * Sales는 10개씩 증가.
+     * discount는 10% 5개, 50% 5개, 나머지는 0. OUTER에만 discount 추가. TOP 상품 5개는 모두 0.
+     * stock의 경우 5개 상품은 모든 옵션 0으로 생성. 이 5개 상품은 모두 OUTER에 존재.
+     *
      *
      * @return
      */
     public static List<Product> createProductList() {
 
-        List<Product> product = createProductListByOUTER();
+        /**
+         * TOP 5개 상품은
+         * 모두 30의 stock을 갖고
+         * sales는 10, 20, 30, 40, 50
+         * 1, 2번째 상품은 isOpen이 false.
+         * 3번째 상품의 1,2번 옵션은 isOpen이 false.
+         *
+         * OUTER 5개 상품은
+         * 모두 stock이 0.
+         * Sales는 60, 70, 80, 90, 100
+         *
+         * 남은 OUTER 10개 상품은
+         * 모두 stock이 30
+         * discount는 10% 5개, 50% 5개
+         * sales는 110, 120, ..., 200
+         *
+         *
+         * 설정값
+         * stock, discount, classification
+         *
+         */
 
-        Product otherClassification = Product.builder()
-                .id("testProductId" + 6)
-                .classification(
-                        Classification.builder()
-                                .id("TOP")
-                                .classificationStep(0)
-                                .build()
-                )
-                .productName("DummyProduct")
-                .productPrice(1000)
-                .thumbnail("productThumbnail")
-                .isOpen(true)
-                .productSales(0L)
-                .productDiscount(0)
-                .build();
-        otherClassification.addProductOption(createProductOption(6));
-        product.add(otherClassification);
 
-        return product;
-    }
 
-    /**
-     * Create ProductList OUTER
-     * OUTER로 5개의 ProductEntity 리스트 생성
-     *
-     * @return
-     */
-    public static List<Product> createProductListByOUTER() {
-        List<Product> result = new ArrayList<>();
+        List<Product> productList = new ArrayList<>();
+        int sales = 0;
+
         for(int i = 0; i < 5; i++) {
-            Product product = createProduct(i);
-            ProductOption productOption = createProductOption(i);
-            product.addProductOption(productOption);
+            sales += 10;
+            boolean isOpen = true;
 
-            result.add(product);
+            if(i <= 1)
+                isOpen = false;
+
+            Product product = createProduct(i, "TOP", isOpen, sales, 0);
+
+            for(int j = 0; j < 3; j++) {
+                boolean optionIsOpen = true;
+                if(i == 2 && j < 2)
+                    optionIsOpen = false;
+
+                ProductOption option = createProductOption(j, 10, optionIsOpen);
+
+                product.addProductOption(option);
+            }
+
+            productList.add(product);
+        }
+
+        for(int i = 0; i < 15; i++) {
+            sales += 10;
+            int stock = 10;
+            int discount = 0;
+            if(i < 5)
+                stock = 0;
+            else if(i < 10)
+                discount = 10;
+            else
+                discount = 50;
+
+            Product product = createProduct(i, "OUTER", true, sales, discount);
+
+            for(int j = 0; j < 3; j++){
+                ProductOption productOption = createProductOption(j, stock, true);
+                product.addProductOption(productOption);
+            }
+
+            productList.add(product);
         }
 
 
-        return result;
+        return productList;
+    }
+
+    public static List<Classification> createClassificationList() {
+        Classification outer = createProductClassification("OUTER");
+        Classification top = createProductClassification("TOP");
+
+        return List.of(outer, top);
+    }
+
+    public static List<Product> outerProductFilter(List<Product> productList) {
+        return productFilter(productList, "OUTER");
+    }
+
+    public static List<Product> topProductFilter(List<Product> productList) {
+        return productFilter(productList, "TOP");
+    }
+
+    private static List<Product> productFilter(List<Product> productList, String classification) {
+        return productList.stream().filter(v -> v.getClassification().getId().equals(classification)).toList();
+    }
+
+    public static List<Product> bestProductFilter(List<Product> productList) {
+        return productList.stream()
+                            .sorted((v1, v2) ->
+                                    Long.compare(v2.getProductSales(), v1.getProductSales())
+                            )
+                            .limit(12)
+                            .toList();
+    }
+
+    public static List<MainListResponseDTO> outerMainResponseListDTOList() {
+        List<Product> allProductList = createProductList();
+        List<Product> outerProductList = outerProductFilter(allProductList);
+        List<MainListDTO> mainListDTOList = createMainListDTOByProductList(outerProductList);
+
+        return mappingMainListResponseDTO(mainListDTOList);
+    }
+
+    public static List<MainListResponseDTO> topMainResponseListDTOList() {
+        List<Product> allProductList = createProductList();
+        List<Product> topProductList = topProductFilter(allProductList);
+        List<MainListDTO> mainListDTOList = createMainListDTOByProductList(topProductList);
+
+        return mappingMainListResponseDTO(mainListDTOList);
+    }
+
+    public static List<MainListResponseDTO> bestMainResponseListDTOList() {
+        List<Product> allProductList = createProductList();
+        List<Product> bestProductList = bestProductFilter(allProductList);
+        List<MainListDTO> mainListDTOList = createMainListDTOByProductList(bestProductList);
+
+        return mappingMainListResponseDTO(mainListDTOList);
+    }
+
+    private static List<MainListDTO> createMainListDTOByProductList(List<Product> productList) {
+        return productList.stream()
+                            .map(v ->{
+                                long stock = v.getProductOptionSet()
+                                        .stream()
+                                        .mapToLong(ProductOption::getStock)
+                                        .reduce(0L, Long::sum);
+                                return new MainListDTO(v.getId(),
+                                        v.getProductName(),
+                                        v.getThumbnail(),
+                                        v.getProductPrice(),
+                                        v.getProductDiscount(),
+                                        stock);
+                            })
+                            .toList();
+    }
+
+    public static List<MainListResponseDTO> mappingMainListResponseDTO(List<MainListDTO> dto) {
+        return Optional.ofNullable(dto)
+                        .map(list -> list.stream()
+                                .map(MainListResponseDTO::new)
+                                .toList()
+                        )
+                        .orElse(null);
+    }
+
+
+
+
+    public static Product createOneProductEntity() {
+        return createProduct(0, "OUTER", true, 0L, 0);
     }
 
     /**
@@ -74,16 +197,16 @@ public class ProductFixture {
      * @param i (index)
      * @return
      */
-    public static Product createProduct(int i) {
+    public static Product createProduct(int i, String classification, boolean isOpen, long sales, int discount) {
         return Product.builder()
-                        .id("testProductId" + i)
-                        .classification(createProductClassificationByOUTER())
-                        .productName("DummyProduct" + i)
+                        .id("test" + classification + "ProductId" + i)
+                        .classification(createProductClassification(classification))
+                        .productName("Dummy" + classification + "Product" + i)
                         .productPrice(1000)
                         .thumbnail("productThumbnail" + i)
-                        .isOpen(true)
-                        .productSales(0L)
-                        .productDiscount(0)
+                        .isOpen(isOpen)
+                        .productSales(sales)
+                        .productDiscount(discount)
                         .build();
     }
 
@@ -93,9 +216,9 @@ public class ProductFixture {
      *
      * @return
      */
-    private static Classification createProductClassificationByOUTER() {
+    private static Classification createProductClassification(String classification) {
         return Classification.builder()
-                .id("OUTER")
+                .id(classification)
                 .classificationStep(0)
                 .build();
     }
@@ -136,7 +259,7 @@ public class ProductFixture {
      * @return
      */
     public static Product createProductAndImage() {
-        Product product = createProduct(0);
+        Product product = createOneProductEntity();
         List<ProductThumbnail> thumbnailSet = createProductThumbnailList();
         List<ProductInfoImage> infoImageSet = createProductInfoImageList();
 
@@ -210,7 +333,7 @@ public class ProductFixture {
      * @return
      */
     public static Product createProductAndOption() {
-        Product product = createProduct(0);
+        Product product = createOneProductEntity();
         List<ProductOption> options = createProductOptionList();
         options.forEach(product::addProductOption);
 
@@ -226,7 +349,7 @@ public class ProductFixture {
     public static List<ProductOption> createProductOptionList() {
         List<ProductOption> result = new ArrayList<>();
         for(int i = 0; i < 5; i++)
-            result.add(createProductOption(i));
+            result.add(createProductOption(i, i, true));
 
         return result;
     }
@@ -239,12 +362,33 @@ public class ProductFixture {
      * @param i
      * @return
      */
-    public static ProductOption createProductOption(int i) {
+    public static ProductOption createProductOption(int i, int stock, boolean isOpen) {
         return ProductOption.builder()
                 .size("testSize" + i)
                 .color("testColor" + i)
-                .stock(i)
+                .stock(stock)
                 .isOpen(true)
                 .build();
+    }
+
+
+    /**
+     * Create ProductOptionDTO
+     * 상품 옵션 조회 시 사용되는 DTO 리스트 생성.
+     * 상품 상세 조회 시 옵션 리스트 조회에 대한 결과가 ProductOptionDTO에 담겨서 반환되기 때문에
+     * 그 테스트에서 사용될 리스트.
+     *
+     * @return
+     */
+    public static List<ProductOptionDTO> createProductOptionDTOList() {
+
+        return createProductOptionList().stream()
+                                        .map(v ->
+                                                new ProductOptionDTO(v.getId(),
+                                                                    v.getSize(),
+                                                                    v.getColor(),
+                                                                    v.getStock()
+                                                )
+                                        ).toList();
     }
 }

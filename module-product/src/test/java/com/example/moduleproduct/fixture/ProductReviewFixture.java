@@ -2,16 +2,13 @@ package com.example.moduleproduct.fixture;
 
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.entity.Product;
-import com.example.modulecommon.model.entity.ProductOption;
 import com.example.modulecommon.model.entity.ProductReview;
 import com.example.modulecommon.model.enumuration.PageAmount;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import com.example.moduleproduct.model.dto.product.business.ProductReviewResponseDTO;
+import org.springframework.data.domain.*;
 
-import java.util.ArrayList;
+import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class ProductReviewFixture {
@@ -66,5 +63,22 @@ public class ProductReviewFixture {
                                 PageAmount.PRODUCT_REVIEW_AMOUNT.getAmount(),
                                 Sort.by("createdAt").descending()
                         );
+    }
+
+    public static Page<ProductReviewResponseDTO> createPageObjectByProductReview() {
+        List<ProductReviewResponseDTO> reviewDTO = IntStream.range(0, 5)
+                                                        .mapToObj(ProductReviewFixture::createProductReviewResponseDTO)
+                                                        .toList();
+        return new PageImpl<>(reviewDTO, createReviewPageable(), reviewDTO.size());
+    }
+
+    public static ProductReviewResponseDTO createProductReviewResponseDTO(int i) {
+
+        return new ProductReviewResponseDTO("writer" + i,
+                                            "reviewContent" + i,
+                                            LocalDate.now(),
+                                            "answerContent" + i,
+                                            LocalDate.now()
+                                    );
     }
 }

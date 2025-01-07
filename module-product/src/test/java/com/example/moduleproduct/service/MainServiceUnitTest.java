@@ -7,7 +7,7 @@ import com.example.moduleproduct.model.dto.main.business.MainListDTO;
 import com.example.moduleproduct.model.dto.main.out.MainListResponseDTO;
 import com.example.moduleproduct.model.dto.page.ProductPageDTO;
 import com.example.moduleproduct.repository.product.ProductRepository;
-import com.example.moduleproduct.service.fixture.ProductServiceFixture;
+import com.example.moduleproduct.service.fixture.MainServiceFixture;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -45,8 +45,8 @@ public class MainServiceUnitTest {
     @DisplayName("BEST 상품 조회 성공")
     void getBestAndNewProductList() {
         ProductPageDTO pageDTO = ProductFixture.createProductPageDTO("BEST");
-        MainListDTO product1 = ProductServiceFixture.createMainListDTO(1);
-        MainListDTO product2 = ProductServiceFixture.createMainListDTO(2);
+        MainListDTO product1 = MainServiceFixture.createMainListDTO(1);
+        MainListDTO product2 = MainServiceFixture.createMainListDTO(2);
 
         List<MainListDTO> mockProductList = Arrays.asList(product1, product2);
         when(productRepository.getProductDefaultList(pageDTO))
@@ -75,8 +75,8 @@ public class MainServiceUnitTest {
     @DisplayName("분류별 상품 조회")
     void getClassificationProductList() {
         ProductPageDTO pageDTO = ProductFixture.createProductPageDTO("OUTER");
-        MainListDTO product1 = ProductServiceFixture.createMainListDTO(1);
-        MainListDTO product2 = ProductServiceFixture.createMainListDTO(2);
+        MainListDTO product1 = MainServiceFixture.createMainListDTO(1);
+        MainListDTO product2 = MainServiceFixture.createMainListDTO(2);
         Pageable pageable = ProductFixture.createProductListPageable();
 
         List<MainListDTO> productList = Arrays.asList(product1, product2);

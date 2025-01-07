@@ -6,6 +6,7 @@ import com.example.moduleproduct.ModuleProductApplication;
 import com.example.moduleproduct.fixture.ProductFixture;
 import com.example.moduleproduct.fixture.ProductQnAFixture;
 import com.example.moduleproduct.model.dto.product.business.ProductQnADTO;
+import com.example.moduleproduct.repository.classification.ClassificationRepository;
 import com.example.moduleproduct.repository.product.ProductRepository;
 import com.example.moduleproduct.repository.productQnA.ProductQnARepository;
 import org.junit.jupiter.api.Assertions;
@@ -39,6 +40,9 @@ public class ProductQnARepositoryTest {
     @Autowired
     private ProductRepository productRepository;
 
+    @Autowired
+    private ClassificationRepository classificationRepository;
+
     /**
      * 여러개의 ProductQnA 조회를 위해 2개의 ProductQnA를 생성 후 save
      * Member, Product Entity는 2개 모두 동일한 데이터로 담기 때문에 한번만 save
@@ -49,6 +53,7 @@ public class ProductQnARepositoryTest {
         ProductQnA productQnA2 = ProductQnAFixture.createProductQnA(2);
         List<ProductQnA> entityList = List.of(productQnA, productQnA2);
 
+        classificationRepository.save(productQnA.getProduct().getClassification());
         memberRepository.save(productQnA.getMember());
         productRepository.save(productQnA.getProduct());
         productQnARepository.saveAll(entityList);

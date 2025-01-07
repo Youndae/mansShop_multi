@@ -14,7 +14,7 @@ public class ProductLikeFixture {
      */
     public static ProductLike createSuccessLikeCountEntity() {
         Member member = MemberFixture.createMember();
-        Product product = ProductFixture.createProduct(0);
+        Product product = ProductFixture.createOneProductEntity();
 
         return ProductLike.builder()
                 .member(member)

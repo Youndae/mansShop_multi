@@ -172,3 +172,12 @@
   - module-product Repository 테스트 코드 작성 및 테스트 완료.
     - 각 테스트의 BeforeEach, Fixture 주석 추가.
   - module-product MainService 단위 테스트 코드 작성 및 테스트 완료.
+
+<br/>
+
+- 25/01/07
+  - module-product ProductService 단위 테스트 코드 작성 및 테스트 완료.
+  - module-product MainService 통합 테스트 코드 작성 중.
+  - module-config application-integration-test.yml 추가.
+    - 통합 테스트 환경은 동일한 로컬 MySQL mansShop-test 데이터베이스에서 테스트 하도록 처리.
+    - 현재 편의상 prod, dev는 동일한 mansShop, integration-test에서는 mansShop-test, test에서는 h2를 사용.

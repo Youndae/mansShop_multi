@@ -1,15 +1,13 @@
 package com.example.moduleproduct.repository;
 
 import com.example.moduleauth.repository.MemberRepository;
-import com.example.modulecommon.model.entity.Member;
-import com.example.modulecommon.model.entity.Product;
-import com.example.modulecommon.model.entity.ProductQnA;
-import com.example.modulecommon.model.entity.ProductQnAReply;
+import com.example.modulecommon.model.entity.*;
 import com.example.moduleproduct.ModuleProductApplication;
 import com.example.moduleproduct.fixture.MemberFixture;
 import com.example.moduleproduct.fixture.ProductFixture;
 import com.example.moduleproduct.fixture.ProductQnAFixture;
 import com.example.moduleproduct.model.dto.product.business.ProductQnADTO;
+import com.example.moduleproduct.repository.classification.ClassificationRepository;
 import com.example.moduleproduct.repository.product.ProductRepository;
 import com.example.moduleproduct.repository.productQnA.ProductQnARepository;
 import com.example.moduleproduct.repository.productQnAReply.ProductQnAReplyRepository;
@@ -47,6 +45,9 @@ public class ProductQnAReplyRepositoryTest {
     @Autowired
     private ProductRepository productRepository;
 
+    @Autowired
+    private ClassificationRepository classificationRepository;
+
     /**
      * 상품 문의 조회는 여러개의 ProductQnA의 각 ID를 리스트화 해 조회하므로
      * 여러개의 ProductQnA를 받아 save
@@ -58,6 +59,7 @@ public class ProductQnAReplyRepositoryTest {
         ProductQnA productQnA2 = ProductQnAFixture.createProductQnAAndReply(2);
         List<ProductQnA> entityList = List.of(productQnA, productQnA2);
 
+        classificationRepository.save(productQnA.getProduct().getClassification());
         memberRepository.save(productQnA.getMember());
         productRepository.save(productQnA.getProduct());
         productQnARepository.saveAll(entityList);
