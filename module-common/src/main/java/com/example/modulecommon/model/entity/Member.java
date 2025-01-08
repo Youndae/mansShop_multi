@@ -1,9 +1,11 @@
 package com.example.modulecommon.model.entity;
 
 import com.example.modulecommon.model.dto.oAuth.OAuth2DTO;
+import com.example.modulecommon.model.enumuration.OAuthProvider;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -49,8 +51,37 @@ public class Member {
         auth.setMember(this);
     }
 
+    @Builder
+    public Member(String userId,
+                  String userPw,
+                  String userName,
+                  String nickname,
+                  String userEmail,
+                  String provider,
+                  Long memberPoint,
+                  String phone,
+                  LocalDate birth) {
+        String phoneRegEx = "(\\d{3})(\\d{3,4})(\\d{4})";
+
+        this.userId = userId;
+        this.userPw = userPw == null ? null : encodePw(userPw);
+        this.userName = userName;
+        this.nickname = nickname;
+        this.userEmail = userEmail;
+        this.provider = provider == null ? OAuthProvider.LOCAL.getKey() : provider;
+        this.memberPoint = memberPoint == null ? 0: memberPoint;
+        this.phone = phone == null ? null : phone.replaceAll(phoneRegEx, "$1-$2-$3");
+        this.birth = birth;
+    }
+
+    private String encodePw(String userPw) {
+        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+        return passwordEncoder.encode(userPw);
+    }
+
     public void setUserPw(String userPw) {
-        this.userPw = userPw;
+        this.userPw = encodePw(userPw);
     }
 
     public void setUserName(String userName) {

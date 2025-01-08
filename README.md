@@ -191,3 +191,10 @@
     - 기존 테스트 Fixture는 5개의 데이터만 넣어두고 테스트했는데 각 기능에 대한 명확한 테스트를 위해 20개의 데이터로 수정.
     - OUTER, TOP 두개의 Classification을 생성했기 때문에 분류별 조회에서도 좀 더 명확하게 테스트를 수행할 수 있고, 상품 검색 또한 TOP이 포함된 상품명을 검색하는 테스트를 수행하도록 해 모든 기능의 테스트를 수행 할 수 있게 되었다.
   - ProductService 통합 테스트 작성 및 테스트 완료.
+
+<br/>
+
+- 25/01/09
+  - module-user의 service, DTO 작성.
+    - 각 Service 클래스 생성은 했지만, 작성한건 MemberService만 작성.
+  - module-user의 MemberServiceUnitTest 작성 및 테스트 완료.
