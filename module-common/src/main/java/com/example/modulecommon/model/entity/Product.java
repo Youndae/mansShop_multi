@@ -1,14 +1,12 @@
 package com.example.modulecommon.model.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -41,19 +39,19 @@ public class Product {
     private int productDiscount;
 
     @CreationTimestamp
-    private LocalDate createdAt;
+    private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    private LocalDate updatedAt;
+    private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
     private final List<ProductOption> productOptionSet = new ArrayList<>();
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
-    private final Set<ProductThumbnail> productThumbnailSet = new HashSet<>();
+    private final List<ProductThumbnail> productThumbnailSet = new ArrayList<>();
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
-    private final Set<ProductInfoImage> productInfoImageSet = new HashSet<>();
+    private final List<ProductInfoImage> productInfoImageSet = new ArrayList<>();
 
     public void addProductOption(ProductOption productOption) {
         productOptionSet.add(productOption);
@@ -80,5 +78,21 @@ public class Product {
 
     public void setId(String productId){
         this.id = productId;
+    }
+
+    @Override
+    public String toString() {
+        return "Product{" +
+                "id='" + id + '\'' +
+                ", classification=" + classification +
+                ", productName='" + productName + '\'' +
+                ", productPrice=" + productPrice +
+                ", thumbnail='" + thumbnail + '\'' +
+                ", isOpen=" + isOpen +
+                ", productSales=" + productSales +
+                ", productDiscount=" + productDiscount +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                '}';
     }
 }

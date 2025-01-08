@@ -1,9 +1,11 @@
 package com.example.moduleproduct.repository;
 
+import com.example.modulecommon.model.entity.Classification;
 import com.example.modulecommon.model.entity.Product;
 import com.example.modulecommon.model.entity.ProductThumbnail;
 import com.example.moduleproduct.ModuleProductApplication;
 import com.example.moduleproduct.fixture.ProductFixture;
+import com.example.moduleproduct.repository.classification.ClassificationRepository;
 import com.example.moduleproduct.repository.product.ProductRepository;
 import com.example.moduleproduct.repository.productThumbnail.ProductThumbnailRepository;
 import org.junit.jupiter.api.Assertions;
@@ -32,13 +34,18 @@ public class ProductThumbnailRepositoryTest {
     @Autowired
     private ProductRepository productRepository;
 
+    @Autowired
+    private ClassificationRepository classificationRepository;
+
     /**
      * 상품 썸네일 리스트 조회를 위해 ProductThumbnail을 담고 있는 Product Entity 생성 후 save
      */
     @BeforeEach
     void init() {
         Product product = ProductFixture.createProductAndImage();
+        List<Classification> classifications = ProductFixture.createClassificationList();
 
+        classificationRepository.saveAll(classifications);
         productRepository.save(product);
     }
 

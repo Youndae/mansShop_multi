@@ -1,9 +1,11 @@
 package com.example.moduleproduct.service;
 
+import com.example.modulecommon.model.dto.response.PagingListResponseDTO;
 import com.example.modulecommon.model.entity.Classification;
 import com.example.modulecommon.model.entity.Product;
 import com.example.moduleproduct.ModuleProductApplication;
 import com.example.moduleproduct.fixture.ProductFixture;
+import com.example.moduleproduct.model.dto.main.business.MainListDTO;
 import com.example.moduleproduct.model.dto.main.out.MainListResponseDTO;
 import com.example.moduleproduct.model.dto.page.ProductPageDTO;
 import com.example.moduleproduct.repository.classification.ClassificationRepository;
@@ -16,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
@@ -80,28 +83,102 @@ public class MainServiceIT {
 
     @Test
     @DisplayName("베스트 상품 조회")
-    void getBestAndNewProductList() {
-        ProductPageDTO pageDTO = ProductPageDTO.builder()
-                                                .pageNum(1)
-                                                .keyword(null)
-                                                .classification("BEST")
-                                                .build();
+    void getBestProductList() {
+        ProductPageDTO pageDTO = ProductFixture.createProductPageDTO("BEST");
         List<MainListResponseDTO> result = mainService.getBestAndNewProductList(pageDTO);
         List<MainListResponseDTO> fixture = ProductFixture.bestMainResponseListDTOList();
 
         Assertions.assertNotNull(result);
         Assertions.assertFalse(result.isEmpty());
         Assertions.assertEquals(fixture.size(), result.size());
-
-        for(int i = 0; i < fixture.size(); i++) {
-            MainListResponseDTO resultDTO = result.get(i);
-            MainListResponseDTO fixtureDTO = fixture.get(i);
-
-            Assertions.assertEquals(fixtureDTO.productId(), resultDTO.productId());
-            Assertions.assertEquals(fixtureDTO.discountPrice(), resultDTO.discountPrice());
-            Assertions.assertEquals(fixtureDTO.productName(), resultDTO.productName());
-            Assertions.assertEquals(fixtureDTO.isSoldOut(), resultDTO.isSoldOut());
-            Assertions.assertEquals(fixtureDTO.originPrice(), resultDTO.originPrice());
-        }
+        Assertions.assertEquals(fixture, result);
     }
+
+    @Test
+    @DisplayName("새로운 상품 조회")
+    void getNewProductList() {
+        ProductPageDTO pageDTO = ProductFixture.createProductPageDTO("NEW");
+        List<Product> newProductList = ProductFixture.newProductFilter(productList);
+        List<MainListDTO> dtoList = ProductFixture.createMainListDTOByProductList(newProductList);
+        List<MainListResponseDTO> fixture = ProductFixture.mappingMainListResponseDTO(dtoList);
+        List<MainListResponseDTO> result = Assertions.assertDoesNotThrow(() -> mainService.getBestAndNewProductList(pageDTO));
+
+        Assertions.assertFalse(result.isEmpty());
+        Assertions.assertEquals(fixture.size(), result.size());
+        Assertions.assertEquals(fixture, result);
+    }
+
+    @Test
+    @DisplayName("상품이 하나도 존재하지 않는 경우")
+    void getEmptyProductList() {
+        productRepository.deleteAll();
+        ProductPageDTO pageDTO = ProductFixture.createProductPageDTO("BEST");
+        List<MainListResponseDTO> result = Assertions.assertDoesNotThrow(() -> mainService.getBestAndNewProductList(pageDTO));
+
+        Assertions.assertTrue(result.isEmpty());
+    }
+
+    @Test
+    @DisplayName("OUTER 분류 상품 조회")
+    void getOuterProductList() {
+        ProductPageDTO pageDTO = ProductFixture.createProductPageDTO("OUTER");
+        List<Product> outerList = ProductFixture.outerProductFilter(productList);
+        int outerTotalElements = outerList.stream().filter(Product::isOpen).toList().size();
+        List<MainListDTO> dtoList = ProductFixture.createMainListDTOByDataReverse(outerList);
+        List<MainListResponseDTO> fixture = ProductFixture.mappingMainListResponseDTO(dtoList);
+        PagingListResponseDTO<MainListResponseDTO> result = Assertions.assertDoesNotThrow(
+                                                                    () -> mainService.getClassificationAndSearchProductList(pageDTO)
+                                                            );
+
+        Assertions.assertEquals(fixture.size(), result.content().size());
+        Assertions.assertEquals(outerTotalElements, result.pagingData().getTotalElements());
+        Assertions.assertEquals(0, result.pagingData().getNumber());
+        Assertions.assertEquals(2, result.pagingData().getTotalPages());
+        Assertions.assertEquals(fixture, result.content());
+    }
+
+    @Test
+    @DisplayName("상품명에 TOP이 들어간 상품 검색")
+    void searchProductListByTOP() {
+        List<Product> topList = ProductFixture.topProductFilter(productList);
+        int topTotalElements = topList.stream().filter(Product::isOpen).toList().size();
+        List<MainListDTO> dtoList = ProductFixture.createMainListDTOByDataReverse(topList);
+        List<MainListResponseDTO> fixture = ProductFixture.mappingMainListResponseDTO(dtoList);
+        ProductPageDTO pageDTO = ProductPageDTO.builder()
+                                                .pageNum(1)
+                                                .keyword("TOP")
+                                                .classification(null)
+                                                .build();
+
+        PagingListResponseDTO<MainListResponseDTO> result = Assertions.assertDoesNotThrow(
+                                                                    () -> mainService.getClassificationAndSearchProductList(pageDTO)
+                                                            );
+
+        Assertions.assertEquals(fixture.size(), result.content().size());
+        Assertions.assertEquals(topTotalElements, result.pagingData().getTotalElements());
+        Assertions.assertEquals(0, result.pagingData().getNumber());
+        Assertions.assertEquals(1, result.pagingData().getTotalPages());
+        Assertions.assertEquals(fixture, result.content());
+    }
+
+    @Test
+    @DisplayName("데이터가 존재하지 않는 SHOES가 들어간 상품명 검색")
+    void searchEmptyProductList() {
+        ProductPageDTO pageDTO = ProductPageDTO.builder()
+                                                .pageNum(1)
+                                                .keyword("SHOES")
+                                                .classification(null)
+                                                .build();
+
+        PagingListResponseDTO<MainListResponseDTO> result = Assertions.assertDoesNotThrow(
+                                                                    () -> mainService.getClassificationAndSearchProductList(pageDTO)
+                                                            );
+
+        Assertions.assertTrue(result.content().isEmpty());
+        Assertions.assertEquals(0, result.pagingData().getTotalElements());
+        Assertions.assertEquals(0, result.pagingData().getNumber());
+        Assertions.assertEquals(0, result.pagingData().getTotalPages());
+    }
+
+
 }

@@ -13,7 +13,7 @@ public class ProductLikeFixture {
      * @return
      */
     public static ProductLike createSuccessLikeCountEntity() {
-        Member member = MemberFixture.createMember();
+        Member member = MemberFixture.createOneMember();
         Product product = ProductFixture.createOneProductEntity();
 
         return ProductLike.builder()
@@ -29,7 +29,7 @@ public class ProductLikeFixture {
      * @return
      */
     public static ProductLike createFailLikeCountEntity() {
-        Member member = MemberFixture.createMember();
+        Member member = MemberFixture.createOneMember();
         Product product = Product.builder()
                 .id("testFailProductId")
                 .classification(null)

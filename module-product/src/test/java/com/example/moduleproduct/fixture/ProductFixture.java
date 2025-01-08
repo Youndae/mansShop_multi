@@ -10,6 +10,7 @@ import com.example.moduleproduct.model.dto.product.business.ProductOptionDTO;
 import org.springframework.data.domain.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -83,6 +84,7 @@ public class ProductFixture {
             sales += 10;
             int stock = 10;
             int discount = 0;
+
             if(i < 5)
                 stock = 0;
             else if(i < 10)
@@ -123,6 +125,14 @@ public class ProductFixture {
         return productList.stream().filter(v -> v.getClassification().getId().equals(classification)).toList();
     }
 
+    public static List<MainListDTO> createMainListDTOByDataReverse(List<Product> productList) {
+        List<Product> list = new ArrayList<>(productList.stream().filter(Product::isOpen).toList());
+        Collections.reverse(list);
+        list = list.stream().limit(12).toList();
+
+        return createMainListDTOByProductList(list);
+    }
+
     public static List<Product> bestProductFilter(List<Product> productList) {
         return productList.stream()
                             .sorted((v1, v2) ->
@@ -130,6 +140,12 @@ public class ProductFixture {
                             )
                             .limit(12)
                             .toList();
+    }
+
+    public static List<Product> newProductFilter(List<Product> productList) {
+        Collections.reverse(productList);
+
+        return productList.stream().filter(Product::isOpen).limit(12).toList();
     }
 
     public static List<MainListResponseDTO> outerMainResponseListDTOList() {
@@ -156,7 +172,7 @@ public class ProductFixture {
         return mappingMainListResponseDTO(mainListDTOList);
     }
 
-    private static List<MainListDTO> createMainListDTOByProductList(List<Product> productList) {
+    public static List<MainListDTO> createMainListDTOByProductList(List<Product> productList) {
         return productList.stream()
                             .map(v ->{
                                 long stock = v.getProductOptionSet()
@@ -290,7 +306,7 @@ public class ProductFixture {
      * @return
      */
     public static List<ProductInfoImage> createProductInfoImageList() {
-        List<String> imageNameList = List.of("info1", "info2", "info3");
+        List<String> imageNameList = List.of("info1", "info2", "info3", "info4");
 
         return imageNameList.stream()
                             .map(ProductFixture::createProductInfoImage)

@@ -3,11 +3,13 @@ package com.example.moduleproduct.fixture;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.entity.Product;
 import com.example.modulecommon.model.entity.ProductReview;
+import com.example.modulecommon.model.entity.ProductReviewReply;
 import com.example.modulecommon.model.enumuration.PageAmount;
 import com.example.moduleproduct.model.dto.product.business.ProductReviewResponseDTO;
 import org.springframework.data.domain.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -22,7 +24,7 @@ public class ProductReviewFixture {
      */
     public static List<ProductReview> createProductReviewList() {
         Product product = ProductFixture.createProductAndOption();
-        Member member = MemberFixture.createMember();
+        Member member = MemberFixture.createOneMember();
 
         return IntStream.range(0, 5)
                         .mapToObj(v ->
@@ -80,5 +82,50 @@ public class ProductReviewFixture {
                                             "answerContent" + i,
                                             LocalDate.now()
                                     );
+    }
+
+    public static ProductReviewReply createProductReviewReply(Member member, ProductReview productReview, int i) {
+        return ProductReviewReply.builder()
+                .member(member)
+                .productReview(productReview)
+                .replyContent("replyContent" + i)
+                .build();
+    }
+
+    public static List<ProductReviewResponseDTO> productReviewResponseDTOFilter(String productId,
+                                                                                List<ProductReview> review,
+                                                                                List<ProductReviewReply> reviewReply) {
+        List<ProductReview> reviewList = review.stream()
+                                                .filter(v ->
+                                                        v.getProduct().getId().equals(productId)
+                                                )
+                                                .sorted((v1, v2) ->
+                                                        Long.compare(v2.getId(), v1.getId())
+                                                )
+                                                .toList();
+        List<ProductReviewResponseDTO> result = new ArrayList<>();
+
+        for(int i = 0; i < reviewList.size(); i++) {
+            ProductReview reviewEntity = reviewList.get(i);
+            String replyContent = null;
+
+            for(int j = 0; j < reviewReply.size(); j++) {
+                if(reviewEntity.getId() == reviewReply.get(j).getProductReview().getId()){
+                    replyContent = reviewReply.get(j).getReplyContent();
+                    break;
+                }
+            }
+
+            result.add(new ProductReviewResponseDTO(
+                    reviewEntity.getMember().getNickname() == null ?
+                            reviewEntity.getMember().getUserName() : reviewEntity.getMember().getNickname(),
+                    reviewEntity.getReviewContent(),
+                    null,
+                    replyContent,
+                    null
+            ));
+        }
+
+        return result;
     }
 }

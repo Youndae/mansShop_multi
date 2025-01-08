@@ -161,7 +161,7 @@ public class ProductServiceUnitTest {
     @DisplayName("상품 상세 페이지 조회")
     void getProductDetail() {
         Product product = ProductFixture.createOneProductEntity();
-        String userId = MemberFixture.createMember().getUserId();
+        String userId = MemberFixture.createOneMember().getUserId();
         List<ProductOptionDTO> optionDTOList = ProductFixture.createProductOptionDTOList();
         List<String> thumbnailList = ProductFixture.createProductThumbnailList().stream().map(ProductThumbnail::getImageName).toList();
         List<String> infoImageList = ProductFixture.createProductInfoImageList().stream().map(ProductInfoImage::getImageName).toList();
@@ -217,7 +217,7 @@ public class ProductServiceUnitTest {
     @DisplayName("상품 상세 페이지 조회 시 리뷰와 문의 데이터가 존재하지 않는 경우")
     void getProductDetailForEmptyReviewAndQnA() {
         Product product = ProductFixture.createOneProductEntity();
-        String userId = MemberFixture.createMember().getUserId();
+        String userId = MemberFixture.createOneMember().getUserId();
         List<ProductOptionDTO> optionDTOList = ProductFixture.createProductOptionDTOList();
         List<String> thumbnailList = ProductFixture.createProductThumbnailList().stream().map(ProductThumbnail::getImageName).toList();
         List<String> infoImageList = ProductFixture.createProductInfoImageList().stream().map(ProductInfoImage::getImageName).toList();
@@ -260,7 +260,7 @@ public class ProductServiceUnitTest {
     @DisplayName("상품 상세 페이지 조회 시 썸네일과 정보 이미지가 존재하지 않는 경우")
     void getProductDetailForEmptyImages() {
         Product product = ProductFixture.createOneProductEntity();
-        String userId = MemberFixture.createMember().getUserId();
+        String userId = MemberFixture.createOneMember().getUserId();
         List<ProductOptionDTO> optionDTOList = ProductFixture.createProductOptionDTOList();
         Page<ProductReviewResponseDTO> reviewResponse = ProductReviewFixture.createPageObjectByProductReview();
         Pageable reviewPageable = ProductReviewFixture.createReviewPageable();
@@ -319,7 +319,7 @@ public class ProductServiceUnitTest {
     @Test
     @DisplayName("관심상품 등록 시 잘못된 상품 정보")
     void likeProductToWrongProduct() {
-        Member member = MemberFixture.createMember();
+        Member member = MemberFixture.createOneMember();
         String productId = "testProduct";
         when(memberRepository.findById(member.getUserId())).thenReturn(Optional.of(member));
         when(productRepository.findById(productId)).thenReturn(Optional.empty());
@@ -346,7 +346,7 @@ public class ProductServiceUnitTest {
     @Test
     @DisplayName("상품 문의 작성")
     void postProductQnA() {
-        Member member = MemberFixture.createMember();
+        Member member = MemberFixture.createOneMember();
         Product product = ProductFixture.createOneProductEntity();
         ProductQnAPostDTO postDTO = new ProductQnAPostDTO(product.getId(), "testContent");
         ProductQnA productQnA = postDTO.toProductQnAEntity(member, product);
@@ -363,7 +363,7 @@ public class ProductServiceUnitTest {
     @Test
     @DisplayName("상품 문의 작성 시 잘못된 상품 아이디")
     void postProductQnAToWrongProduct() {
-        Member member = MemberFixture.createMember();
+        Member member = MemberFixture.createOneMember();
         String productId = "testProduct";
         ProductQnAPostDTO postDTO = new ProductQnAPostDTO(productId, "testContent");
 

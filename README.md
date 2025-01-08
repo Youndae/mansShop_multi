@@ -181,3 +181,13 @@
   - module-config application-integration-test.yml 추가.
     - 통합 테스트 환경은 동일한 로컬 MySQL mansShop-test 데이터베이스에서 테스트 하도록 처리.
     - 현재 편의상 prod, dev는 동일한 mansShop, integration-test에서는 mansShop-test, test에서는 h2를 사용.
+
+<br/>
+
+- 25/01/08
+  - Product의 createdAt, updatedAt 타입을 LocalDate -> LocalDateTime으로 변경.
+    - BEST 상품 조회를 제외한 나머지 상품 조회는 모두 createdAt을 기준으로 하기 때문에 시,분,초를 갖도록 수정.
+  - ProductRepositoryTest 수정 및 재 테스트
+    - 기존 테스트 Fixture는 5개의 데이터만 넣어두고 테스트했는데 각 기능에 대한 명확한 테스트를 위해 20개의 데이터로 수정.
+    - OUTER, TOP 두개의 Classification을 생성했기 때문에 분류별 조회에서도 좀 더 명확하게 테스트를 수행할 수 있고, 상품 검색 또한 TOP이 포함된 상품명을 검색하는 테스트를 수행하도록 해 모든 기능의 테스트를 수행 할 수 있게 되었다.
+  - ProductService 통합 테스트 작성 및 테스트 완료.

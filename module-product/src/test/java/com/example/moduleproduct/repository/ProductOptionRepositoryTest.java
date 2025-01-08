@@ -1,10 +1,12 @@
 package com.example.moduleproduct.repository;
 
+import com.example.modulecommon.model.entity.Classification;
 import com.example.modulecommon.model.entity.Product;
 import com.example.modulecommon.model.entity.ProductOption;
 import com.example.moduleproduct.ModuleProductApplication;
 import com.example.moduleproduct.fixture.ProductFixture;
 import com.example.moduleproduct.model.dto.product.business.ProductOptionDTO;
+import com.example.moduleproduct.repository.classification.ClassificationRepository;
 import com.example.moduleproduct.repository.product.ProductRepository;
 import com.example.moduleproduct.repository.productOption.ProductOptionRepository;
 import org.junit.jupiter.api.Assertions;
@@ -34,12 +36,18 @@ public class ProductOptionRepositoryTest {
     @Autowired
     private ProductRepository productRepository;
 
+    @Autowired
+    private ClassificationRepository classificationRepository;
+
     /**
      * 상품 옵션 리스트 조회 테스트를 위해 여러개의 ProductOption을 담고 있는 Product 생성 후 save
      */
     @BeforeEach
     void init() {
         Product product = ProductFixture.createProductAndOption();
+        List<Classification> classifications = ProductFixture.createClassificationList();
+
+        classificationRepository.saveAll(classifications);
         productRepository.save(product);
     }
 

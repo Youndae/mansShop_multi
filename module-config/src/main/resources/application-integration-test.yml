@@ -21,4 +21,4 @@ server:
 
 logging:
   file:
-    path: logback-spring-dev
+    path: logback-spring-integration-test

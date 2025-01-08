@@ -22,16 +22,16 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @SpringBootTest(classes = ModuleProductApplication.class)
 @EntityScan(basePackages = "com.example.modulecommon")
 @EnableJpaRepositories(basePackages = "com.example")
 @ComponentScan(basePackages = {"com.example.moduleconfig", "com.example.modulecommon"})
 @ActiveProfiles("test")
+@Transactional
 public class ProductRepositoryTest {
 
     @Autowired
@@ -40,15 +40,21 @@ public class ProductRepositoryTest {
     @Autowired
     private ClassificationRepository classificationRepository;
 
+    private List<Product> productList;
+
     /**
-     * 상품 조회 테스트를 위해 여러 Product Entity를 생성하고 save
-     * 상품 분류인 Classification은 별도로 생성하지 않고 생성된 ProductList에서 Set으로 새로 매핑하도록 처리.
-     * OUTER5개, TOP1개로 구성되어 있기 때문에 Set으로 생성해 OUTER, TOP만 갖고 저장하게 됨.
+     * 상품 리스트, 상품 분류 데이터 저장
+     * 상품 리스트는 15개의 OUTER, 5개의 TOP으로 구성.
+     * 상품 하나당 3개의 옵션 존재.
+     * TOP에서 2개의 상품은 isOpen = false로 비공개 상태.
+     * 1개 상품은 2개의 옵션이 isOpen = false로 옵션 2개 비공개 상태.
+     * OUTER 0 ~ 4번까지는 상품 옵션 재고가 0
+     * OUTER 5 ~ 14까지는 상품 할인율이 10% 5개, 50% 5개.
      */
     @BeforeEach
     void init() {
-        List<Product> productList = ProductFixture.createProductList();
-        Set<Classification> classifications = productList.stream().map(Product::getClassification).collect(Collectors.toSet());
+        productList = ProductFixture.createProductList();
+        List<Classification> classifications = ProductFixture.createClassificationList();
 
         classificationRepository.saveAll(classifications);
         productRepository.saveAll(productList);
@@ -57,35 +63,56 @@ public class ProductRepositoryTest {
     @Test
     @DisplayName(value = "BEST 상품 조회")
     void findByBestProduct() {
-        List<Product> productList = ProductFixture.createProductList();
         ProductPageDTO pageDTO = ProductFixture.createProductPageDTO("BEST");
         List<MainListDTO> result = productRepository.getProductDefaultList(pageDTO);
-        Assertions.assertEquals(productList.size(), result.size());
+        List<Product> bestProductList = ProductFixture.bestProductFilter(productList);
+        List<MainListDTO> fixture = ProductFixture.createMainListDTOByProductList(bestProductList);
 
-        for(int i = 0; i < productList.size(); i++){
-            Product product = productList.get(i);
-            MainListDTO resultDTO = result.get(i);
-            Assertions.assertEquals(product.getId(), resultDTO.productId());
-            Assertions.assertEquals(product.getProductName(), resultDTO.productName());
-        }
+        Assertions.assertEquals(fixture.size(), result.size());
+        Assertions.assertEquals(fixture, result);
+    }
+
+    @Test
+    @DisplayName(value = "New 상품 조회")
+    void findByNewProduct() {
+        ProductPageDTO pageDTO = ProductFixture.createProductPageDTO("NEW");
+        List<MainListDTO> result = productRepository.getProductDefaultList(pageDTO);
+        List<Product> newProductList = ProductFixture.newProductFilter(productList);
+        List<MainListDTO> fixture = ProductFixture.createMainListDTOByProductList(newProductList);
+
+        Assertions.assertEquals(fixture.size(), result.size());
+        Assertions.assertEquals(fixture, result);
     }
 
     @Test
     @DisplayName(value = "분류별 상품 조회. OUTER 조회")
     void findByClassificationProduct() {
-        /*List<Product> outerList = ProductFixture.createProductListByOUTER();
+        List<Product> outerList = ProductFixture.outerProductFilter(productList);
+        List<MainListDTO> fixture = ProductFixture.createMainListDTOByDataReverse(outerList);
         ProductPageDTO pageDTO = ProductFixture.createProductPageDTO("OUTER");
         Pageable pageable = ProductFixture.createProductListPageable();
         Page<MainListDTO> result = productRepository.getProductClassificationAndSearchList(pageDTO, pageable);
 
+        Assertions.assertEquals(fixture, result.getContent());
         Assertions.assertEquals(outerList.size(), result.getTotalElements());
-
-        for(int i = 0; i < outerList.size(); i++) {
-            Product product = outerList.get(outerList.size() - i - 1);
-            MainListDTO resultDTO = result.getContent().get(i);
-
-            Assertions.assertEquals(product.getId(), resultDTO.productId());
-            Assertions.assertEquals(product.getProductName(), resultDTO.productName());
-        }*/
     }
+
+    @Test
+    @DisplayName("상품 검색. 상품명에 TOP이 들어간 상품 검색")
+    void searchProduct() {
+        List<Product> topList = ProductFixture.topProductFilter(productList);
+        List<MainListDTO> fixture = ProductFixture.createMainListDTOByDataReverse(topList);
+        ProductPageDTO pageDTO = ProductPageDTO.builder()
+                                                .pageNum(1)
+                                                .keyword("TOP")
+                                                .classification(null)
+                                                .build();
+        Pageable pageable = ProductFixture.createProductListPageable();
+        Page<MainListDTO> result = productRepository.getProductClassificationAndSearchList(pageDTO, pageable);
+
+        Assertions.assertEquals(fixture, result.getContent());
+        Assertions.assertEquals(fixture.size(), result.getTotalElements());
+    }
+
+
 }

@@ -1,9 +1,11 @@
 package com.example.moduleproduct.repository;
 
+import com.example.modulecommon.model.entity.Classification;
 import com.example.modulecommon.model.entity.Product;
 import com.example.modulecommon.model.entity.ProductInfoImage;
 import com.example.moduleproduct.ModuleProductApplication;
 import com.example.moduleproduct.fixture.ProductFixture;
+import com.example.moduleproduct.repository.classification.ClassificationRepository;
 import com.example.moduleproduct.repository.product.ProductRepository;
 import com.example.moduleproduct.repository.productInfoImage.ProductInfoImageRepository;
 import org.junit.jupiter.api.Assertions;
@@ -32,13 +34,18 @@ public class ProductInfoImageRepositoryTest {
     @Autowired
     private ProductRepository productRepository;
 
+    @Autowired
+    private ClassificationRepository classificationRepository;
+
     /**
      * 상품 정보 이미지를 확인하기 위해 ProductInfoImage Entity를 담고 있는 Product를 save
      */
     @BeforeEach
     void init() {
         Product product = ProductFixture.createProductAndImage();
+        List<Classification> classifications = ProductFixture.createClassificationList();
 
+        classificationRepository.saveAll(classifications);
         productRepository.save(product);
     }
 

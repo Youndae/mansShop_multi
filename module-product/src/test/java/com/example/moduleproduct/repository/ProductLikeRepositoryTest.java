@@ -1,14 +1,12 @@
 package com.example.moduleproduct.repository;
 
 import com.example.moduleauth.repository.MemberRepository;
-import com.example.modulecommon.model.entity.Auth;
-import com.example.modulecommon.model.entity.Member;
-import com.example.modulecommon.model.entity.Product;
-import com.example.modulecommon.model.entity.ProductLike;
+import com.example.modulecommon.model.entity.*;
 import com.example.modulecommon.model.enumuration.OAuthProvider;
 import com.example.moduleproduct.ModuleProductApplication;
 import com.example.moduleproduct.fixture.ProductFixture;
 import com.example.moduleproduct.fixture.ProductLikeFixture;
+import com.example.moduleproduct.repository.classification.ClassificationRepository;
 import com.example.moduleproduct.repository.product.ProductRepository;
 import com.example.moduleproduct.repository.productLike.ProductLikeRepository;
 import org.junit.jupiter.api.Assertions;
@@ -22,6 +20,8 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @SpringBootTest(classes = ModuleProductApplication.class)
 @EntityScan(basePackages = "com.example.modulecommon")
@@ -39,6 +39,9 @@ public class ProductLikeRepositoryTest {
     @Autowired
     private MemberRepository memberRepository;
 
+    @Autowired
+    private ClassificationRepository classificationRepository;
+
     /**
      * 관심상품 등록 여부 조회를 위해 ProductLike Entity 생성.
      * Member, Product Entity에 대한 데이터가 필요하기 때문에 save후 ProductLike save
@@ -46,6 +49,9 @@ public class ProductLikeRepositoryTest {
     @BeforeEach
     void init() {
         ProductLike productLike = ProductLikeFixture.createSuccessLikeCountEntity();
+        List<Classification> classifications = ProductFixture.createClassificationList();
+
+        classificationRepository.saveAll(classifications);
         memberRepository.save(productLike.getMember());
         productRepository.save(productLike.getProduct());
         productLikeRepository.save(productLike);

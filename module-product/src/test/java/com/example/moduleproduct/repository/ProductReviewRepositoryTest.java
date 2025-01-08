@@ -1,13 +1,12 @@
 package com.example.moduleproduct.repository;
 
 import com.example.moduleauth.repository.MemberRepository;
-import com.example.modulecommon.model.entity.Member;
-import com.example.modulecommon.model.entity.Product;
-import com.example.modulecommon.model.entity.ProductOption;
-import com.example.modulecommon.model.entity.ProductReview;
+import com.example.modulecommon.model.entity.*;
 import com.example.moduleproduct.ModuleProductApplication;
+import com.example.moduleproduct.fixture.ProductFixture;
 import com.example.moduleproduct.fixture.ProductReviewFixture;
 import com.example.moduleproduct.model.dto.product.business.ProductReviewResponseDTO;
+import com.example.moduleproduct.repository.classification.ClassificationRepository;
 import com.example.moduleproduct.repository.product.ProductRepository;
 import com.example.moduleproduct.repository.productOption.ProductOptionRepository;
 import com.example.moduleproduct.repository.productReview.ProductReviewRepository;
@@ -45,6 +44,9 @@ public class ProductReviewRepositoryTest {
     @Autowired
     private ProductOptionRepository productOptionRepository;
 
+    @Autowired
+    private ClassificationRepository classificationRepository;
+
     /**
      * ProductReview 조회를 위해 해당 Entity 리스트 생성 및 save
      * Member와 Product, ProductOption은 동일한 데이터를 갖는 Entity들이기 떄문에 한번만 save
@@ -55,7 +57,9 @@ public class ProductReviewRepositoryTest {
         Product product = reviewEntities.get(0).getProduct();
         Member member = reviewEntities.get(0).getMember();
         ProductOption productOption = reviewEntities.get(0).getProductOption();
+        List<Classification> classifications = ProductFixture.createClassificationList();
 
+        classificationRepository.saveAll(classifications);
         memberRepository.save(member);
         productRepository.save(product);
         productOptionRepository.save(productOption);

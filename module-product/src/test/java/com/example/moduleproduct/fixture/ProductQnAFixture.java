@@ -6,6 +6,8 @@ import com.example.modulecommon.model.entity.ProductQnA;
 import com.example.modulecommon.model.entity.ProductQnAReply;
 import com.example.modulecommon.model.enumuration.PageAmount;
 import com.example.moduleproduct.model.dto.product.business.ProductQnADTO;
+import com.example.moduleproduct.model.dto.product.business.ProductQnAReplyDTO;
+import com.example.moduleproduct.model.dto.product.business.ProductQnAResponseDTO;
 import org.springframework.data.domain.*;
 
 import java.time.LocalDate;
@@ -24,7 +26,7 @@ public class ProductQnAFixture {
      */
     public static ProductQnA createProductQnA(int qnANum) {
         Product product = ProductFixture.createOneProductEntity();
-        Member member = MemberFixture.createMember();
+        Member member = MemberFixture.createOneMember();
 
         return ProductQnA.builder()
                         .member(member)
@@ -32,6 +34,15 @@ public class ProductQnAFixture {
                         .qnaContent("TestQnAContent" + qnANum)
                         .productQnAStat(false)
                         .build();
+    }
+
+    public static ProductQnA createProductQnA(int qnANum, Member member, Product product) {
+        return ProductQnA.builder()
+                .member(member)
+                .product(product)
+                .qnaContent("TestQnAContent" + qnANum)
+                .productQnAStat(false)
+                .build();
     }
 
     /**
@@ -104,7 +115,7 @@ public class ProductQnAFixture {
                             );
 
         List<ProductQnAReply> replyList = new ArrayList<>();
-        Member member = MemberFixture.createMember();
+        Member member = MemberFixture.createOneMember();
 
         for(int i = 0; i < qnaEntities.size(); i++) {
             ProductQnA qna = qnaEntities.get(i);
@@ -119,5 +130,30 @@ public class ProductQnAFixture {
         }
 
         return replyList;
+    }
+
+    public static List<ProductQnAResponseDTO> createProductQnAResponseDTOList(List<ProductQnA> qnAList) {
+
+        return qnAList.stream()
+                        .map(v -> {
+                            List<ProductQnAReplyDTO> replyDTO = v.getProductQnAReplies().stream()
+                                    .map(r ->
+                                            new ProductQnAReplyDTO(
+                                                    r.getMember().getNickname() == null ?
+                                                            r.getMember().getUserName() : r.getMember().getNickname(),
+                                                    r.getReplyContent(),
+                                                    null)
+                                    )
+                                    .toList();
+                            return new ProductQnAResponseDTO(
+                                    v.getId(),
+                                    v.getMember().getNickname() == null ? v.getMember().getUserName() : v.getMember().getNickname(),
+                                    v.getQnaContent(),
+                                    null,
+                                    false,
+                                    replyDTO
+                            );
+                        })
+                        .toList();
     }
 }

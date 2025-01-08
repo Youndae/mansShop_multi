@@ -80,18 +80,20 @@ public class ProductDSLRepositoryImpl implements ProductDSLRepository {
             return new OrderSpecifier[]{new OrderSpecifier<>(Order.DESC, product.productSales)};
         else{
             return new OrderSpecifier[]{
-                    new OrderSpecifier<>(Order.DESC, product.createdAt),
-                    new OrderSpecifier<>(Order.DESC, product.id)
+                    new OrderSpecifier<>(Order.DESC, product.createdAt)
             };
         }
     }
 
     private BooleanExpression productSearchType(ProductPageDTO pageDTO) {
-        if(pageDTO.classification().equals("BEST") || pageDTO.classification().equals("NEW"))
-            return product.isOpen.isTrue();
-        else if(pageDTO.keyword() == null)
-            return product.isOpen.isTrue().and(product.classification.id.eq(pageDTO.classification()));
-        else
+        if(pageDTO.classification() != null) {
+            if(pageDTO.classification().equals("BEST") || pageDTO.classification().equals("NEW"))
+                return product.isOpen.isTrue();
+            else if(pageDTO.keyword() == null)
+                return product.isOpen.isTrue().and(product.classification.id.eq(pageDTO.classification()));
+        }else if(pageDTO.keyword() != null)
             return product.isOpen.isTrue().and(product.productName.like("%" + pageDTO.keyword() + "%"));
+
+        return null;
     }
 }
