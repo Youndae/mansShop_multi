@@ -9,7 +9,9 @@
 - JDK 17
 - MySQL
 - h2(test DB)
-- Redis
+- Docker
+  - Redis
+  - mailhog(integration-test)
 - IntelliJ
 
 ## dependency
@@ -205,3 +207,5 @@
   - module-user의 MemberService 통합 테스트 작성 및 테스트 완료.
   - module-auth의 SecurityConfig에 작성되어 있던 BCryptPasswordEncoder Bean AuthConfig로 분리.
     - module-user에서 통합 테스트 중 BCryptPasswordEncoder가 필요한데 주입을 위함.
+  - module-user에서 메일 테스트를 위해 mailhog 사용.
+    - Docker에서 jcalonso/mailhog를 실행하고 application-integration-test.yml에 설정해서 메일 테스트 수행
