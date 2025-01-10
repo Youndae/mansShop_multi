@@ -136,7 +136,7 @@ public class MemberServiceUnitTest {
     @Test
     @DisplayName("아이디 찾기. 연락처 기반")
     void searchIdByPhone() {
-        UserSearchDTO searchDTO = MemberFixture.createUserSearchDTOByPhone();
+        UserSearchDTO searchDTO = MemberFixture.createUserSearchDTOByPhone(0);
         String userId = MemberFixture.createMember(0).getUserId();
         
         when(memberRepository.searchId(searchDTO)).thenReturn(userId);
@@ -150,7 +150,7 @@ public class MemberServiceUnitTest {
     @Test
     @DisplayName("아이디 찾기. 연락처 기반. 정보가 존재하지 않는경우")
     void searchIdByPhoneNotFound() {
-        UserSearchDTO searchDTO = MemberFixture.createUserSearchDTOByPhone();
+        UserSearchDTO searchDTO = MemberFixture.createUserSearchDTOByPhone(0);
 
         when(memberRepository.searchId(searchDTO)).thenReturn(null);
 
@@ -162,7 +162,7 @@ public class MemberServiceUnitTest {
     @Test
     @DisplayName("아이디 찾기. 이메일 기반")
     void searchIdByEmail() {
-        UserSearchDTO searchDTO = MemberFixture.createUserSearchDTOByEmail();
+        UserSearchDTO searchDTO = MemberFixture.createUserSearchDTOByEmail(0);
         String userId = MemberFixture.createMember(0).getUserId();
 
         when(memberRepository.searchId(searchDTO)).thenReturn(userId);
@@ -176,7 +176,7 @@ public class MemberServiceUnitTest {
     @Test
     @DisplayName("아이디 찾기. 이메일 기반. 정보가 존재하지 않는 경우")
     void searchIdByEmailNotFound() {
-        UserSearchDTO searchDTO = MemberFixture.createUserSearchDTOByEmail();
+        UserSearchDTO searchDTO = MemberFixture.createUserSearchDTOByEmail(0);
 
         when(memberRepository.searchId(searchDTO)).thenReturn(null);
 
@@ -188,7 +188,7 @@ public class MemberServiceUnitTest {
     @Test
     @DisplayName("비밀번호 찾기 요청 시 정보 확인 후 인증번호 메일 전송")
     void searchPw() throws MessagingException {
-        UserSearchPwDTO searchDTO = MemberFixture.createUserSearchPwDTO();
+        UserSearchPwDTO searchDTO = MemberFixture.createUserSearchPwDTO(0);
         MimeMessage mimeMessage = new MimeMessage((Session) null);
         when(memberRepository.findByPassword(searchDTO)).thenReturn(1L);
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
@@ -203,7 +203,7 @@ public class MemberServiceUnitTest {
     @Test
     @DisplayName("비밀번호 찾기 요청 시 정보 확인 후 인증번호 메일 전송. 사용자 정보가 존재하지 않는 경우")
     void searchPwNotFound() {
-        UserSearchPwDTO searchDTO = MemberFixture.createUserSearchPwDTO();
+        UserSearchPwDTO searchDTO = MemberFixture.createUserSearchPwDTO(0);
         when(memberRepository.findByPassword(searchDTO)).thenReturn(0L);
 
         String result = Assertions.assertDoesNotThrow(() -> memberService.searchPw(searchDTO));
@@ -214,7 +214,7 @@ public class MemberServiceUnitTest {
     @Test
     @DisplayName("비밀번호 찾기 요청 시 정보 확인 후 인증번호 메일 전송. 메일 전송 실패")
     void searchPwThrowMessagingException() throws MessagingException {
-        UserSearchPwDTO searchDTO = MemberFixture.createUserSearchPwDTO();
+        UserSearchPwDTO searchDTO = MemberFixture.createUserSearchPwDTO(0);
         MimeMessage mimeMessage = new MimeMessage((Session) null);
         when(memberRepository.findByPassword(searchDTO)).thenReturn(1L);
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
@@ -263,6 +263,21 @@ public class MemberServiceUnitTest {
         String result = Assertions.assertDoesNotThrow(() -> memberService.checkCertificationNo(certificationDTO));
 
         Assertions.assertEquals(Result.FAIL.getResultKey(), result);
+    }
+
+    @Test
+    @DisplayName("인증번호 조회 과정에서 오류가 발생하는 경우")
+    void checkCertificationError() {
+        String userId = MemberFixture.createMember(0).getUserId();
+        String certification = "123456";
+        UserCertificationDTO certificationDTO = new UserCertificationDTO(userId, certification);
+
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get(userId)).thenThrow(new RuntimeException());
+
+        String result = memberService.checkCertificationNo(certificationDTO);
+
+        Assertions.assertEquals(Result.ERROR.getResultKey(), result);
     }
 
     @Test

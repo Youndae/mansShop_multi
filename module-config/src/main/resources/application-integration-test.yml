@@ -16,6 +16,18 @@ spring:
     username: root
     password: 1234
 
+  mail:
+    host: localhost
+    port: 1025
+    username: ""
+    password: ""
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls.enable: false
+          starttls.required: false
+
 server:
   port: 8084
 

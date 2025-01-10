@@ -198,3 +198,10 @@
   - module-user의 service, DTO 작성.
     - 각 Service 클래스 생성은 했지만, 작성한건 MemberService만 작성.
   - module-user의 MemberServiceUnitTest 작성 및 테스트 완료.
+
+<br/>
+
+- 25/01/10
+  - module-user의 MemberService 통합 테스트 작성 및 테스트 완료.
+  - module-auth의 SecurityConfig에 작성되어 있던 BCryptPasswordEncoder Bean AuthConfig로 분리.
+    - module-user에서 통합 테스트 중 BCryptPasswordEncoder가 필요한데 주입을 위함.

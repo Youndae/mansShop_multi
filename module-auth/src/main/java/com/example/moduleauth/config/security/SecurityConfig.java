@@ -34,11 +34,6 @@ public class SecurityConfig {
     private final JWTAuthorizationFilter jwtAuthorizationFilter;
 
     @Bean
-    public BCryptPasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    @Bean
     @Profile("prod")
     protected SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         log.info("-------------------------- default Security FilterChain");

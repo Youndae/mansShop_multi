@@ -42,12 +42,22 @@ public class MemberService {
     private static final String checkNoDuplicatesResponseMessage = "No duplicates";
 
     public String joinProc(JoinDTO joinDTO) {
+        if(!checkJoinData(joinDTO))
+            throw new IllegalArgumentException("Join member data check is false");
+
         Member memberEntity = joinDTO.toEntity();
         memberEntity.addMemberAuth(new Auth().toMemberAuth());
 
         memberRepository.save(memberEntity);
 
         return Result.OK.getResultKey();
+    }
+
+    private boolean checkJoinData(JoinDTO joinDTO) {
+        Member checkId = memberRepository.findById(joinDTO.userId()).orElse(null);
+        Member checkNickname = memberRepository.findByNickname(joinDTO.nickname());
+
+        return checkId == null && checkNickname == null;
     }
 
     public String checkJoinId(String userId) {
@@ -80,7 +90,7 @@ public class MemberService {
             return Result.NOTFOUND.getResultKey();
 
         Random ran = new Random();
-        int certificationNo = ran.nextInt(8999999) + 100001;
+        int certificationNo = ran.nextInt(899999) + 100001;
 
         try {
             ValueOperations<String, String> stringValueOperations = redisTemplate.opsForValue();
