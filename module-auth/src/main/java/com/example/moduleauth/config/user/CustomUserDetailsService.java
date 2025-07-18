@@ -1,9 +1,10 @@
 package com.example.moduleauth.config.user;
 
 import com.example.moduleauth.repository.MemberRepository;
+import com.example.modulecommon.customException.CustomBadCredentialsException;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.ErrorCode;
-import com.example.moduleconfig.config.exception.customException.CustomBadCredentialsException;
+
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -8,13 +8,14 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Builder
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "memberQnA")
 public class MemberQnA {
 
     @Id
@@ -22,30 +23,40 @@ public class MemberQnA {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "userId")
+    @JoinColumn(name = "userId", nullable = false)
     private Member member;
 
     @ManyToOne
-    @JoinColumn(name = "qnaClassificationId")
+    @JoinColumn(name = "qnaClassificationId", nullable = false)
     private QnAClassification qnAClassification;
 
+    @Column(length = 200,
+            nullable = false
+    )
     private String memberQnATitle;
 
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String memberQnAContent;
 
     @CreationTimestamp
-    private LocalDate createdAt;
+    @Column(nullable = false, columnDefinition = "DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3)")
+    private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    private LocalDate updatedAt;
+    @Column(nullable = false, columnDefinition = "DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3)")
+    private LocalDateTime updatedAt;
 
+    @Column(columnDefinition = "TINYINT(1) DEFAULT 0",
+            nullable = false
+    )
     private boolean memberQnAStat;
 
-    public void setModifyData (String title, String content, QnAClassification qnaClassification) {
+    /*public void setModifyData(MemberQnAModifyDTO modifyDTO, QnAClassification qnaClassification) {
         this.qnAClassification = qnaClassification;
-        this.memberQnATitle = title;
-        this.memberQnAContent = content;
-    }
+        this.memberQnATitle = modifyDTO.title();
+        this.memberQnAContent = modifyDTO.content();
+    }*/
 
     public void setMemberQnAStat(boolean memberQnAStat) {
         this.memberQnAStat = memberQnAStat;

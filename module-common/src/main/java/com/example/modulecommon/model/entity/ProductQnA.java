@@ -6,16 +6,16 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalDateTime;
 
 @Entity
 @Builder
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "productQnA")
 public class ProductQnA {
 
     @Id
@@ -23,29 +23,44 @@ public class ProductQnA {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "userId")
+    @JoinColumn(name = "userId", nullable = false)
     private Member member;
 
     @ManyToOne
-    @JoinColumn(name = "productId")
+    @JoinColumn(name = "productId", nullable = false)
     private Product product;
 
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String qnaContent;
 
-    @OneToMany(mappedBy = "productQnA", cascade = CascadeType.ALL)
-    private final List<ProductQnAReply> productQnAReplies = new ArrayList<>();
-
     @CreationTimestamp
-    private LocalDate createdAt;
+    @Column(nullable = false, columnDefinition = "DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3)")
+    private LocalDateTime createdAt;
 
+    @UpdateTimestamp
+    @Column(nullable = false, columnDefinition = "DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3)")
+    private LocalDateTime updatedAt;
+
+    @Column(columnDefinition = "TINYINT(1) DEFAULT 0",
+            nullable = false
+    )
     private boolean productQnAStat;
-
-    public void addProductQnAReply(ProductQnAReply reply) {
-        productQnAReplies.add(reply);
-        reply.setProductQnA(this);
-    }
 
     public void setProductQnAStat(boolean productQnAStat) {
         this.productQnAStat = productQnAStat;
+    }
+
+    @Override
+    public String toString() {
+        return "ProductQnA{" +
+                "id=" + id +
+                ", member=" + member +
+                ", qnaContent='" + qnaContent + '\'' +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                ", productQnAStat=" + productQnAStat +
+                ", productName=" + product.getProductName() +
+                '}';
     }
 }

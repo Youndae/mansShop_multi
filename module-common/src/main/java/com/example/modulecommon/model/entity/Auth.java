@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
+@Table(name = "auth")
 public class Auth {
 
     @Id
@@ -22,10 +23,17 @@ public class Auth {
     @JoinColumn(name = "userId")
     private Member member;
 
+    @Column(length = 50,
+            nullable = false
+    )
     private String auth;
 
     public void setMember(Member member) {
         this.member = member;
+    }
+
+    public void setAuth(String auth) {
+        this.auth = auth;
     }
 
     public Auth toMemberAuth() {

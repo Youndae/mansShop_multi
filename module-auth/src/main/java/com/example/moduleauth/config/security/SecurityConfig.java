@@ -113,12 +113,12 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .logout(AbstractHttpConfigurer::disable);
-
+        log.info("security config test~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
         http
-                .securityMatcher(request ->
+                /*.securityMatcher(request ->
                         !request.getRequestURI().startsWith("/swagger-ui/**") &&
                                 !request.getRequestURI().startsWith("/v3/api-docs")
-                )
+                )*/
                 .oauth2Login((oauth2) ->
                         oauth2
                                 .loginPage("/login")

@@ -1,9 +1,11 @@
 package com.example.moduleproduct.service;
 
+import com.example.modulecommon.model.dto.response.PagingListDTO;
 import com.example.modulecommon.model.dto.response.PagingListResponseDTO;
 import com.example.modulecommon.model.dto.response.PagingMappingDTO;
 import com.example.moduleproduct.model.dto.main.business.MainListDTO;
 import com.example.moduleproduct.model.dto.main.out.MainListResponseDTO;
+import com.example.moduleproduct.model.dto.page.MainPageDTO;
 import com.example.moduleproduct.model.dto.page.ProductPageDTO;
 import com.example.moduleproduct.repository.product.ProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,36 +27,33 @@ public class MainService {
 
     private final ProductRepository productRepository;
 
-    public List<MainListResponseDTO> getBestAndNewProductList(ProductPageDTO pageDTO) {
-        List<MainListDTO> list = productRepository.getProductDefaultList(pageDTO);
 
-        return mappingMainListResponseDTO(list);
+    public List<MainListResponseDTO> getBestAndNewList(MainPageDTO pageDTO) {
+        List<MainListDTO> listDTO = productRepository.findListDefault(pageDTO);
+
+        return mainListDataMapping(listDTO);
     }
 
-    public PagingListResponseDTO<MainListResponseDTO> getClassificationAndSearchProductList(ProductPageDTO pageDTO) {
-        Pageable pageable = PageRequest.of(pageDTO.pageNum() - 1,
-                                            pageDTO.mainProductAmount(),
-                                            Sort.by("createdAt").descending());
-        Page<MainListDTO> list = productRepository.getProductClassificationAndSearchList(pageDTO, pageable);
-        List<MainListResponseDTO> content = mappingMainListResponseDTO(list.getContent());
+    public PagingListDTO<MainListResponseDTO> getClassificationAndSearchList(MainPageDTO pageDTO) {
+        Pageable pageable = PageRequest.of(
+                pageDTO.pageNum() - 1,
+                pageDTO.amount(),
+                Sort.by("createdAt").descending()
+        );
 
+        Page<MainListDTO> dto = productRepository.findListPageable(pageDTO, pageable);
+        List<MainListResponseDTO> responseDTO = mainListDataMapping(dto.getContent());
         PagingMappingDTO pagingMappingDTO = PagingMappingDTO.builder()
-                                                            .totalElements(list.getTotalElements())
-                                                            .totalPages(list.getTotalPages())
-                                                            .empty(list.isEmpty())
-                                                            .number(list.getNumber())
-                                                            .build();
+                                                    .totalElements(dto.getTotalElements())
+                                                    .totalPages(dto.getTotalPages())
+                                                    .empty(dto.isEmpty())
+                                                    .number(dto.getNumber())
+                                                    .build();
 
-        return new PagingListResponseDTO<>(content, pagingMappingDTO);
+        return new PagingListDTO<>(responseDTO, pagingMappingDTO);
     }
 
-    private List<MainListResponseDTO> mappingMainListResponseDTO(List<MainListDTO> dto) {
-
-        return Optional.ofNullable(dto)
-                        .map(list -> list.stream()
-                                        .map(MainListResponseDTO::new)
-                                        .toList()
-                        )
-                        .orElse(null);
+    private List<MainListResponseDTO> mainListDataMapping(List<MainListDTO> dto) {
+        return dto.stream().map(MainListResponseDTO::new).toList();
     }
 }

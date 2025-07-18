@@ -14,7 +14,7 @@ public record ProductQnAReplyDTO(
         this(
                 qnaReply.getMember().getNickname() == null ? qnaReply.getMember().getUserName() : qnaReply.getMember().getNickname(),
                 qnaReply.getReplyContent(),
-                qnaReply.getCreatedAt()
+                qnaReply.getCreatedAt().toLocalDate()
         );
     }
 }

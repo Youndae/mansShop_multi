@@ -1,4 +1,4 @@
-package com.example.moduleconfig.config.exception.customException;
+package com.example.modulecommon.customException;
 
 
 import com.example.modulecommon.model.enumuration.ErrorCode;
@@ -7,8 +7,7 @@ import lombok.Getter;
 
 @AllArgsConstructor
 @Getter
-public class CustomBadCredentialsException extends RuntimeException {
-
+public class CustomAccessDeniedException extends RuntimeException {
     ErrorCode errorCode;
 
     String message;

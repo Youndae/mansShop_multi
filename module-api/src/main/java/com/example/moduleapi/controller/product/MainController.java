@@ -54,6 +54,7 @@ public class MainController {
     )
     @GetMapping({"/", "/new"})
     public ResponseEntity<?> getMainProduct(HttpServletRequest request) {
+        log.info("MainController :: getMainProduct");
         String requestURI = request.getRequestURI();
         String classification = requestURI.substring(requestURI.lastIndexOf("/") + 1);
         classification = classification.equals("") ? "BEST" : classification;

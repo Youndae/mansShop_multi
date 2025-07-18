@@ -10,24 +10,37 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Builder
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "productLike")
-public class ProductLike {
+@Builder
+@Table(name = "notification")
+public class Notification {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "userId", nullable = false)
+    @JoinColumn(name = "userId")
     private Member member;
 
-    @ManyToOne
-    @JoinColumn(name = "productId", nullable = false)
-    private Product product;
+    @Column(length = 50,
+            nullable = false
+    )
+    private String type;
+
+    @Column(length = 255,
+            nullable = false
+    )
+    private String title;
+
+    private Long relatedId;
+
+    @Column(nullable = false,
+            columnDefinition = "TINYINT(1) DEFAULT 0"
+    )
+    private boolean isRead;
 
     @CreationTimestamp
     @Column(nullable = false, columnDefinition = "DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3)")

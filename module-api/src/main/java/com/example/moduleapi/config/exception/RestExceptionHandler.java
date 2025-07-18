@@ -1,23 +1,25 @@
-package com.example.moduleconfig.config.exception;
+package com.example.moduleapi.config.exception;
 
+import com.example.modulecommon.customException.*;
 import com.example.modulecommon.model.enumuration.ErrorCode;
-import com.example.moduleconfig.config.exception.customException.*;
-import io.swagger.v3.oas.annotations.Hidden;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import java.sql.SQLException;
+
 @RestControllerAdvice
 @Slf4j
-@Hidden
 public class RestExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(CustomTokenExpiredException.class)
-    public ResponseEntity<?> tokenExpiredException(Exception e) {
+    public ResponseEntity<ExceptionEntity> tokenExpiredException(Exception e) {
         log.warn("tokenExpiredException : {}", e.getMessage());
 
         return toResponseEntity(ErrorCode.TOKEN_EXPIRED);
@@ -58,15 +60,35 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         return toResponseEntity(ErrorCode.NOT_FOUND);
     }
 
-    private ResponseEntity<?> toResponseEntity(ErrorCode errorCode){
+    @ExceptionHandler(CustomOrderSessionExpiredException.class)
+    public ResponseEntity<?> orderSessionExpiredException(Exception e) {
+        log.warn("orderSessionExpiredException : {}", e.getMessage());
+
+        return toResponseEntity(ErrorCode.ORDER_SESSION_EXPIRED);
+    }
+
+    @ExceptionHandler(CustomOrderDataFailedException.class)
+    public ResponseEntity<?> orderDataFailedException(Exception e) {
+        log.warn("orderDataFailedException : {}", e.getMessage());
+
+        return toResponseEntity(ErrorCode.ORDER_DATA_FAILED);
+    }
+
+    @ExceptionHandler({CannotCreateTransactionException.class, JpaSystemException.class, SQLException.class})
+    public ResponseEntity<?> cannotCreateTransactionException(Exception e) {
+        log.warn("DB Connection Exception : {}", e.getMessage());
+
+        return toResponseEntity(ErrorCode.DB_CONNECTION_ERROR);
+    }
+
+    private ResponseEntity<ExceptionEntity> toResponseEntity(ErrorCode errorCode) {
 
         return ResponseEntity.status(errorCode.getHttpStatus())
                 .body(
-                        ExceptionEntity.builder()
-                                .errorCode(String.valueOf(errorCode.getHttpStatus()))
-                                .errorMessage(errorCode.getMessage())
-                                .build()
+                        new ExceptionEntity(
+                                String.valueOf(errorCode.getHttpStatus()),
+                                errorCode.getMessage()
+                        )
                 );
     }
-
 }

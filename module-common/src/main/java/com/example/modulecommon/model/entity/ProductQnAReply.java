@@ -9,12 +9,14 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Builder
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "productQnAReply")
 public class ProductQnAReply {
 
     @Id
@@ -22,20 +24,24 @@ public class ProductQnAReply {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "userId")
+    @JoinColumn(name = "userId", nullable = false)
     private Member member;
 
     @ManyToOne
-    @JoinColumn(name = "qnaId")
+    @JoinColumn(name = "qnaId", nullable = false)
     private ProductQnA productQnA;
 
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String replyContent;
 
     @CreationTimestamp
-    private LocalDate createdAt;
+    @Column(nullable = false, columnDefinition = "DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3)")
+    private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    private LocalDate updatedAt;
+    @Column(nullable = false, columnDefinition = "DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3)")
+    private LocalDateTime updatedAt;
 
     public void setReplyContent(String content) {
         this.replyContent = content;

@@ -7,9 +7,8 @@
 ## 환경
 - Spring Boot 3.4.0
 - JDK 17
-- MySQL
-- h2(test DB)
 - Docker
+  - MySQL
   - Redis
   - mailhog(integration-test)
 - IntelliJ
@@ -31,7 +30,6 @@
 - log4j2
 - swagger (springdoc-openapi-starter-webmvc-ui 2.6.0)
 - spring-boot-starter-oauth2-client
-- h2
 - jwt 4.4.0
 - iamport-rest-client-java 0.2.23
 - spring-boot-starter-mail 3.3.0
@@ -209,3 +207,16 @@
     - module-user에서 통합 테스트 중 BCryptPasswordEncoder가 필요한데 주입을 위함.
   - module-user에서 메일 테스트를 위해 mailhog 사용.
     - Docker에서 jcalonso/mailhog를 실행하고 application-integration-test.yml에 설정해서 메일 테스트 수행
+
+<br/>
+
+- 25/07/18
+  - 작업 재시작
+    - Monolithic Boot 버전이 많이 개선되었기 때문에 그에 맞춰서 구조 제외 코드 전부 개선해서 처리 예정
+    - module-product 우선적으로 구현 예정
+    - 공통 테스트 fixture는 module-common에 배치
+    - module-config에서 각종 config 파일들을 관리하는데 각 모듈에서 의존성 문제로 인해 resources/META-INF/spring 하위에 org.springframework.boot.autoconfigure.AutoConfiguration.imports 파일 생성
+      - 실제로 문제가 발생하면서 동작을 안한것은 아니지만 빨간 밑줄이 계속 신경쓰여서 이 방법으로 처리
+    - application-integration-test.yml을 제거하고 application-test.yml로 처리
+    - h2도 의존성 및 설정 다 제거하고 미사용으로 처리 계획.
+    - module-product에서 메인 관련 기능 구현 및 MainService Integration test 코드 작성 및 테스트

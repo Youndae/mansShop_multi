@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "cartDetail")
 public class CartDetail {
 
     @Id
@@ -18,26 +19,27 @@ public class CartDetail {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "cartId")
+    @JoinColumn(name = "cartId", nullable = false)
     private Cart cart;
 
     @ManyToOne
-    @JoinColumn(name = "productOptionId")
+    @JoinColumn(name = "productOptionId", nullable = false)
     private ProductOption productOption;
 
     private int cartCount;
 
-    private int cartPrice;
+    public void countUpDown(String type) {
+        if(type.equals("up"))
+            this.cartCount = cartCount + 1;
+        else
+            this.cartCount = cartCount < 2 ? 1 : cartCount - 1;
+    }
 
     public void setCart(Cart cart) {
         this.cart = cart;
     }
 
-    public void setCartCount(int cartCount) {
-        this.cartCount = cartCount;
-    }
-
-    public void setCartPrice(int cartPrice) {
-        this.cartPrice = cartPrice;
+    public void addCartCount(int cartCount) {
+        this.cartCount = this.cartCount + cartCount;
     }
 }

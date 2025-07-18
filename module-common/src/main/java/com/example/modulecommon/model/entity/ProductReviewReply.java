@@ -8,12 +8,14 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Builder
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "productReviewReply")
 public class ProductReviewReply {
 
     @Id
@@ -21,18 +23,26 @@ public class ProductReviewReply {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "userId")
+    @JoinColumn(name = "userId", nullable = false)
     private Member member;
 
     @ManyToOne
-    @JoinColumn(name = "reviewId")
+    @JoinColumn(name = "reviewId", nullable = false)
     private ProductReview productReview;
 
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String replyContent;
 
     @CreationTimestamp
-    private LocalDate createdAt;
+    @Column(nullable = false, columnDefinition = "DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3)")
+    private LocalDateTime createdAt;
 
     @CreationTimestamp
-    private LocalDate updatedAt;
+    @Column(nullable = false, columnDefinition = "DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3)")
+    private LocalDateTime updatedAt;
+
+    public void setProductReview(ProductReview productReview) {
+        this.productReview = productReview;
+    }
 }

@@ -1,10 +1,10 @@
 package com.example.moduleproduct.service;
 
 import com.example.moduleauth.repository.MemberRepository;
+import com.example.modulecommon.customException.CustomNotFoundException;
 import com.example.modulecommon.model.entity.*;
 import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.modulecommon.model.enumuration.Result;
-import com.example.moduleconfig.config.exception.customException.CustomNotFoundException;
 import com.example.moduleproduct.model.dto.page.ProductDetailPageDTO;
 import com.example.moduleproduct.model.dto.product.business.*;
 import com.example.moduleproduct.model.dto.product.in.ProductQnAPostDTO;
