@@ -20,18 +20,21 @@ repositories {
 dependencies {
     implementation project(':module-common')
     implementation project(':module-config')
-    implementation project(':module-user')
     implementation project(':module-admin')
+    implementation project(':module-auth')
+    implementation project(':module-cart')
+    implementation project(':module-file')
+    implementation project(':module-mypage')
+    implementation project(':module-notification')
     implementation project(':module-order')
     implementation project(':module-product')
-    implementation project(':module-auth')
+    implementation project(':module-user')
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
+    implementation 'org.springframework.boot:spring-boot-starter-mail:3.3.0'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux:3.4.0'
 
-
-
-//    implementation 'org.springdoc:springdoc-openapi-ui:1.8.0'
+    testImplementation(testFixtures(project(':module-common')))
 
 }
 

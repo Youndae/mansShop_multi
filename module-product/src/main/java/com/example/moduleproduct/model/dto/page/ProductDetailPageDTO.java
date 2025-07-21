@@ -13,6 +13,10 @@ public record ProductDetailPageDTO(
     }
 
     public ProductDetailPageDTO(int page) {
-        this(page, PageAmount.PRODUCT_REVIEW_AMOUNT.getAmount(), PageAmount.PRODUCT_QNA_AMOUNT.getAmount());
+        this(
+                page,
+                PageAmount.PRODUCT_REVIEW_AMOUNT.getAmount(),
+                PageAmount.PRODUCT_QNA_AMOUNT.getAmount()
+        );
     }
 }

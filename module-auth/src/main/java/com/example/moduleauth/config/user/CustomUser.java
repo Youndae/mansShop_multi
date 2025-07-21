@@ -31,6 +31,8 @@ public class CustomUser extends User implements CustomUserDetails {
                         )
                         .collect(Collectors.toList())
         );
+
+        this.member = member;
     }
 
     @Override

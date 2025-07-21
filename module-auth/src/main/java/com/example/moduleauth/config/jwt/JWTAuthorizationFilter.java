@@ -54,7 +54,7 @@ public class JWTAuthorizationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request
             , HttpServletResponse response
             , FilterChain chain) throws ServletException, IOException {
-
+        log.info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ JWTAuthorizationFilter ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
         String accessToken = request.getHeader(accessHeader);
         Cookie refreshToken = WebUtils.getCookie(request, refreshHeader);
         Cookie inoToken = WebUtils.getCookie(request, inoHeader);

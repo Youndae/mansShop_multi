@@ -19,6 +19,18 @@ spring:
     hikari.maximum-pool-size: 30
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+cloud:
+  aws:
+    credentials:
+      access-key:
+      secret-key:
+    region:
+      static:
+    s3:
+      bucket:
+    stack:
+      auto: false
+
 server:
   port: 8080
 

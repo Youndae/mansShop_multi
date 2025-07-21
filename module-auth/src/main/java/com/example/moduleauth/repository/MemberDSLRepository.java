@@ -8,6 +8,8 @@ public interface MemberDSLRepository {
 
     Member findByLocalUserId(String userId);
 
+    Member findByUserId(String userId);
+
     String searchId(UserSearchDTO searchDTO);
 
     Long findByPassword(UserSearchPwDTO searchDTO);

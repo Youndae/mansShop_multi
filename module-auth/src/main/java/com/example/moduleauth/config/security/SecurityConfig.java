@@ -34,9 +34,8 @@ public class SecurityConfig {
     private final JWTAuthorizationFilter jwtAuthorizationFilter;
 
     @Bean
-    @Profile("prod")
+    @Profile({"prod", "dev"})
     protected SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        log.info("-------------------------- default Security FilterChain");
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth ->
@@ -80,9 +79,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    @Profile("dev")
+    @Profile("test")
     protected SecurityFilterChain devSecurityFilterChain(HttpSecurity http) throws Exception {
-        log.info("-------------------------- dev Security FilterChain");
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth ->
@@ -113,20 +111,6 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .logout(AbstractHttpConfigurer::disable);
-        log.info("security config test~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-        http
-                /*.securityMatcher(request ->
-                        !request.getRequestURI().startsWith("/swagger-ui/**") &&
-                                !request.getRequestURI().startsWith("/v3/api-docs")
-                )*/
-                .oauth2Login((oauth2) ->
-                        oauth2
-                                .loginPage("/login")
-                                .userInfoEndpoint((userInfoEndpointConfig) ->
-                                        userInfoEndpointConfig.userService(customOAuth2UserService)
-                                )
-                                .successHandler(customOAuth2SuccessHandler)
-                );
 
         return http.build();
     }

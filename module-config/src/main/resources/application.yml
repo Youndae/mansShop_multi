@@ -45,6 +45,30 @@ spring:
 server:
   port: 8080
 
+cloud:
+  aws:
+    credentials:
+      access-key:
+      secret-key:
+    region:
+      static:
+    s3:
+      bucket:
+    stack:
+      auto: false
+
+springdoc:
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+  use-fqn: true
+
+# ttl의 경우 초단위
+notification:
+  redis:
+    prefix: "user:online:"
+    ttl: 40
+    status: "online"
+
 iamport:
   key:
   secret:

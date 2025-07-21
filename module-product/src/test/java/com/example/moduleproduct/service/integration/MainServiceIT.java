@@ -68,25 +68,19 @@ public class MainServiceIT {
         productOptionRepository.saveAll(optionList);
     }
 
-    private MainPageDTO createDefaultMainPageDTO(String classification) {
-        return new MainPageDTO(classification);
-    }
-
     @Test
     @DisplayName(value = "BEST 상품 리스트 조회")
     void getBestList() {
-        MainPageDTO pageDTO = createDefaultMainPageDTO("BEST");
+        MainPageDTO pageDTO = new MainPageDTO("BEST");
         List<Product> fixtureList = productList.stream()
                 .sorted(
                         Comparator.comparingLong(Product::getProductSalesQuantity)
                                 .reversed()
                 )
-                .limit(pageDTO.amount())
+                .limit(12)
                 .toList();
 
-        List<MainListResponseDTO> result = assertDoesNotThrow(
-                () -> mainService.getBestAndNewList(pageDTO)
-        );
+        List<MainListResponseDTO> result = assertDoesNotThrow(() -> mainService.getBestAndNewList(pageDTO));
 
         assertNotNull(result);
         assertFalse(result.isEmpty());
@@ -109,10 +103,22 @@ public class MainServiceIT {
     }
 
     @Test
+    @DisplayName(value = "NEW 상품 리스트 조회")
+    void getNewList() {
+        MainPageDTO pageDTO = new MainPageDTO("NEW");
+
+        List<MainListResponseDTO> result = assertDoesNotThrow(() -> mainService.getBestAndNewList(pageDTO));
+
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+        assertEquals(12, result.size());
+    }
+
+    @Test
     @DisplayName(value = "BEST 상품 리스트 조회. 데이터가 없는 경우")
     void getBestListEmpty() {
         productRepository.deleteAll();
-        MainPageDTO pageDTO = createDefaultMainPageDTO("BEST");
+        MainPageDTO pageDTO = new MainPageDTO("BEST");
 
         List<MainListResponseDTO> result = assertDoesNotThrow(() -> mainService.getBestAndNewList(pageDTO));
 
@@ -121,31 +127,17 @@ public class MainServiceIT {
     }
 
     @Test
-    @DisplayName(value = "NEW 상품 리스트 조회")
-    void getNewList() {
-        MainPageDTO pageDTO = createDefaultMainPageDTO("NEW");
-
-        List<MainListResponseDTO> result = assertDoesNotThrow(() -> mainService.getBestAndNewList(pageDTO));
-
-        assertNotNull(result);
-        assertFalse(result.isEmpty());
-        assertEquals(pageDTO.amount(), result.size());
-    }
-
-    @Test
     @DisplayName(value = "상품 분류 리스트 조회")
     void getClassificationList() {
         String classificationId = classificationList.get(0).getId();
-        MainPageDTO pageDTO = createDefaultMainPageDTO(classificationId);
+        MainPageDTO pageDTO = new MainPageDTO(classificationId);
         List<Product> fixtureList = productList.stream()
                 .filter(v -> v.getClassification().getId().equals(classificationId))
                 .toList();
         int contentSize = Math.min(fixtureList.size(), pageDTO.amount());
         int totalPages = PaginationUtils.getTotalPages(fixtureList.size(), pageDTO.amount());
 
-        PagingListDTO<MainListResponseDTO> result = assertDoesNotThrow(
-                () -> mainService.getClassificationAndSearchList(pageDTO)
-        );
+        PagingListDTO<MainListResponseDTO> result = assertDoesNotThrow(() -> mainService.getClassificationAndSearchList(pageDTO));
 
         assertNotNull(result);
         assertFalse(result.content().isEmpty());
@@ -159,7 +151,7 @@ public class MainServiceIT {
     @DisplayName(value = "상품 분류 리스트 조회. 데이터가 없는 경우")
     void getClassificationListEmpty() {
         String classificationId = "noneId";
-        MainPageDTO pageDTO = createDefaultMainPageDTO(classificationId);
+        MainPageDTO pageDTO = new MainPageDTO(classificationId);
 
         PagingListDTO<MainListResponseDTO> result = assertDoesNotThrow(() -> mainService.getClassificationAndSearchList(pageDTO));
 

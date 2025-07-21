@@ -20,6 +20,8 @@ repositories {
 dependencies {
     implementation project(':module-common')
     implementation project(':module-config')
+    implementation project(':module-auth')
+    implementation project(':module-product')
 }
 
 tasks.register("prepareKotlinBuildScriptModel"){}

@@ -36,18 +36,33 @@ spring:
         auto-startup: true
         missing-queues-fatal: false
 
-    #  mailhog
-    mail:
-      host: localhost
-      port: 1025
-      username: ""
-      password: ""
-      properties:
-        mail:
-          smtp:
-            auth: false
-            starttls.enable: false
-            starttls.required: false
+  #  mailhog
+  mail:
+    host: localhost
+    port: 1025
+    username: ""
+    password: ""
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls.enable: false
+          starttls.required: false
+
+server:
+  port: 8080
+
+cloud:
+  aws:
+    credentials:
+      access-key:
+      secret-key:
+    region:
+      static:
+    s3:
+      bucket:
+    stack:
+      auto: false
 
 logging:
   file:

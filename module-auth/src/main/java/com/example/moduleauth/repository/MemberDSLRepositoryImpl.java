@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import static com.example.modulecommon.model.entity.QMember.member;
+import static com.example.modulecommon.model.entity.QAuth.auth1;
 
 
 @Repository
@@ -20,9 +21,19 @@ public class MemberDSLRepositoryImpl implements MemberDSLRepository{
 
     @Override
     public Member findByLocalUserId(String userId) {
-        return jpaQueryFactory.select(member)
-                .from(member)
+
+        return jpaQueryFactory.selectFrom(member)
+                .innerJoin(member.auths, auth1).fetchJoin()
                 .where(member.userId.eq(userId).and(member.provider.eq("local")))
+                .fetchOne();
+    }
+
+    @Override
+    public Member findByUserId(String userId) {
+
+        return jpaQueryFactory.selectFrom(member)
+                .leftJoin(member.auths, auth1).fetchJoin()
+                .where(member.userId.eq(userId))
                 .fetchOne();
     }
 

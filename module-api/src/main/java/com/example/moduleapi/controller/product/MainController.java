@@ -1,31 +1,29 @@
 package com.example.moduleapi.controller.product;
 
-import com.example.moduleapi.useCase.product.MainReadUserCase;
-import com.example.modulecommon.model.dto.response.PagingListResponseDTO;
-import com.example.modulecommon.model.dto.response.PagingMappingDTO;
+import com.example.moduleapi.annotation.swagger.DefaultApiResponse;
+import com.example.moduleapi.mapper.PagingResponseMapper;
+import com.example.moduleapi.model.response.PagingResponseDTO;
+import com.example.modulecommon.model.dto.response.PagingListDTO;
+import com.example.modulecommon.model.enumuration.Role;
+import com.example.modulefile.usecase.FileReadUseCase;
+import com.example.modulemypage.model.dto.out.MyPageOrderDTO;
+import com.example.modulemypage.usecase.MyPageOrderReadUseCase;
+import com.example.moduleorder.model.dto.page.OrderPageDTO;
+import com.example.moduleorder.model.dto.in.MemberOrderDTO;
 import com.example.moduleproduct.model.dto.main.out.MainListResponseDTO;
-import com.example.moduleproduct.model.dto.page.ProductPageDTO;
+import com.example.moduleproduct.model.dto.page.MainPageDTO;
+import com.example.moduleproduct.usecase.MainReadUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
-import io.swagger.v3.oas.annotations.StringToClassMapItem;
-import io.swagger.v3.oas.annotations.media.*;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.util.List;
 
 @Tag(name = "Main Controller")
@@ -35,161 +33,185 @@ import java.util.List;
 @Slf4j
 public class MainController {
 
-    private final MainReadUserCase mainReadUserCase;
+    private final MainReadUseCase mainReadUseCase;
 
-    @Value("#{filePath['file.product.path']}")
-    private String filePath;
+    private final FileReadUseCase fileReadUseCase;
 
-    @Operation(summary = "메인 BEST 상품과 NEW 카테고리 상품 조회",
-    description = "요청 URL이 / 인 경우 BEST 상품을 조회하고 /new 인 경우 새로운 상품 기준 조회"
-    )
-    @ApiResponses(
-            @ApiResponse(responseCode = "200", description = "Success",
-                    content = @Content(mediaType = "application/json",
-                            array = @ArraySchema(
-                                    schema = @Schema(implementation = MainListResponseDTO.class)
-                            )
-                    )
-            )
-    )
-    @GetMapping({"/", "/new"})
-    public ResponseEntity<?> getMainProduct(HttpServletRequest request) {
-        log.info("MainController :: getMainProduct");
-        String requestURI = request.getRequestURI();
-        String classification = requestURI.substring(requestURI.lastIndexOf("/") + 1);
-        classification = classification.equals("") ? "BEST" : classification;
+    private final MyPageOrderReadUseCase myPageOrderReadUseCase;
 
-        ProductPageDTO pageDTO = ProductPageDTO.builder()
-                                            .pageNum(1)
-                                            .keyword(null)
-                                            .classification(classification)
-                                            .build();
+    private final PagingResponseMapper pagingResponseMapper;
 
-        List<MainListResponseDTO> responseDTO = mainReadUserCase.getMainProduct(pageDTO);
+    /**
+     *
+     * 메인의 BEST 리스트 조회.
+     */
+    @Operation(summary = "메인 BEST 상품 조회")
+    @DefaultApiResponse
+    @GetMapping("/")
+    public ResponseEntity<List<MainListResponseDTO>> mainList() {
+        MainPageDTO mainPageDTO = new MainPageDTO("BEST");
+        List<MainListResponseDTO> responseDTO = mainReadUseCase.getBestProductList(mainPageDTO);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(responseDTO);
+    }
+
+    @Operation(summary = "메인 NEW 상품 카테고리 조회")
+    @DefaultApiResponse
+    @GetMapping("/new")
+    public ResponseEntity<List<MainListResponseDTO>> mainNewList() {
+        MainPageDTO mainPageDTO = new MainPageDTO("NEW");
+        List<MainListResponseDTO> responseDTO = mainReadUseCase.getNewProductList(mainPageDTO);
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(responseDTO);
     }
 
 
-    @Operation(summary = "메인 카테고리별 상품 조회",
-            description = "상품 등록순으로 조회"
-    )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200", description = "Success",
-                    useReturnTypeSchema = true
-            ),
-            @ApiResponse(responseCode = "800", description = "token stealing"
-                    , content = @Content(
-                            examples = @ExampleObject(value = "토큰 탈취 응답입니다.")
-                    )
-            ),
-            @ApiResponse(responseCode = "403", description = "Access Denied"
-                    , content = @Content(
-                            examples = @ExampleObject(value = "권한 오류 응답입니다.")
-                    )
-            )
-    })
+    /**
+     *
+     * @param classification
+     * @param page
+     *
+     * 메인의 상품 리스트 중 상품 카테고리 선택으로 인한 리스트 조회.
+     */
+    @Operation(summary = "상품 분류별 조회 요청")
+    @DefaultApiResponse
     @Parameters({
             @Parameter(
                     name = "classification",
                     description = "상품 분류. OUTER, TOP, PANTS, SHOES, BAGS",
                     example = "OUTER",
-                    required = true
+                    required = true,
+                    in = ParameterIn.PATH
             ),
             @Parameter(
                     name = "page",
-                    description = "상품 리스트 페이지 번호. 최소값 1",
-                    required = true
+                    description = "페이지 번호",
+                    example = "1",
+                    in = ParameterIn.QUERY
             )
     })
     @GetMapping("/{classification}")
-    public ResponseEntity<PagingListResponseDTO<MainListResponseDTO>> getClassificationProduct(@PathVariable(name = "classification") String classification,
-                                                    @RequestParam(name = "keyword", required = false) String keyword,
-                                                    @RequestParam(name = "page") int page) {
-        ProductPageDTO pageDTO = ProductPageDTO.builder()
-                                                .pageNum(page)
-                                                .keyword(keyword)
-                                                .classification(classification)
-                                                .build();
+    public ResponseEntity<PagingResponseDTO<MainListResponseDTO>> mainClassificationList(@PathVariable(name = "classification") String classification,
+                                                                                         @RequestParam(name = "page", required = false, defaultValue = "1") int page){
+        MainPageDTO mainPageDTO = new MainPageDTO(page, null, classification);
 
-        PagingListResponseDTO<MainListResponseDTO> responseDTO = mainReadUserCase.getClassificationProduct(pageDTO);
+        PagingListDTO<MainListResponseDTO> responseDTO = mainReadUseCase.getClassificationOrSearchList(mainPageDTO);
 
-        return ResponseEntity.ok(responseDTO);
+        return pagingResponseMapper.toPagingResponse(responseDTO);
     }
 
-    @Operation(summary = "메인 상품 검색")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200", description = "Success",
-                    useReturnTypeSchema = true
-            ),
-            @ApiResponse(responseCode = "800", description = "token stealing"
-                    , content = @Content(
-                        examples = @ExampleObject(value = "토큰 탈취 응답입니다.")
-                    )
-            ),
-            @ApiResponse(responseCode = "403", description = "Access Denied"
-                    , content = @Content(
-                        examples = @ExampleObject(value = "권한 오류 응답입니다.")
-                    )
-            )
-    })
+    /**
+     *
+     * @param page
+     * @param keyword
+     *
+     * Navbar의 상품 검색 기능
+     */
+    @Operation(summary = "상품 검색")
+    @DefaultApiResponse
     @Parameters({
-            @Parameter(
-                    name = "keyword",
-                    description = "상품명 검색 키워드",
-                    example = "DummyOUTER",
-                    required = true
+            @Parameter(name = "page",
+                    description = "페이지 번호",
+                    example = "1",
+                    in = ParameterIn.QUERY
             ),
-            @Parameter(
-                    name = "page",
-                    description = "상품 리스트 페이지 번호. 최소값 1",
+            @Parameter(name = "keyword",
+                    description = "검색어",
+                    example = "DummyOUTER",
                     required = true
             )
     })
     @GetMapping("/search")
-    public ResponseEntity<PagingListResponseDTO<MainListResponseDTO>> getSearchProduct(@RequestParam(name = "keyword") String keyword,
-                                                                                       @RequestParam(name = "page") int page) {
-        ProductPageDTO pageDTO = ProductPageDTO.builder()
-                                                .pageNum(page)
-                                                .keyword(keyword)
-                                                .classification(null)
-                                                .build();
+    public ResponseEntity<PagingResponseDTO<MainListResponseDTO>> searchList(@RequestParam(name = "page", required = false, defaultValue = "1") int page,
+                                                                             @RequestParam(name = "keyword") String keyword){
 
-        PagingListResponseDTO<MainListResponseDTO> responseDTO = mainReadUserCase.getClassificationProduct(pageDTO);
+        MainPageDTO mainPageDTO = new MainPageDTO(page, keyword, null);
+        PagingListDTO<MainListResponseDTO> responseDTO = mainReadUseCase.getClassificationOrSearchList(mainPageDTO);
 
-        return ResponseEntity.ok(responseDTO);
+        return pagingResponseMapper.toPagingResponse(responseDTO);
     }
 
-    @Operation(summary = "이미지 조회",
-    description = "byte[] 타입으로 반환")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200", description = "Success",
-                    useReturnTypeSchema = true
-            )
-    })
+    /**
+     *
+     * @param imageName
+     *
+     * 파일 저장을 local로 처리하는 경우 사용.
+     */
+    @Operation(summary = "이미지 파일 Binary Data 반환")
+    @DefaultApiResponse
     @Parameter(name = "imageName",
-                description = "테스트 이미지명으로 테스트 가능",
-                example = "mansShop_testImage",
-                required = true
+            description = "이미지 파일명",
+            example = "2149347511.jpg",
+            required = true,
+            in = ParameterIn.PATH
     )
     @GetMapping("/display/{imageName}")
     public ResponseEntity<byte[]> display(@PathVariable(name = "imageName") String imageName) {
-        File file = new File(filePath + imageName);
-        ResponseEntity<byte[]> result = null;
 
-        try {
-            HttpHeaders header = new HttpHeaders();
-            header.add("Content-Type", Files.probeContentType(file.toPath()));
+        return fileReadUseCase.getDisplayImage(imageName);
+    }
 
-            result = new ResponseEntity<>(FileCopyUtils.copyToByteArray(file), HttpStatus.OK);
-        }catch (IOException e) {
-            e.printStackTrace();
-        }
+    /**
+     *
+     * @param recipient
+     * @param phone
+     * @param term
+     * @param page
+     *
+     * 비회원의 주문 내역 조회
+     * 가능성은 별로 없다고 생각하지만 비회원도 같은 recipient와 연락처로 장기간 동안 주문한 경우
+     * 해당 기간 동안의 내역을 출력할 수 있어야 한다고 생각해 사용자 주문내역과 마찬가지로 term을 받아 기간별 조회 처리.
+     */
+    @Operation(summary = "비회원의 주문내역 조회")
+    @DefaultApiResponse
+    @Parameters({
+            @Parameter(name = "recipient",
+                    description = "수령인",
+                    example = "테스터1000",
+                    required = true,
+                    in = ParameterIn.QUERY
+            ),
+            @Parameter(name = "phone",
+                    description = "수령인 연락처",
+                    example = "01034568890",
+                    required = true,
+                    in = ParameterIn.QUERY
+            ),
+            @Parameter(name = "term",
+                    description = "조회 기간. 페이지 최초 접근시에는 3으로 처리. 3, 6, 12, all로 구성",
+                    example = "3",
+                    required = true,
+                    in = ParameterIn.PATH
+            ),
+            @Parameter(name = "page",
+                    description = "페이지 번호. 최소값 1",
+                    example = "1",
+                    required = true,
+                    in = ParameterIn.PATH
+            )
+    })
+    @GetMapping("/order/{term}")
+    public ResponseEntity<PagingResponseDTO<MyPageOrderDTO>> nonMemberOrderList(@RequestParam(name = "recipient") String recipient,
+                                                                                @RequestParam(name = "phone") String phone,
+                                                                                @PathVariable(name = "term") String term,
+                                                                                @RequestParam(name = "page", required = false, defaultValue = "1") int page){
 
-        return result;
+        MemberOrderDTO memberOrderDTO = MemberOrderDTO.builder()
+                .userId(Role.ANONYMOUS.getRole())
+                .recipient(recipient)
+                .phone(phone)
+                .build();
+
+        OrderPageDTO orderPageDTO = OrderPageDTO.builder()
+                .pageNum(page)
+                .term(term)
+                .build();
+
+
+        PagingListDTO<MyPageOrderDTO> responseDTO = myPageOrderReadUseCase.getOrderList(orderPageDTO, memberOrderDTO);
+
+        return pagingResponseMapper.toPagingResponse(responseDTO);
     }
 }

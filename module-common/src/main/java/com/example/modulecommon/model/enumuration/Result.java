@@ -7,13 +7,15 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum Result {
 
-    TOKEN_STEALING("token Stealing")
-    , TOKEN_EXPIRATION("token expiration")
-    , WRONG_TOKEN("wrong token")
-    , OK("OK")
-    , FAIL("FAIL")
-    , ERROR("error")
-    , NOTFOUND("not found");
+    TOKEN_STEALING("token Stealing"),
+    TOKEN_EXPIRATION("token expiration"),
+    WRONG_TOKEN("wrong token"),
+    OK("OK"),
+    FAIL("FAIL"),
+    ERROR("error"),
+    NOTFOUND("not found"),
+    DUPLICATE("duplicated"),
+    NO_DUPLICATE("No duplicates");
 
     private final String resultKey;
 }

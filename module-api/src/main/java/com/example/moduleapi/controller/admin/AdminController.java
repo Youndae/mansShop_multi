@@ -1,6 +1,6 @@
 package com.example.moduleapi.controller.admin;
 
-import com.example.moduleapi.annotation.SwaggerAuthentication;
+import com.example.moduleapi.annotation.swagger.SwaggerAuthentication;
 import com.example.modulecommon.model.entity.Member;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
