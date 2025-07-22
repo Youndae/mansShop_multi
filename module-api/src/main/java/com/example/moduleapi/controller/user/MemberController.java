@@ -153,7 +153,7 @@ public class MemberController {
     @DefaultApiResponse
     @GetMapping("/oAuth/token")
     public ResponseEntity<ResponseMessageDTO> oAuthIssueToken(HttpServletRequest request, HttpServletResponse response) {
-        String responseMessage = userWriteUseCase.oAuthUserIssueToken(request, response);
+        String responseMessage = userWriteUseCase.issueOAuthUserToken(request, response);
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new ResponseMessageDTO(responseMessage));

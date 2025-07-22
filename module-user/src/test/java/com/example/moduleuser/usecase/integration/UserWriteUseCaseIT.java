@@ -1,4 +1,4 @@
-package com.example.moduleuser.service.integration;
+package com.example.moduleuser.usecase.integration;
 
 import com.example.moduleauth.config.jwt.JWTTokenProvider;
 import com.example.moduleauth.model.dto.member.UserSearchPwDTO;
@@ -13,9 +13,8 @@ import com.example.modulecommon.model.enumuration.Result;
 import com.example.moduleuser.ModuleUserApplication;
 import com.example.moduleuser.model.dto.member.in.*;
 import com.example.moduleuser.model.dto.member.out.UserStatusResponseDTO;
-import com.example.moduleuser.service.UserWriteService;
+import com.example.moduleuser.usecase.UserWriteUseCase;
 import com.example.moduleuser.utils.MailHogUtils;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,10 +46,10 @@ import static org.junit.jupiter.api.Assertions.*;
 @ComponentScan(basePackages = {"com.example.moduleconfig", "com.example.modulecommon"})
 @ActiveProfiles("test")
 @Transactional
-public class UserWriteServiceIT {
+public class UserWriteUseCaseIT {
 
     @Autowired
-    private UserWriteService userWriteService;
+    private UserWriteUseCase userWriteUseCase;
 
     @Autowired
     private EntityManager em;
@@ -96,7 +95,7 @@ public class UserWriteServiceIT {
                 "joinTester@join.com"
         );
         LocalDate birth = LocalDate.of(2000, 1, 1);
-        String result = assertDoesNotThrow(() -> userWriteService.joinProc(joinDTO));
+        String result = assertDoesNotThrow(() -> userWriteUseCase.joinProc(joinDTO));
 
         assertNotNull(result);
         assertEquals(Result.OK.getResultKey(), result);
@@ -120,7 +119,7 @@ public class UserWriteServiceIT {
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        UserStatusResponseDTO result = assertDoesNotThrow(() -> userWriteService.loginProc(loginDTO, request, response));
+        UserStatusResponseDTO result = assertDoesNotThrow(() -> userWriteUseCase.loginProc(loginDTO, request, response));
 
         assertNotNull(result);
 
@@ -158,7 +157,7 @@ public class UserWriteServiceIT {
 
         assertThrows(
                 CustomBadCredentialsException.class,
-                () -> userWriteService.loginProc(loginDTO, request, response)
+                () -> userWriteUseCase.loginProc(loginDTO, request, response)
         );
     }
 
@@ -178,7 +177,7 @@ public class UserWriteServiceIT {
         LogoutDTO logoutDTO = new LogoutDTO(accessToken, ino, userId);
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        String result = assertDoesNotThrow(() -> userWriteService.logoutProc(logoutDTO, response));
+        String result = assertDoesNotThrow(() -> userWriteUseCase.logoutProc(logoutDTO, response));
 
         assertNotNull(result);
         assertEquals(Result.OK.getResultKey(), result);
@@ -220,7 +219,7 @@ public class UserWriteServiceIT {
         request.setCookies(new Cookie("temporary", temporaryToken));
         MockHttpServletResponse newResponse = new MockHttpServletResponse();
 
-        String result = assertDoesNotThrow(() -> userWriteService.oAuthUserIssueToken(request, newResponse));
+        String result = assertDoesNotThrow(() -> userWriteUseCase.issueOAuthUserToken(request, newResponse));
 
         assertNotNull(result);
         assertEquals(Result.OK.getResultKey(), result);
@@ -260,7 +259,7 @@ public class UserWriteServiceIT {
 
         assertThrows(
                 CustomBadCredentialsException.class,
-                () -> userWriteService.oAuthUserIssueToken(request, response)
+                () -> userWriteUseCase.issueOAuthUserToken(request, response)
         );
     }
 
@@ -273,19 +272,18 @@ public class UserWriteServiceIT {
 
         assertThrows(
                 CustomAccessDeniedException.class,
-                () -> userWriteService.oAuthUserIssueToken(request, response)
+                () -> userWriteUseCase.issueOAuthUserToken(request, response)
         );
     }
 
     //메일전송은 mailhog로 처리
     @Test
     @DisplayName(value = "비밀번호 찾기 요청")
-    void searchPW() {
+    void searchPW() throws Exception {
         Member member = memberList.get(0);
         UserSearchPwDTO searchPwDTO = new UserSearchPwDTO(member.getUserId(), member.getUserName(), member.getUserEmail());
 
-        ObjectMapper om = new ObjectMapper();
-        String result = assertDoesNotThrow(() -> userWriteService.searchPw(searchPwDTO));
+        String result = assertDoesNotThrow(() -> userWriteUseCase.searchPassword(searchPwDTO));
 
         assertNotNull(result);
         assertEquals(Result.OK.getResultKey(), result);
@@ -293,14 +291,11 @@ public class UserWriteServiceIT {
         String redisCertificationValue = redisTemplate.opsForValue().get(member.getUserId());
         assertNotNull(redisCertificationValue);
 
-        try {
-            String mailCertification = mailHogUtils.getCertificationNumberByMailHog();
-            assertEquals(redisCertificationValue, mailCertification);
-            mailHogUtils.deleteMailHog();
-            redisTemplate.delete(member.getUserId());
-        }catch (Exception e) {
-            fail("mail hog check fail");
-        }
+        redisTemplate.delete(member.getUserId());
+
+        String mailCertification = mailHogUtils.getCertificationNumberByMailHog();
+        assertEquals(redisCertificationValue, mailCertification);
+        mailHogUtils.deleteMailHog();
     }
 
     @Test
@@ -308,7 +303,7 @@ public class UserWriteServiceIT {
     void searchPWUserNotFound() {
         UserSearchPwDTO searchPwDTO = new UserSearchPwDTO("noneUserId", "noneUserName", "noneUserEmail");
 
-        String result = assertDoesNotThrow(() -> userWriteService.searchPw(searchPwDTO));
+        String result = assertDoesNotThrow(() -> userWriteUseCase.searchPassword(searchPwDTO));
 
         assertNotNull(result);
         assertEquals(Result.NOTFOUND.getResultKey(), result);
@@ -322,7 +317,7 @@ public class UserWriteServiceIT {
         UserCertificationDTO certificationDTO = new UserCertificationDTO(member.getUserId(), certificationFixture);
         redisTemplate.opsForValue().set(member.getUserId(), certificationFixture);
 
-        String result = assertDoesNotThrow(() -> userWriteService.checkCertificationNo(certificationDTO));
+        String result = assertDoesNotThrow(() -> userWriteUseCase.checkCertificationNo(certificationDTO));
 
         assertNotNull(result);
         assertEquals(Result.OK.getResultKey(), result);
@@ -338,7 +333,7 @@ public class UserWriteServiceIT {
         UserCertificationDTO certificationDTO = new UserCertificationDTO(member.getUserId(), "102031");
         redisTemplate.opsForValue().set(member.getUserId(), certificationFixture);
 
-        String result = assertDoesNotThrow(() -> userWriteService.checkCertificationNo(certificationDTO));
+        String result = assertDoesNotThrow(() -> userWriteUseCase.checkCertificationNo(certificationDTO));
 
         assertNotNull(result);
         assertEquals(Result.FAIL.getResultKey(), result);
@@ -355,7 +350,7 @@ public class UserWriteServiceIT {
         UserResetPwDTO resetPwDTO = new UserResetPwDTO(member.getUserId(), certificationFixture, newUserPw);
         redisTemplate.opsForValue().set(member.getUserId(), certificationFixture);
 
-        String result = assertDoesNotThrow(() -> userWriteService.resetPw(resetPwDTO));
+        String result = assertDoesNotThrow(() -> userWriteUseCase.resetPw(resetPwDTO));
 
         assertNotNull(result);
         assertEquals(Result.OK.getResultKey(), result);
@@ -379,7 +374,7 @@ public class UserWriteServiceIT {
         UserResetPwDTO resetPwDTO = new UserResetPwDTO(member.getUserId(), "102031", newUserPw);
         redisTemplate.opsForValue().set(member.getUserId(), certificationFixture);
 
-        String result = assertDoesNotThrow(() -> userWriteService.resetPw(resetPwDTO));
+        String result = assertDoesNotThrow(() -> userWriteUseCase.resetPw(resetPwDTO));
 
         assertNotNull(result);
         assertEquals(Result.FAIL.getResultKey(), result);
@@ -401,7 +396,7 @@ public class UserWriteServiceIT {
         String newUserPw = "5678";
         UserResetPwDTO resetPwDTO = new UserResetPwDTO(member.getUserId(), certificationFixture, newUserPw);
 
-        String result = assertDoesNotThrow(() -> userWriteService.resetPw(resetPwDTO));
+        String result = assertDoesNotThrow(() -> userWriteUseCase.resetPw(resetPwDTO));
 
         assertNotNull(result);
         assertEquals(Result.FAIL.getResultKey(), result);
@@ -426,7 +421,7 @@ public class UserWriteServiceIT {
 
         assertThrows(
                 IllegalArgumentException.class,
-                () -> userWriteService.resetPw(resetPwDTO)
+                () -> userWriteUseCase.resetPw(resetPwDTO)
         );
 
         String redisCertificationValue = redisTemplate.opsForValue().get(noneUserId);

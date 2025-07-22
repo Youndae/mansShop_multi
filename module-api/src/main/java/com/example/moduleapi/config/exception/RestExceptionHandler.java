@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -39,7 +40,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         return toResponseEntity(ErrorCode.TOKEN_STEALING);
     }
 
-    @ExceptionHandler({CustomBadCredentialsException.class, BadCredentialsException.class})
+    @ExceptionHandler({CustomBadCredentialsException.class, BadCredentialsException.class, InternalAuthenticationServiceException.class})
     public ResponseEntity<?> badCredentialsException(Exception e) {
         log.warn("BadCredentials Exception : {}", e.getMessage());
 

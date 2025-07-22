@@ -1,4 +1,4 @@
-package com.example.moduleuser.service.integration;
+package com.example.moduleuser.usecase.integration;
 
 
 import com.example.moduleauth.model.dto.member.UserSearchDTO;
@@ -10,7 +10,7 @@ import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.Result;
 import com.example.moduleuser.ModuleUserApplication;
 import com.example.moduleuser.model.dto.member.out.UserSearchIdResponseDTO;
-import com.example.moduleuser.service.UserReadService;
+import com.example.moduleuser.usecase.UserReadUseCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,10 +33,10 @@ import static org.junit.jupiter.api.Assertions.*;
 @ComponentScan(basePackages = {"com.example.moduleconfig", "com.example.modulecommon"})
 @ActiveProfiles("test")
 @Transactional
-public class UserReadServiceIT {
+public class UserReadUseCaseIT {
 
     @Autowired
-    private UserReadService userReadService;
+    private UserReadUseCase userReadUseCase;
 
     @Autowired
     private MemberRepository memberRepository;
@@ -57,7 +57,7 @@ public class UserReadServiceIT {
     @Test
     @DisplayName(value = "아이디 중복 체크")
     void checkJoinUserId() {
-        String result = assertDoesNotThrow(() -> userReadService.checkJoinId("newUserId"));
+        String result = assertDoesNotThrow(() -> userReadUseCase.checkJoinUserId("newUserId"));
 
         assertNotNull(result);
         assertEquals(Result.NO_DUPLICATE.getResultKey(), result);
@@ -67,7 +67,7 @@ public class UserReadServiceIT {
     @DisplayName(value = "아이디 중복 체크. 중복인 경우")
     void checkJoinUserIdDuplicated() {
         Member member = memberList.get(0);
-        String result = assertDoesNotThrow(() -> userReadService.checkJoinId(member.getUserId()));
+        String result = assertDoesNotThrow(() -> userReadUseCase.checkJoinUserId(member.getUserId()));
 
         assertNotNull(result);
         assertEquals(Result.DUPLICATE.getResultKey(), result);
@@ -76,7 +76,7 @@ public class UserReadServiceIT {
     @Test
     @DisplayName(value = "닉네임 중복 체크")
     void checkNickname() {
-        String result = assertDoesNotThrow(() -> userReadService.checkNickname("newUserNickname", null));
+        String result = assertDoesNotThrow(() -> userReadUseCase.checkNickname("newUserNickname", null));
 
         assertNotNull(result);
         assertEquals(Result.NO_DUPLICATE.getResultKey(), result);
@@ -87,7 +87,7 @@ public class UserReadServiceIT {
     void checkNicknameOriginNicknameCheck() {
         Member member = memberList.get(0);
         Principal principal = member::getUserId;
-        String result = assertDoesNotThrow(() -> userReadService.checkNickname(member.getNickname(), principal));
+        String result = assertDoesNotThrow(() -> userReadUseCase.checkNickname(member.getNickname(), principal));
 
         assertNotNull(result);
         assertEquals(Result.NO_DUPLICATE.getResultKey(), result);
@@ -97,7 +97,7 @@ public class UserReadServiceIT {
     @DisplayName(value = "닉네임 중복 체크. 중복인 경우")
     void checkNicknameDuplicated() {
         Member member = memberList.get(0);
-        String result = assertDoesNotThrow(() -> userReadService.checkNickname(member.getNickname(), null));
+        String result = assertDoesNotThrow(() -> userReadUseCase.checkNickname(member.getNickname(), null));
 
         assertNotNull(result);
         assertEquals(Result.DUPLICATE.getResultKey(), result);
@@ -110,7 +110,7 @@ public class UserReadServiceIT {
         String memberPhone = member.getPhone().replaceAll("-", "");
         UserSearchDTO searchDTO = new UserSearchDTO(member.getUserName(), memberPhone, null);
 
-        UserSearchIdResponseDTO result = assertDoesNotThrow(() -> userReadService.searchId(searchDTO));
+        UserSearchIdResponseDTO result = assertDoesNotThrow(() -> userReadUseCase.searchId(searchDTO));
 
         assertNotNull(result);
         assertEquals(member.getUserId(), result.userId());
@@ -123,7 +123,7 @@ public class UserReadServiceIT {
         Member member = memberList.get(0);
         UserSearchDTO searchDTO = new UserSearchDTO(member.getUserName(), null, member.getUserEmail());
 
-        UserSearchIdResponseDTO result = assertDoesNotThrow(() -> userReadService.searchId(searchDTO));
+        UserSearchIdResponseDTO result = assertDoesNotThrow(() -> userReadUseCase.searchId(searchDTO));
 
         assertNotNull(result);
         assertEquals(member.getUserId(), result.userId());
@@ -135,7 +135,7 @@ public class UserReadServiceIT {
     void searchIdByPhoneNotFound() {
         UserSearchDTO searchDTO = new UserSearchDTO("noneUser", "01011119999", null);
 
-        UserSearchIdResponseDTO result = assertDoesNotThrow(() -> userReadService.searchId(searchDTO));
+        UserSearchIdResponseDTO result = assertDoesNotThrow(() -> userReadUseCase.searchId(searchDTO));
 
         assertNotNull(result);
         assertNull(result.userId());
@@ -147,7 +147,7 @@ public class UserReadServiceIT {
     void searchIdByEmailNotFound() {
         UserSearchDTO searchDTO = new UserSearchDTO("noneUser", null, "noneUser@none.com");
 
-        UserSearchIdResponseDTO result = assertDoesNotThrow(() -> userReadService.searchId(searchDTO));
+        UserSearchIdResponseDTO result = assertDoesNotThrow(() -> userReadUseCase.searchId(searchDTO));
 
         assertNotNull(result);
         assertNull(result.userId());

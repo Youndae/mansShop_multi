@@ -13,6 +13,35 @@
   - mailhog(integration-test)
 - IntelliJ
 
+## Architecture
+- Clean Architecture
+  - Architecture 규칙
+    - UseCase는 데이터 조작(조회, 갱신, 삭제 등), 비즈니스 로직 서비스 호출을 통해 데이터를 조합 후 응답하는 역할
+      - HTTP Method에 따라 GET 요청은 ReadUseCase, POST, PUT, PATCH, DELETE 요청은 WriteUseCase에서 처리
+    - Service는 DataService, DomainService, ExternalService로 분리
+      - DataService에서는 MySQL, Redis 등의 데이터 조회, 갱신 등 데이터 조작 관련
+      - DomainService에서는 비즈니스 로직, 검증 관련
+      - ExternalService에서는 메일 전송, RabbitMQ 호출 등 외부 시스템 호출 관련
+    - Service 메서드 분리 규칙
+      - 단일 책임 원칙을 최대한 위배하지 않도록 각 메서드는 단위별로 설계
+      - 기능에 완전 종속적으로 재사용 가능성이 없는데 로직도 단순한 경우 분리하지 않도록 설계
+        - 이런 케이스까지 분리하게 되면 너무 과한 세분화가 이루어져 오히려 복잡성 증가 우려
+  - 요청 발생 시 호출 구조
+    - Controller(module-api) -> UseCase(각 서비스 모듈) -> Service -> Repository
+
+## Test
+- Controller
+  - 통합 테스트
+- UseCase
+  - 통합 테스트
+  - 단위 테스트
+- Service
+  - 로직이 포함된 메서드만 단위 테스트 수행 단순 비교, 단순 Repsoitory 조회 같은 메서드는 생략
+  - 필요에 따라 통합 테스트
+- Repository
+  - 통합 테스트
+
+
 ## dependency
 - spring-boot-starter-web
 - lombok
@@ -220,3 +249,14 @@
     - application-integration-test.yml을 제거하고 application-test.yml로 처리
     - h2도 의존성 및 설정 다 제거하고 미사용으로 처리 계획.
     - module-product에서 메인 관련 기능 구현 및 MainService Integration test 코드 작성 및 테스트
+
+<br/>
+
+- 25/07/21
+  - Main, Member 구현 및 테스트
+    - MainController, MemberController 작성 및 통합 테스트
+    - MainService, UserReadService, UserWriteService 작성 및 단위, 통합 테스트
+    - 테스트 과정에서 MailHog 사용을 위한 MailHogUtils 생성
+    - MailHogUtils의 경우 하나의 모듈에 작성하고 참조하도록 하기에는 오히려 복잡도가 증가. module-api와 module-user에서만 사용된다는 점을 고려해 완전 중복되는 코드더라도 각각 작성하는 방향으로 설계.
+      - 단순히 Utils를 의존하는 케이스를 넘어 불필요하게 spring-boot-starter-mail 의존성까지 가져야 한다는 문제.
+      - MailHogUtils가 MailHog에서 처리된 메일 데이터 조회 및 제거만 담당하고 있다는 점에서 차라리 중복을 허용하는게 운영 환경까지 고려했을 때 적합하다고 생각.
