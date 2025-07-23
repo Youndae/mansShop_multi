@@ -23,8 +23,7 @@ public class ProductLikeDSLRepositoryImpl implements ProductLikeDSLRepository{
                 .where(productLike.member.userId.eq(userId)
                         .and(productLike.product.id.eq(productId))
                 )
-                .fetch()
-                .get(0)
+                .fetchOne()
                 .intValue();
     }
 

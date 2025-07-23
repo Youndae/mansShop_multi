@@ -1,5 +1,6 @@
 package com.example.moduleproduct.model.dto.main.out;
 
+import com.example.modulecommon.utils.ProductDiscountUtils;
 import com.example.moduleproduct.model.dto.main.business.MainListDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -23,13 +24,13 @@ public record MainListResponseDTO(
 
     public MainListResponseDTO(MainListDTO dto) {
         this(
-                dto.productId()
-                , dto.productName()
-                , dto.thumbnail()
-                , dto.price()
-                , dto.discount()
-                , (int) (dto.price() * (1 - ((double) dto.discount() / 100)))
-                , dto.stock() == 0
+                dto.productId(),
+                dto.productName(),
+                dto.thumbnail(),
+                dto.price(),
+                dto.discount(),
+                ProductDiscountUtils.calcDiscountPrice(dto.price(), dto.discount()),
+                dto.stock() == 0
         );
     }
 }

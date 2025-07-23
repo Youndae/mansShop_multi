@@ -5,13 +5,10 @@ import com.example.moduleauth.repository.AuthRepository;
 import com.example.moduleauth.repository.MemberRepository;
 import com.example.modulecommon.fixture.MemberAndAuthFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
-import com.example.modulecommon.model.entity.Auth;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.Result;
-import com.example.modulecommon.model.enumuration.Role;
 import com.example.moduleuser.ModuleUserApplication;
 import com.example.moduleuser.model.dto.member.in.LogoutDTO;
-import com.example.moduleuser.model.dto.member.in.UserResetPwDTO;
 import com.example.moduleuser.service.UserDataService;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,11 +22,9 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -58,9 +53,6 @@ public class UserDataServiceIT {
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
 
-    @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
-
     private Member member;
 
     @Value("#{jwt['token.temporary.header']}")
@@ -75,89 +67,6 @@ public class UserDataServiceIT {
 
         em.flush();
         em.clear();
-    }
-
-    @Test
-    @DisplayName(value = "회원가입 시 회원 데이터 저장")
-    void saveMember() {
-        Member member = Member.builder()
-                .userId("saveTestMemberId")
-                .userPw("1234")
-                .userName("saveTestMemberName")
-                .nickname("saveTestMemberNickname")
-                .userEmail("saveTester@tester.com")
-                .phone("01012345678")
-                .birth(LocalDate.of(2000, 1, 1))
-                .build();
-        Auth auth = Auth.builder()
-                .auth(Role.MEMBER.getKey())
-                .build();
-        member.addMemberAuth(auth);
-
-        String result = assertDoesNotThrow(() -> userDataService.saveMember(member));
-
-        em.flush();
-        em.clear();
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
-
-        Member saveMember = memberRepository.findByLocalUserId(member.getUserId());
-        assertNotNull(saveMember);
-        assertEquals(member.getUserId(), saveMember.getUserId());
-        assertEquals(member.getUserPw(), saveMember.getUserPw());
-        assertEquals(member.getUserName(), saveMember.getUserName());
-        assertEquals(member.getNickname(), saveMember.getNickname());
-        assertEquals(member.getUserEmail(), saveMember.getUserEmail());
-        assertEquals(member.getPhone(), saveMember.getPhone());
-        assertEquals(member.getBirth(), saveMember.getBirth());
-        assertEquals(1, saveMember.getAuths().size());
-        assertEquals(Role.MEMBER.getKey(), saveMember.getAuths().get(0).getAuth());
-    }
-
-    @Test
-    @DisplayName(value = "회원가입 시 회원 데이터 저장. 관리자라 권한이 여러개인 경우")
-    void saveAdmin() {
-        Member member = Member.builder()
-                .userId("saveTestMemberId")
-                .userPw("1234")
-                .userName("saveTestMemberName")
-                .nickname("saveTestMemberNickname")
-                .userEmail("saveTester@tester.com")
-                .phone("01012345678")
-                .birth(LocalDate.of(2000, 1, 1))
-                .build();
-        Auth memberAuth = Auth.builder()
-                .auth(Role.MEMBER.getKey())
-                .build();
-        Auth managerAuth = Auth.builder()
-                .auth(Role.MANAGER.getKey())
-                .build();
-        Auth adminAuth = Auth.builder()
-                .auth(Role.ADMIN.getKey())
-                .build();
-        member.addMemberAuth(memberAuth);
-        member.addMemberAuth(managerAuth);
-        member.addMemberAuth(adminAuth);
-
-        String result = assertDoesNotThrow(() -> userDataService.saveMember(member));
-
-        em.flush();
-        em.clear();
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
-
-        Member saveMember = memberRepository.findByLocalUserId(member.getUserId());
-        assertNotNull(saveMember);
-        assertEquals(member.getUserId(), saveMember.getUserId());
-        assertEquals(member.getUserPw(), saveMember.getUserPw());
-        assertEquals(member.getUserName(), saveMember.getUserName());
-        assertEquals(member.getNickname(), saveMember.getNickname());
-        assertEquals(member.getUserEmail(), saveMember.getUserEmail());
-        assertEquals(member.getPhone(), saveMember.getPhone());
-        assertEquals(member.getBirth(), saveMember.getBirth());
-        assertEquals(3, saveMember.getAuths().size());
     }
 
     @Test
@@ -263,18 +172,5 @@ public class UserDataServiceIT {
 
         String deleteCertification = redisTemplate.opsForValue().get(member.getUserId());
         assertNull(deleteCertification);
-    }
-
-    @Test
-    @DisplayName(value = "비밀번호 수정")
-    void patchPassword() {
-        UserResetPwDTO resetDTO = new UserResetPwDTO(member.getUserId(), "123456", "patchPassword");
-
-        assertDoesNotThrow(() -> userDataService.patchPassword(member, resetDTO));
-
-        Member patchMember = memberRepository.findByLocalUserId(member.getUserId());
-
-        assertNotNull(patchMember);
-        assertTrue(passwordEncoder.matches(resetDTO.userPw(), patchMember.getUserPw()));
     }
 }

@@ -1,14 +1,30 @@
 package com.example.moduleapi.controller.product;
 
+import com.example.moduleapi.annotation.swagger.DefaultApiResponse;
 import com.example.moduleapi.annotation.swagger.SwaggerAuthentication;
+import com.example.moduleapi.mapper.PagingResponseMapper;
+import com.example.moduleapi.model.response.PagingElementsResponseDTO;
+import com.example.moduleapi.service.PrincipalService;
+import com.example.modulecommon.model.dto.response.ResponseMessageDTO;
+import com.example.moduleproduct.model.dto.page.ProductDetailPageDTO;
+import com.example.moduleproduct.model.dto.product.business.ProductQnAResponseDTO;
+import com.example.moduleproduct.model.dto.product.in.ProductQnAPostDTO;
+import com.example.moduleproduct.model.dto.product.out.ProductDetailDTO;
+import com.example.moduleproduct.model.dto.product.out.ProductDetailReviewDTO;
+import com.example.moduleproduct.usecase.product.ProductReadUseCase;
+import com.example.moduleproduct.usecase.product.ProductWriteUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -21,117 +37,203 @@ import java.util.Map;
 @Slf4j
 public class ProductController {
 
-    /*
-        productDetail
-        detail Review
-        detail QnA
-        post qna
-        post like
-        delete like
+    private final ProductReadUseCase productReadUseCase;
+
+    private final ProductWriteUseCase productWriteUseCase;
+
+    private final PrincipalService principalService;
+
+    private final PagingResponseMapper pagingResponseMapper;
+
+    /**
+     *
+     * @param productId
+     * @param principal
+     * @return
+     *
+     * 상품 상세 페이지 데이터 요청.
+     * 상품에 대한 찜하기 상태가 필요하므로 Principal을 같이 받아줌.
      */
-
-    @Operation(summary = "상품 상세 정보 조회",
-    description = "상품 기본 정보와 관심 상품 여부, 할인율, 옵션 리스트, 썸네일 리스트, 리뷰, 상품 문의 사항 조회.\n토큰이 없다면 관심 상품은 무조건 false로 반환")
-    // TODO: ApiResponse
+    @Operation(summary = "상품 상세 데이터 조회",
+            description = "JWT를 같이 보내면 관심상품 여부를 확인 가능"
+    )
+    @DefaultApiResponse
+    @SwaggerAuthentication
+    @Parameters({
+            @Parameter(
+                    name = "productId",
+                    description = "상품 아이디",
+                    example = "BAGS20210629134401",
+                    required = true,
+                    in = ParameterIn.PATH
+            )
+    })
     @GetMapping("/{productId}")
-    public ResponseEntity<?> getDetail(@Parameter(name = "productId",
-                                                description = "상품 아이디",
-                                                example = "OUTER20210630113120",
-                                                in = ParameterIn.PATH
-                                        )
-                                       @PathVariable(name = "productId") String productId,
-                                       Principal principal) {
+    public ResponseEntity<ProductDetailDTO> getDetail(@PathVariable(name = "productId") String productId, Principal principal) {
+        String userId = principalService.extractUserIdIfExist(principal);
 
-        return null;
+        ProductDetailDTO responseDTO = productReadUseCase.getProductDetail(productId, userId);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(responseDTO);
     }
 
-    @Operation(summary = "상품 리뷰 리스트 조회",
-    description = "상품 상세 페이지 내에서 리뷰 리스트 페이징 기능 동작 시 요청.")
-    //TODO: ApiResponse
+    /**
+     *
+     * @param productId
+     * @param page
+     * @return
+     *
+     * 상품 상세 페이지의 리뷰 데이터 요청.
+     * 위 상세 페이지 데이터와 별개로 요청이 한번 더 발생하는 것이 아닌
+     * 리뷰 페이징 처리를 위함.
+     *
+     */
+    @Operation(summary = "상품 상세 페이지에서 리뷰 데이터 조회")
+    @DefaultApiResponse
+    @SwaggerAuthentication
     @Parameters({
             @Parameter(
                     name = "productId",
                     description = "상품 아이디",
-                    example = "OUTER20210630113120",
+                    example = "BAGS20210629134401",
+                    required = true,
                     in = ParameterIn.PATH
             ),
             @Parameter(
                     name = "page",
-                    description = "리뷰 페이지 번호",
+                    description = "페이지 번호",
                     example = "1",
-                    in = ParameterIn.PATH
+                    required = true,
+                    in = ParameterIn.QUERY
             )
     })
-    @GetMapping("/{productId}/review/{page}")
-    public ResponseEntity<?> getReview(@PathVariable(name = "productId") String productId,
-                                       @PathVariable(name = "page") int page) {
+    @GetMapping("/{productId}/review")
+    public ResponseEntity<PagingElementsResponseDTO<ProductDetailReviewDTO>> getReview(@PathVariable(name = "productId") String productId,
+                                                                                       @RequestParam(name = "page") int page) {
+        ProductDetailPageDTO pageDTO = new ProductDetailPageDTO(page);
+        Page<ProductDetailReviewDTO> responseDTO = productReadUseCase.getProductDetailReview(pageDTO, productId);
 
-        return null;
+        return pagingResponseMapper.toPagingElementsResponse(responseDTO);
     }
 
-    @Operation(summary = "상품 QnA 리스트 조회",
-    description = "상품 상세 페이지 내에서 상품 리스트 페이징 기능 동작 시 요청")
-    //TODO: ApiResponse
+    /**
+     *
+     * @param productId
+     * @param page
+     * @return
+     *
+     * 상품 상세 페이지 QnA 데이터 요청
+     * 위 리뷰와 마찬가지로 첫페이지의 데이터가 아닌 페이징 기능을 위함
+     */
+    @Operation(summary = "상품 상세 페이지에서 상품 문의 데이터 조회")
+    @DefaultApiResponse
+    @SwaggerAuthentication
     @Parameters({
             @Parameter(
                     name = "productId",
                     description = "상품 아이디",
-                    example = "OUTER20210630113120",
+                    example = "BAGS20210629134401",
+                    required = true,
                     in = ParameterIn.PATH
             ),
             @Parameter(
                     name = "page",
-                    description = "상품문의 페이지 번호",
-                    example = "1",
-                    in = ParameterIn.PATH
+                    description = "페이지 번호.",
+                    example = "2",
+                    required = true,
+                    in = ParameterIn.QUERY
             )
     })
-    @GetMapping("/{productId}/qna/{page}")
-    public ResponseEntity<?> getQnA(@PathVariable(name = "productId") String productId,
-                                    @PathVariable(name = "page") int page) {
+    @GetMapping("/{productId}/qna")
+    public ResponseEntity<PagingElementsResponseDTO<ProductQnAResponseDTO>> getQnA(@PathVariable(name = "productId") String productId,
+                                                                                   @RequestParam(name = "page") int page) {
 
-        return null;
+        ProductDetailPageDTO pageDTO = new ProductDetailPageDTO(page);
+        Page<ProductQnAResponseDTO> responseDTO = productReadUseCase.getProductDetailQnA(pageDTO, productId);
+
+        return pagingResponseMapper.toPagingElementsResponse(responseDTO);
     }
 
-    @Operation(summary = "상품 문의 작성 요청",
-    description = "상품 상세 페이지 내에서 문의 작성 요청")
-    //TODO: ApiResponse
-    //TODO: Parameter DTO
+    /**
+     *
+     * @param postDTO
+     * @param principal
+     *
+     * 상품 상세 페이지에서 상품 문의 작성
+     * 로그인한 사용자만 요청 가능
+     */
+    @Operation(summary = "상품 문의 작성")
+    @DefaultApiResponse
+    @SwaggerAuthentication
     @PostMapping("/qna")
-    //TODO: ResponseEntity<String>
-    public ResponseEntity<?> postProductQnA() {
+    @PreAuthorize("hasAnyRole('ROLE_MEMBER', 'ROLE_MANAGER', 'ROLE_ADMIN')")
+    public ResponseEntity<ResponseMessageDTO> postProductQnA(@RequestBody ProductQnAPostDTO postDTO, Principal principal) {
 
-        return null;
+        String userId = principalService.extractUserId(principal);
+        String responseMessage = productWriteUseCase.postProductQnA(postDTO, userId);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new ResponseMessageDTO(responseMessage));
     }
 
-    @Operation(summary = "관심 상품 등록",
-    description = "상품 상세 페이지 내에서 관심 상품 등록 요청")
-    //TODO: ApiResponse
+    /**
+     *
+     * @param productIdMap
+     * @param principal
+     * @return
+     *
+     * 관심상품 등록 기능
+     */
+    @Operation(summary = "관심상품 등록")
+    @DefaultApiResponse
     @SwaggerAuthentication
     @PostMapping("/like")
-    public ResponseEntity<?> likeProduct(@Parameter(name = "ProductIdMap",
-                                                    description = "상품 아이디 Key : Value로 전달",
-                                                    example = "productId : OUTER20210630113120"
-                                        )
-                                        @RequestBody Map<String, String> productId,
-                                        Principal principal) {
+    @PreAuthorize("hasAnyRole('ROLE_MEMBER', 'ROLE_MANAGER', 'ROLE_ADMIN')")
+    public ResponseEntity<ResponseMessageDTO> likeProduct(@Schema(name = "productId", description = "상품 아이디")
+                                                          @RequestBody Map<String, String> productIdMap,
+                                                          Principal principal) {
 
-        return null;
+        String productId = productIdMap.get("productId");
+
+        if(!productIdMap.containsKey("productId") || productId == null || productId.isBlank()){
+            log.warn("ProductService.likeProduct :: IllegalArgumentException by productIdMap");
+            throw new IllegalArgumentException();
+        }
+
+        String userId = principalService.extractUserId(principal);
+        String responseMessage = productWriteUseCase.likeProduct(productId, userId);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new ResponseMessageDTO(responseMessage));
     }
 
-    @Operation(summary = "관심 상품 해제",
-    description = "상품 상세 페이지 내에서 관심 상품 해제 요청")
-    //TODO: ApiResponse
+    /**
+     *
+     * @param productId
+     * @param principal
+     * @return
+     *
+     * 관심상품 해제 기능
+     */
+    @Operation(summary = "관심상품 해제")
+    @DefaultApiResponse
     @SwaggerAuthentication
+    @Parameter(name = "productId",
+            description = "상품 아이디",
+            example = "BAGS20210629134401",
+            required = true,
+            in = ParameterIn.PATH
+    )
     @DeleteMapping("/like/{productId}")
-    public ResponseEntity<?> deLikeProduct(@Parameter(name = "productId",
-                                                    description = "상품 아이디",
-                                                    example = "OUTER20210630113120",
-                                                    in = ParameterIn.PATH
-                                            )
-                                           @PathVariable(name = "productId") String productId,
-                                           Principal principal) {
+    @PreAuthorize("hasAnyRole('ROLE_MEMBER', 'ROLE_MANAGER', 'ROLE_ADMIN')")
+    public ResponseEntity<ResponseMessageDTO> deLikeProduct(@PathVariable(name = "productId") String productId,
+                                                            Principal principal) {
 
-        return null;
+        String userId = principalService.extractUserId(principal);
+        String responseMessage = productWriteUseCase.deleteProductLike(productId, userId);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new ResponseMessageDTO(responseMessage));
     }
 }

@@ -12,7 +12,7 @@ import com.example.moduleorder.model.dto.page.OrderPageDTO;
 import com.example.moduleorder.model.dto.in.MemberOrderDTO;
 import com.example.moduleproduct.model.dto.main.out.MainListResponseDTO;
 import com.example.moduleproduct.model.dto.page.MainPageDTO;
-import com.example.moduleproduct.usecase.MainReadUseCase;
+import com.example.moduleproduct.usecase.main.MainReadUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;

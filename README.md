@@ -260,3 +260,20 @@
     - MailHogUtils의 경우 하나의 모듈에 작성하고 참조하도록 하기에는 오히려 복잡도가 증가. module-api와 module-user에서만 사용된다는 점을 고려해 완전 중복되는 코드더라도 각각 작성하는 방향으로 설계.
       - 단순히 Utils를 의존하는 케이스를 넘어 불필요하게 spring-boot-starter-mail 의존성까지 가져야 한다는 문제.
       - MailHogUtils가 MailHog에서 처리된 메일 데이터 조회 및 제거만 담당하고 있다는 점에서 차라리 중복을 허용하는게 운영 환경까지 고려했을 때 적합하다고 생각.
+
+<br/>
+
+- 25/07/22
+  - module-user 마무리
+    - 서비스 구조 개선.
+      - DataService, DomainService, ExternalService로 분류.
+      - DataService는 DB를 통한 데이터 조회 및 갱신, 삽입, 삭제만 담당
+      - DomainService는 비즈니스 로직, 검증 등의 로직 위주 담당
+      - ExternalService는 RabbitMQ나 Mail, 외부 API와 같은 외부 시스템 호출 및 사용을 담당
+
+<br/>
+
+- 25/07/23
+  - module-product 마무리
+    - product 관련 기능 마무리
+    - Product 관련 각 서비스, UseCase, Controller에 대한 단위 테스트 및 통합 테스트 완료

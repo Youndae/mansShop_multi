@@ -1,8 +1,10 @@
 package com.example.moduleproduct.repository.productReview;
 
-import com.example.moduleproduct.model.dto.product.business.ProductReviewResponseDTO;
+import com.example.moduleproduct.model.dto.product.out.ProductDetailReviewDTO;
+import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +17,7 @@ import java.util.List;
 
 import static com.example.modulecommon.model.entity.QProductReview.productReview;
 import static com.example.modulecommon.model.entity.QProductReviewReply.productReviewReply;
+import static com.example.modulecommon.model.entity.QMember.member;
 
 @Repository
 @RequiredArgsConstructor
@@ -23,16 +26,19 @@ public class ProductReviewDSLRepositoryImpl implements ProductReviewDSLRepositor
     private final JPAQueryFactory jpaQueryFactory;
 
     @Override
-    public Page<ProductReviewResponseDTO> findByProductId(String productId, Pageable pageable) {
-        List<ProductReviewResponseDTO> list = jpaQueryFactory
+    public Page<ProductDetailReviewDTO> findByProductId(String productId, Pageable pageable) {
+        List<ProductDetailReviewDTO> list = jpaQueryFactory
                 .select(
                         Projections.constructor(
-                                ProductReviewResponseDTO.class,
-                                new CaseBuilder()
-                                        .when(productReview.member.nickname.isNull())
-                                        .then(productReview.member.userName)
-                                        .otherwise(productReview.member.nickname)
-                                        .as("reviewWriter"),
+                                ProductDetailReviewDTO.class,
+                                ExpressionUtils.as(
+                                        JPAExpressions.select(new CaseBuilder()
+                                                        .when(productReview.member.nickname.isNull())
+                                                        .then(productReview.member.userName)
+                                                        .otherwise(productReview.member.nickname))
+                                                .from(member)
+                                                .where(member.userId.eq(productReview.member.userId)), "reviewWriter"
+                                ),
                                 productReview.reviewContent,
                                 productReview.createdAt.as("reviewCreatedAt"),
                                 productReviewReply.replyContent.as("answerContent"),
@@ -49,7 +55,7 @@ public class ProductReviewDSLRepositoryImpl implements ProductReviewDSLRepositor
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        JPAQuery<Long> count = jpaQueryFactory.select(productReview.count())
+        JPAQuery<Long> count = jpaQueryFactory.select(productReview.countDistinct())
                 .from(productReview)
                 .where(productReview.product.id.eq(productId));
 

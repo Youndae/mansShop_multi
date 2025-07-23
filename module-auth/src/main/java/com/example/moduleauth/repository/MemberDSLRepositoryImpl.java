@@ -3,7 +3,6 @@ package com.example.moduleauth.repository;
 import com.example.moduleauth.model.dto.member.UserSearchDTO;
 import com.example.moduleauth.model.dto.member.UserSearchPwDTO;
 import com.example.modulecommon.model.entity.Member;
-import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;

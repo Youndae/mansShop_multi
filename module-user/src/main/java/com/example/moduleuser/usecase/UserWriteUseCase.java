@@ -2,6 +2,8 @@ package com.example.moduleuser.usecase;
 
 import com.example.moduleauth.config.user.CustomUser;
 import com.example.moduleauth.model.dto.member.UserSearchPwDTO;
+import com.example.moduleauth.service.MemberReader;
+import com.example.moduleauth.service.MemberStore;
 import com.example.modulecommon.customException.CustomBadCredentialsException;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.ErrorCode;
@@ -30,12 +32,17 @@ public class UserWriteUseCase {
 
     private final UserExternalService userExternalService;
 
+    private final MemberReader memberReader;
+
+    private final MemberStore memberStore;
+
 
     @Transactional(rollbackFor = Exception.class)
     public String joinProc(JoinDTO joinDTO) {
         Member member = userDomainService.getJoinMember(joinDTO);
+        memberStore.saveMemberAndAuth(member);
 
-        return userDataService.saveMember(member);
+        return Result.OK.getResultKey();
     }
 
     public UserStatusResponseDTO loginProc(LoginDTO loginDTO,
@@ -75,7 +82,7 @@ public class UserWriteUseCase {
     }
 
     public String searchPassword(UserSearchPwDTO searchDTO) {
-        Long correctInfoCount = userDataService.searchPwCorrectInfoCount(searchDTO);
+        Long correctInfoCount = memberReader.countMatchingBySearchPwDTO(searchDTO);
         if(correctInfoCount == 0)
             return Result.NOTFOUND.getResultKey();
 
@@ -122,8 +129,12 @@ public class UserWriteUseCase {
             return Result.ERROR.getResultKey();
         }
 
-        Member member = userDataService.getMemberByUserIdNotFoundIllegalException(resetDTO.userId());
-        userDataService.patchPassword(member, resetDTO);
+        Member member = memberReader.getMemberById(resetDTO.userId());
+        if(member == null)
+            throw new IllegalArgumentException();
+
+        member.setUserPw(resetDTO.userPw());
+        memberStore.saveMember(member);
 
         return Result.OK.getResultKey();
     }

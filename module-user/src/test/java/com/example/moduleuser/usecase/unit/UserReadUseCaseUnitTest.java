@@ -1,12 +1,11 @@
 package com.example.moduleuser.usecase.unit;
 
 import com.example.moduleauth.model.dto.member.UserSearchDTO;
-import com.example.moduleauth.repository.MemberRepository;
+import com.example.moduleauth.service.MemberReader;
 import com.example.modulecommon.fixture.MemberAndAuthFixture;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.Result;
 import com.example.moduleuser.model.dto.member.out.UserSearchIdResponseDTO;
-import com.example.moduleuser.service.UserDataService;
 import com.example.moduleuser.usecase.UserReadUseCase;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,7 +15,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.security.Principal;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -24,21 +22,18 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class UserReadServiceUnitTest {
+public class UserReadUseCaseUnitTest {
 
     @InjectMocks
     private UserReadUseCase userReadUseCase;
 
     @Mock
-    private UserDataService userDataService;
-
-    @Mock
-    private MemberRepository memberRepository;
+    private MemberReader memberReader;
 
     @Test
     @DisplayName(value = "회원가입시 아이디 중복체크. 정상인 경우")
     void checkJoinId() {
-        when(userDataService.getMemberByUserIdNotFoundIsNull(any())).thenReturn(null);
+        when(memberReader.getMemberById(any())).thenReturn(null);
 
         String result = assertDoesNotThrow(() -> userReadUseCase.checkJoinUserId("userId"));
 
@@ -50,7 +45,7 @@ public class UserReadServiceUnitTest {
     void checkJoinIdIsDuplicated() {
         Member member = MemberAndAuthFixture.createDefaultMember(1).memberList().get(0);
 
-        when(userDataService.getMemberByUserIdNotFoundIsNull(any())).thenReturn(member);
+        when(memberReader.getMemberById(any())).thenReturn(member);
 
         String result = assertDoesNotThrow(() -> userReadUseCase.checkJoinUserId(member.getUserId()));
 
@@ -60,7 +55,7 @@ public class UserReadServiceUnitTest {
     @Test
     @DisplayName(value = "회원가입시 닉네임 중복체크. 정상인 경우")
     void checkJoinNickname() {
-        when(userDataService.getMemberByNickname(any())).thenReturn(null);
+        when(memberReader.getMemberByUserId(any())).thenReturn(null);
 
         String result = assertDoesNotThrow(() -> userReadUseCase.checkNickname("nickname", null));
 
@@ -72,7 +67,7 @@ public class UserReadServiceUnitTest {
     void checkJoinNicknameIsDuplicated() {
         Member member = MemberAndAuthFixture.createDefaultMember(1).memberList().get(0);
 
-        when(userDataService.getMemberByNickname(any())).thenReturn(member);
+        when(memberReader.getMemberByNickname(any())).thenReturn(member);
 
         String result = assertDoesNotThrow(() -> userReadUseCase.checkNickname("nickname", null));
 
@@ -84,7 +79,7 @@ public class UserReadServiceUnitTest {
     void checkNickname() {
         Principal principal = mock(Principal.class);
 
-        when(userDataService.getMemberByNickname(any())).thenReturn(null);
+        when(memberReader.getMemberByNickname(any())).thenReturn(null);
 
         String result = assertDoesNotThrow(() -> userReadUseCase.checkNickname("nicknameElse", principal));
 
@@ -99,7 +94,7 @@ public class UserReadServiceUnitTest {
         Principal principal = mock(Principal.class);
 
         when(principal.getName()).thenReturn("userId");
-        when(userDataService.getMemberByNickname(any())).thenReturn(member);
+        when(memberReader.getMemberByNickname(any())).thenReturn(member);
 
         String result = assertDoesNotThrow(() -> userReadUseCase.checkNickname(member.getNickname(), principal));
 
@@ -117,7 +112,7 @@ public class UserReadServiceUnitTest {
         Principal principal = mock(Principal.class);
 
         when(principal.getName()).thenReturn(member.getUserId());
-        when(userDataService.getMemberByNickname(any())).thenReturn(member);
+        when(memberReader.getMemberByNickname(any())).thenReturn(member);
 
         String result = assertDoesNotThrow(() -> userReadUseCase.checkNickname(member.getNickname(), principal));
 
@@ -130,7 +125,7 @@ public class UserReadServiceUnitTest {
         String userId = "userId";
         UserSearchDTO searchDTO = new UserSearchDTO("userName", "01012345678", null);
 
-        when(userDataService.getSearchUserId(searchDTO)).thenReturn(userId);
+        when(memberReader.getSearchUserId(searchDTO)).thenReturn(userId);
 
         UserSearchIdResponseDTO result = assertDoesNotThrow(() -> userReadUseCase.searchId(searchDTO));
 
@@ -143,7 +138,7 @@ public class UserReadServiceUnitTest {
     void searchIdIsNull() {
         UserSearchDTO searchDTO = new UserSearchDTO("userName", "01012345678", null);
 
-        when(userDataService.getSearchUserId(searchDTO)).thenReturn(null);
+        when(memberReader.getSearchUserId(searchDTO)).thenReturn(null);
 
         UserSearchIdResponseDTO result = assertDoesNotThrow(() -> userReadUseCase.searchId(searchDTO));
 

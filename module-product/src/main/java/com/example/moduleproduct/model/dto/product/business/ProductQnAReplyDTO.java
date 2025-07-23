@@ -1,6 +1,6 @@
 package com.example.moduleproduct.model.dto.product.business;
 
-import com.example.modulecommon.model.entity.ProductQnAReply;
+import com.example.moduleproduct.model.dto.product.out.ProductDetailQnAReplyListDTO;
 
 import java.time.LocalDate;
 
@@ -10,11 +10,11 @@ public record ProductQnAReplyDTO(
         LocalDate createdAt
 ) {
 
-    public ProductQnAReplyDTO (ProductQnAReply qnaReply) {
+    public ProductQnAReplyDTO (ProductDetailQnAReplyListDTO qnaReply) {
         this(
-                qnaReply.getMember().getNickname() == null ? qnaReply.getMember().getUserName() : qnaReply.getMember().getNickname(),
-                qnaReply.getReplyContent(),
-                qnaReply.getCreatedAt().toLocalDate()
+                qnaReply.writer(),
+                qnaReply.replyContent(),
+                qnaReply.createdAt().toLocalDate()
         );
     }
 }

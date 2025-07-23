@@ -1,6 +1,8 @@
 package com.example.moduleproduct.repository.productQnAReply;
 
-import com.example.modulecommon.model.entity.ProductQnAReply;
+import com.example.moduleproduct.model.dto.product.out.ProductDetailQnAReplyListDTO;
+import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -16,8 +18,20 @@ public class ProductQnAReplyDSLRepositoryImpl implements ProductQnAReplyDSLRepos
     private final JPAQueryFactory jpaQueryFactory;
 
     @Override
-    public List<ProductQnAReply> findByQnAReply(List<Long> qnaIds) {
-        return jpaQueryFactory.select(productQnAReply)
+    public List<ProductDetailQnAReplyListDTO> getQnAReplyListByQnAIds(List<Long> qnaIds) {
+        return jpaQueryFactory.select(
+                        Projections.constructor(
+                                ProductDetailQnAReplyListDTO.class,
+                                new CaseBuilder()
+                                        .when(productQnAReply.member.nickname.isNull())
+                                        .then(productQnAReply.member.userName)
+                                        .otherwise(productQnAReply.member.nickname)
+                                        .as("writer"),
+                                productQnAReply.replyContent.as("replyContent"),
+                                productQnAReply.productQnA.id.as("qnaId"),
+                                productQnAReply.createdAt
+                        )
+                )
                 .from(productQnAReply)
                 .where(productQnAReply.productQnA.id.in(qnaIds))
                 .orderBy(productQnAReply.productQnA.id.desc())

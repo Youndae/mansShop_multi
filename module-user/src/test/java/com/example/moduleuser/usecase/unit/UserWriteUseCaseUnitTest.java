@@ -1,8 +1,8 @@
 package com.example.moduleuser.usecase.unit;
 
 import com.example.moduleauth.model.dto.member.UserSearchPwDTO;
-import com.example.moduleauth.repository.AuthRepository;
-import com.example.moduleauth.repository.MemberRepository;
+import com.example.moduleauth.service.MemberReader;
+import com.example.moduleauth.service.MemberStore;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.Result;
 import com.example.moduleuser.model.dto.member.in.JoinDTO;
@@ -18,9 +18,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
-import org.springframework.mail.javamail.JavaMailSender;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -28,7 +25,7 @@ import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
-public class UserWriteServiceUnitTest {
+public class UserWriteUseCaseUnitTest {
 
     @InjectMocks
     @Spy
@@ -44,19 +41,10 @@ public class UserWriteServiceUnitTest {
     private UserExternalService userExternalService;
 
     @Mock
-    private MemberRepository memberRepository;
+    private MemberReader memberReader;
 
     @Mock
-    private AuthRepository authRepository;
-
-    @Mock
-    private StringRedisTemplate redisTemplate;
-
-    @Mock
-    private JavaMailSender javaMailSender;
-
-    @Mock
-    private ValueOperations<String, String> valueOperations;
+    private MemberStore memberStore;
 
     @Test
     @DisplayName(value = "회원가입 요청")
@@ -73,7 +61,7 @@ public class UserWriteServiceUnitTest {
         Member member = joinDTO.toEntity();
 
         when(userDomainService.getJoinMember(any(JoinDTO.class))).thenReturn(member);
-        when(userDataService.saveMember(any(Member.class))).thenReturn(Result.OK.getResultKey());
+        doNothing().when(memberStore).saveMemberAndAuth(any(Member.class));
 
         String result = assertDoesNotThrow(() -> userWriteUseCase.joinProc(joinDTO));
 
@@ -85,7 +73,7 @@ public class UserWriteServiceUnitTest {
     void searchPw() throws Exception {
         UserSearchPwDTO searchDTO = new UserSearchPwDTO("userId", "userName", "userEmail@userEmail.com");
 
-        when(userDataService.searchPwCorrectInfoCount(searchDTO)).thenReturn(1L);
+        when(memberReader.countMatchingBySearchPwDTO(searchDTO)).thenReturn(1L);
         when(userDomainService.createCertificationNumber()).thenReturn(123456);
         doNothing().when(userDataService).saveCertificationNumberToRedis(any(UserSearchPwDTO.class), anyInt());
         doNothing().when(userExternalService).sendCertificationMail(any(UserSearchPwDTO.class), anyInt());
@@ -100,7 +88,7 @@ public class UserWriteServiceUnitTest {
     void searchPwUserNotFound() {
         UserSearchPwDTO searchDTO = new UserSearchPwDTO("userId", "userName", "userEmail@userEmail.com");
 
-        when(userDataService.searchPwCorrectInfoCount(searchDTO)).thenReturn(0L);
+        when(memberReader.countMatchingBySearchPwDTO(searchDTO)).thenReturn(0L);
 
         String result = assertDoesNotThrow(() -> userWriteUseCase.searchPassword(searchDTO));
 
@@ -112,7 +100,7 @@ public class UserWriteServiceUnitTest {
     void searchPwMessagingException() throws Exception {
         UserSearchPwDTO searchDTO = new UserSearchPwDTO("userId", "userName", "userEmail@userEmail.com");
 
-        when(userDataService.searchPwCorrectInfoCount(searchDTO)).thenReturn(1L);
+        when(memberReader.countMatchingBySearchPwDTO(searchDTO)).thenReturn(1L);
         when(userDomainService.createCertificationNumber()).thenReturn(123456);
         doNothing().when(userDataService).saveCertificationNumberToRedis(any(UserSearchPwDTO.class), anyInt());
         doThrow(new RuntimeException("mail send fail")).when(userExternalService).sendCertificationMail(any(UserSearchPwDTO.class), anyInt());

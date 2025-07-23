@@ -1,4 +1,4 @@
-package com.example.moduleproduct.service.integration;
+package com.example.moduleproduct.usecase.main.integration;
 
 import com.example.modulecommon.fixture.ClassificationFixture;
 import com.example.modulecommon.fixture.ProductFixture;
@@ -7,13 +7,14 @@ import com.example.modulecommon.model.entity.Classification;
 import com.example.modulecommon.model.entity.Product;
 import com.example.modulecommon.model.entity.ProductOption;
 import com.example.modulecommon.utils.PaginationUtils;
+import com.example.modulecommon.utils.ProductDiscountUtils;
 import com.example.moduleproduct.ModuleProductApplication;
 import com.example.moduleproduct.model.dto.main.out.MainListResponseDTO;
 import com.example.moduleproduct.model.dto.page.MainPageDTO;
 import com.example.moduleproduct.repository.classification.ClassificationRepository;
 import com.example.moduleproduct.repository.product.ProductRepository;
 import com.example.moduleproduct.repository.productOption.ProductOptionRepository;
-import com.example.moduleproduct.service.MainService;
+import com.example.moduleproduct.usecase.main.MainReadUseCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -37,10 +38,10 @@ import static org.junit.jupiter.api.Assertions.*;
 @ComponentScan(basePackages = {"com.example.moduleconfig", "com.example.modulecommon"})
 @ActiveProfiles("test")
 @Transactional
-public class MainServiceIT {
+public class MainReadUseCaseIT {
 
     @Autowired
-    private MainService mainService;
+    private MainReadUseCase mainReadUseCase;
 
     @Autowired
     private ProductRepository productRepository;
@@ -80,7 +81,7 @@ public class MainServiceIT {
                 .limit(12)
                 .toList();
 
-        List<MainListResponseDTO> result = assertDoesNotThrow(() -> mainService.getBestAndNewList(pageDTO));
+        List<MainListResponseDTO> result = assertDoesNotThrow(() -> mainReadUseCase.getBestProductList(pageDTO));
 
         assertNotNull(result);
         assertFalse(result.isEmpty());
@@ -107,7 +108,7 @@ public class MainServiceIT {
     void getNewList() {
         MainPageDTO pageDTO = new MainPageDTO("NEW");
 
-        List<MainListResponseDTO> result = assertDoesNotThrow(() -> mainService.getBestAndNewList(pageDTO));
+        List<MainListResponseDTO> result = assertDoesNotThrow(() -> mainReadUseCase.getNewProductList(pageDTO));
 
         assertNotNull(result);
         assertFalse(result.isEmpty());
@@ -120,7 +121,7 @@ public class MainServiceIT {
         productRepository.deleteAll();
         MainPageDTO pageDTO = new MainPageDTO("BEST");
 
-        List<MainListResponseDTO> result = assertDoesNotThrow(() -> mainService.getBestAndNewList(pageDTO));
+        List<MainListResponseDTO> result = assertDoesNotThrow(() -> mainReadUseCase.getBestProductList(pageDTO));
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -137,7 +138,7 @@ public class MainServiceIT {
         int contentSize = Math.min(fixtureList.size(), pageDTO.amount());
         int totalPages = PaginationUtils.getTotalPages(fixtureList.size(), pageDTO.amount());
 
-        PagingListDTO<MainListResponseDTO> result = assertDoesNotThrow(() -> mainService.getClassificationAndSearchList(pageDTO));
+        PagingListDTO<MainListResponseDTO> result = assertDoesNotThrow(() -> mainReadUseCase.getClassificationOrSearchList(pageDTO));
 
         assertNotNull(result);
         assertFalse(result.content().isEmpty());
@@ -153,7 +154,50 @@ public class MainServiceIT {
         String classificationId = "noneId";
         MainPageDTO pageDTO = new MainPageDTO(classificationId);
 
-        PagingListDTO<MainListResponseDTO> result = assertDoesNotThrow(() -> mainService.getClassificationAndSearchList(pageDTO));
+        PagingListDTO<MainListResponseDTO> result = assertDoesNotThrow(() -> mainReadUseCase.getClassificationOrSearchList(pageDTO));
+
+        assertNotNull(result);
+        assertTrue(result.content().isEmpty());
+        assertEquals(0, result.pagingData().getTotalElements());
+        assertEquals(0, result.pagingData().getTotalPages());
+        assertTrue(result.pagingData().isEmpty());
+    }
+
+    @Test
+    @DisplayName(value = "상품 검색")
+    void getSearchList() {
+        Product product = productList.get(0);
+        int discountPrice = ProductDiscountUtils.calcDiscountPrice(product.getProductPrice(), product.getProductDiscount());
+        boolean isSoldOut = product.getProductOptions().stream().mapToInt(ProductOption::getStock).sum() == 0;
+        String keyword = product.getProductName();
+        MainPageDTO pageDTO = new MainPageDTO(1, keyword, null);
+
+        PagingListDTO<MainListResponseDTO> result = assertDoesNotThrow(() -> mainReadUseCase.getClassificationOrSearchList(pageDTO));
+
+        assertNotNull(result);
+        assertFalse(result.content().isEmpty());
+        assertEquals(1, result.pagingData().getTotalElements());
+        assertEquals(1, result.pagingData().getTotalPages());
+        assertFalse(result.pagingData().isEmpty());
+        assertEquals(1, result.content().size());
+
+        MainListResponseDTO resultDTO = result.content().get(0);
+
+        assertEquals(product.getId(), resultDTO.productId());
+        assertEquals(product.getProductName(), resultDTO.productName());
+        assertEquals(product.getThumbnail(), resultDTO.thumbnail());
+        assertEquals(product.getProductPrice(), resultDTO.originPrice());
+        assertEquals(product.getProductDiscount(), resultDTO.discount());
+        assertEquals(discountPrice, resultDTO.discountPrice());
+        assertEquals(isSoldOut, resultDTO.isSoldOut());
+    }
+
+    @Test
+    @DisplayName(value = "상품 검색. 조회 결과가 없는 경우")
+    void getSearchListEmpty() {
+        MainPageDTO pageDTO = new MainPageDTO(1, "noneProduct", null);
+
+        PagingListDTO<MainListResponseDTO> result = assertDoesNotThrow(() -> mainReadUseCase.getClassificationOrSearchList(pageDTO));
 
         assertNotNull(result);
         assertTrue(result.content().isEmpty());
