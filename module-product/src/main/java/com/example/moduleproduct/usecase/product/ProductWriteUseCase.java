@@ -11,6 +11,9 @@ import com.example.modulecommon.model.enumuration.Result;
 import com.example.moduleproduct.model.dto.product.in.ProductQnAPostDTO;
 import com.example.moduleproduct.service.product.ProductDataService;
 import com.example.moduleproduct.service.product.ProductDomainService;
+import com.example.moduleproduct.service.productLike.ProductLikeDataService;
+import com.example.moduleproduct.service.productLike.ProductLikeDomainService;
+import com.example.moduleproduct.service.productQnA.ProductQnADataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,6 +27,12 @@ public class ProductWriteUseCase {
 
     private final ProductDomainService productDomainService;
 
+    private final ProductQnADataService productQnADataService;
+
+    private final ProductLikeDataService productLikeDataService;
+
+    private final ProductLikeDomainService productLikeDomainService;
+
     private final MemberReader memberReader;
 
     public String postProductQnA(ProductQnAPostDTO postDTO, String userId) {
@@ -33,7 +42,7 @@ public class ProductWriteUseCase {
         Product product = productDataService.getProductById(postDTO.productId());
         ProductQnA productQnA = postDTO.toProductQnAEntity(member, product);
 
-        productDataService.saveProductQnA(productQnA);
+        productQnADataService.saveProductQnA(productQnA);
 
         return Result.OK.getResultKey();
     }
@@ -41,7 +50,7 @@ public class ProductWriteUseCase {
     public String likeProduct(String productId, String userId) {
         ProductLike productLike = getProductLike(productId, userId);
 
-        productDataService.saveProductLike(productLike);
+        productLikeDataService.saveProductLike(productLike);
 
         return Result.OK.getResultKey();
     }
@@ -49,7 +58,7 @@ public class ProductWriteUseCase {
     public String deleteProductLike(String productId, String userId) {
         ProductLike productLike = getProductLike(productId, userId);
 
-        productDataService.deleteProductLike(productLike);
+        productLikeDataService.deleteProductLike(productLike);
 
         return Result.OK.getResultKey();
     }
@@ -61,6 +70,6 @@ public class ProductWriteUseCase {
         Member member = memberReader.getMemberByUserId(userId);
         Product product = productDataService.getProductById(productId);
 
-        return productDomainService.buildLikeProduct(member, product);
+        return productLikeDomainService.buildLikeProduct(member, product);
     }
 }

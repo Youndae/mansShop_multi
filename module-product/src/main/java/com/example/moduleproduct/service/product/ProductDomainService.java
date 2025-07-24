@@ -43,14 +43,4 @@ public class ProductDomainService {
 
         return resultList;
     }
-
-    public ProductLike buildLikeProduct(Member member, Product product) {
-        if(member == null || product == null)
-            throw new CustomNotFoundException(ErrorCode.NOT_FOUND, ErrorCode.NOT_FOUND.getMessage());
-
-        return ProductLike.builder()
-                .member(member)
-                .product(product)
-                .build();
-    }
 }

@@ -103,38 +103,4 @@ public class ProductDomainServiceIT {
             assertEquals(fixtureReplyDTO.replyContent(), resultReplyDTO.content());
         }
     }
-
-    @Test
-    @DisplayName(value = "LikeProduct Entity build")
-    void buildLikeProduct() {
-        Member member = Member.builder().userId("testUser").build();
-        Product product = Product.builder().id("testProductId").build();
-
-        ProductLike result = assertDoesNotThrow(() -> productDomainService.buildLikeProduct(member, product));
-        assertNotNull(result);
-        assertEquals(member.getUserId(), result.getMember().getUserId());
-        assertEquals(product.getId(), result.getProduct().getId());
-    }
-
-    @Test
-    @DisplayName(value = "LikeProduct Entity build. Member가 null인 경우")
-    void buildLikeProductMemberIsNull() {
-        Product product = Product.builder().id("testProductId").build();
-
-        assertThrows(
-                CustomNotFoundException.class,
-                () -> productDomainService.buildLikeProduct(null, product)
-        );
-    }
-
-    @Test
-    @DisplayName(value = "LikeProduct Entity build. Product가 null인 경우")
-    void buildLikeProductProductIsNull() {
-        Member member = Member.builder().userId("testUser").build();
-
-        assertThrows(
-                CustomNotFoundException.class,
-                () -> productDomainService.buildLikeProduct(member, null)
-        );
-    }
 }

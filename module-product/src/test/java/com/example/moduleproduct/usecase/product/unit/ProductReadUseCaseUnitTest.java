@@ -13,6 +13,9 @@ import com.example.moduleproduct.model.dto.product.out.ProductDetailReviewDTO;
 import com.example.moduleproduct.model.dto.product.out.ProductPageableDTO;
 import com.example.moduleproduct.service.product.ProductDataService;
 import com.example.moduleproduct.service.product.ProductDomainService;
+import com.example.moduleproduct.service.productLike.ProductLikeDataService;
+import com.example.moduleproduct.service.productQnA.ProductQnADataService;
+import com.example.moduleproduct.service.review.ProductReviewDataService;
 import com.example.moduleproduct.usecase.product.ProductReadUseCase;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -42,6 +45,15 @@ public class ProductReadUseCaseUnitTest {
 
     @Mock
     private ProductDomainService productDomainService;
+
+    @Mock
+    private ProductQnADataService productQnADataService;
+
+    @Mock
+    private ProductReviewDataService productReviewDataService;
+
+    @Mock
+    private ProductLikeDataService productLikeDataService;
 
     @Test
     @DisplayName(value = "상품 상세 정보 조회")
@@ -121,13 +133,13 @@ public class ProductReadUseCaseUnitTest {
         Page<ProductDetailReviewDTO> reviewPage = new PageImpl<>(detailReviewDTOList);
 
         when(productDataService.getProductById(any())).thenReturn(product);
-        when(productDataService.getProductLikeStatusByUser(any(), any())).thenReturn(true);
+        when(productLikeDataService.getProductLikeStatusByUser(any(), any())).thenReturn(true);
         when(productDataService.getProductOptionDTOListByProductId(any())).thenReturn(optionDTOList);
         when(productDataService.getProductThumbnailImageNameList(any())).thenReturn(thumbnails);
         when(productDataService.getProductInfoImageNameList(any())).thenReturn(infoImages);
-        when(productDataService.getProductDetailReview(any(ProductDetailPageDTO.class), any())).thenReturn(reviewPage);
-        when(productDataService.getProductDetailQnA(any(Pageable.class), any())).thenReturn(qnaDTOPage);
-        when(productDataService.getProductDetailQnAReplyList(anyList())).thenReturn(replyListDTO);
+        when(productReviewDataService.getProductDetailReview(any(ProductDetailPageDTO.class), any())).thenReturn(reviewPage);
+        when(productQnADataService.getProductDetailQnA(any(Pageable.class), any())).thenReturn(qnaDTOPage);
+        when(productQnADataService.getProductDetailQnAReplyList(anyList())).thenReturn(replyListDTO);
         when(productDomainService.mapToProductQnAResponseDTO(any(), anyList())).thenReturn(detailQnADTOList);
 
         Page<ProductQnAResponseDTO> qnaResponse = new PageImpl<>(detailQnADTOList);
@@ -192,8 +204,8 @@ public class ProductReadUseCaseUnitTest {
         Page<ProductQnADTO> qnaDTOPage = new PageImpl<>(qnADTOList);
         Page<ProductQnAResponseDTO> fixture = new PageImpl<>(detailQnADTOList);
 
-        when(productDataService.getProductDetailQnA(any(Pageable.class), any())).thenReturn(qnaDTOPage);
-        when(productDataService.getProductDetailQnAReplyList(anyList())).thenReturn(replyListDTO);
+        when(productQnADataService.getProductDetailQnA(any(Pageable.class), any())).thenReturn(qnaDTOPage);
+        when(productQnADataService.getProductDetailQnAReplyList(anyList())).thenReturn(replyListDTO);
         when(productDomainService.mapToProductQnAResponseDTO(any(), anyList())).thenReturn(detailQnADTOList);
 
         Page<ProductQnAResponseDTO> result = assertDoesNotThrow(() -> productReadUseCase.getProductDetailQnA(pageDTO, "testProductId"));

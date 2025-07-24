@@ -11,6 +11,9 @@ import com.example.moduleproduct.model.dto.product.out.ProductDetailReviewDTO;
 import com.example.moduleproduct.model.dto.product.out.ProductPageableDTO;
 import com.example.moduleproduct.service.product.ProductDataService;
 import com.example.moduleproduct.service.product.ProductDomainService;
+import com.example.moduleproduct.service.productLike.ProductLikeDataService;
+import com.example.moduleproduct.service.productQnA.ProductQnADataService;
+import com.example.moduleproduct.service.review.ProductReviewDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
@@ -28,12 +31,18 @@ public class ProductReadUseCase {
 
     private final ProductDomainService productDomainService;
 
+    private final ProductQnADataService productQnADataService;
+
+    private final ProductReviewDataService productReviewDataService;
+
+    private final ProductLikeDataService productLikeDataService;
+
     public ProductDetailDTO getProductDetail(String productId, String userId) {
         Product product = productDataService.getProductById(productId);
 
         boolean likeStatus = false;
         if(userId != null)
-            likeStatus = productDataService.getProductLikeStatusByUser(userId, productId);
+            likeStatus = productLikeDataService.getProductLikeStatusByUser(userId, productId);
 
         List<ProductOptionDTO> optionDTOList = productDataService.getProductOptionDTOListByProductId(productId);
         List<String> thumbnailNameList = productDataService.getProductThumbnailImageNameList(productId);
@@ -57,20 +66,20 @@ public class ProductReadUseCase {
     }
 
     public Page<ProductDetailReviewDTO> getProductDetailReview(ProductDetailPageDTO pageDTO, String productId) {
-        return productDataService.getProductDetailReview(pageDTO, productId);
+        return productReviewDataService.getProductDetailReview(pageDTO, productId);
     }
 
     public Page<ProductQnAResponseDTO> getProductDetailQnA(ProductDetailPageDTO pageDTO, String productId) {
         Pageable qnaPageable = PageRequest.of(pageDTO.pageNum() - 1,
-                pageDTO.qnaAmount(),
-                Sort.by("createdAt").descending()
-        );
-        Page<ProductQnADTO> productQnADTOData = productDataService.getProductDetailQnA(qnaPageable, productId);
+                                                    pageDTO.qnaAmount(),
+                                                    Sort.by("createdAt").descending()
+                                            );
+        Page<ProductQnADTO> productQnADTOData = productQnADataService.getProductDetailQnA(qnaPageable, productId);
         List<ProductQnAResponseDTO> qnaContent = Collections.emptyList();
 
         if(!productQnADTOData.getContent().isEmpty()) {
             List<Long> qnaIds = productQnADTOData.getContent().stream().map(ProductQnADTO::qnaId).toList();
-            List<ProductDetailQnAReplyListDTO> productQnAReplyList = productDataService.getProductDetailQnAReplyList(qnaIds);
+            List<ProductDetailQnAReplyListDTO> productQnAReplyList = productQnADataService.getProductDetailQnAReplyList(qnaIds);
             qnaContent = productDomainService.mapToProductQnAResponseDTO(productQnADTOData, productQnAReplyList);
         }
         return new PageImpl<>(qnaContent, qnaPageable, productQnADTOData.getTotalElements());
