@@ -20,7 +20,6 @@ import com.example.moduleorder.model.vo.PreOrderDataVO;
 import com.example.moduleorder.service.OrderCookieWriter;
 import com.example.moduleorder.service.OrderDataService;
 import com.example.moduleorder.service.OrderDomainService;
-import com.example.moduleorder.service.OrderExternalService;
 import com.example.moduleorder.usecase.OrderWriteUseCase;
 import com.example.moduleproduct.model.dto.product.business.OrderProductInfoDTO;
 import com.example.moduleproduct.service.product.ProductOptionReader;
@@ -54,9 +53,6 @@ public class OrderWriteUseCaseUnitTest {
 
     @Mock
     private OrderDomainService orderDomainService;
-
-    @Mock
-    private OrderExternalService orderExternalService;
 
     @Mock
     private ProductOptionReader productOptionReader;

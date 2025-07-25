@@ -1,7 +1,5 @@
 package com.example.moduleorder.usecase.integration;
 
-import com.example.moduleauth.repository.AuthRepository;
-import com.example.moduleauth.repository.MemberRepository;
 import com.example.modulecommon.fixture.ClassificationFixture;
 import com.example.modulecommon.fixture.MemberAndAuthFixture;
 import com.example.modulecommon.fixture.ProductFixture;
@@ -14,12 +12,12 @@ import com.example.moduleorder.ModuleOrderApplication;
 import com.example.moduleorder.model.dto.in.MemberOrderDTO;
 import com.example.moduleorder.model.dto.out.OrderListDTO;
 import com.example.moduleorder.model.dto.page.OrderPageDTO;
-import com.example.moduleorder.repository.ProductOrderDetailRepository;
 import com.example.moduleorder.repository.ProductOrderRepository;
 import com.example.moduleorder.usecase.OrderReadUseCase;
 import com.example.moduleproduct.repository.classification.ClassificationRepository;
 import com.example.moduleproduct.repository.product.ProductRepository;
 import com.example.moduleproduct.repository.productOption.ProductOptionRepository;
+import com.example.moduleuser.repository.MemberRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

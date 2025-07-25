@@ -292,3 +292,13 @@
   - module-order 마무리
     - module-mypage에 있던 주문 목록 조회를 module-order로 이동.
     - useCase, service, controller 모두 작성 및 테스트 완료.
+
+<br/>
+
+- 25/07/26
+  - MemberRepository, AuthRepository module-auth -> module-user 이동
+    - module-auth는 완전하게 인증 / 인가에 대한 처리만 담당하는 모듈
+    - 기존에는 인증 / 인가 처리 중 MemberRepository가 필요했기 때문에 auth에 배치해야 된다고 생각했으나, interface를 통한 사용이 가능하다는 것을 확인
+    - module-auth가 module-user를 참조하지 않기 때문에 구현체가 module-user에 있으면 참조하지 않고 DI가 주입하지 못할것이라고 생각했는데 가능하다는 점을 알게됨
+    - module-auth에서는 AuthMemberReader, AuthMemberStore 인터페이스를 갖고 있고, 이 두 인터페이스에 대한 구현체를 module-user에서 작성하는 방법으로 의존성 없이 사용이 가능.
+    - 이 개선 사항으로 인해 이전에 module-auth의 MemberReader를 참조하고 사용하던 부분들을 모두 수정. 확인까지 완료

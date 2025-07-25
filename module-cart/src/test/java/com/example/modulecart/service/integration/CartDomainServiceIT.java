@@ -2,7 +2,6 @@ package com.example.modulecart.service.integration;
 
 import com.example.modulecart.ModuleCartApplication;
 import com.example.modulecart.model.dto.in.AddCartDTO;
-import com.example.modulecart.repository.CartRepository;
 import com.example.modulecart.service.CartDomainService;
 import com.example.modulecommon.fixture.ClassificationFixture;
 import com.example.modulecommon.fixture.ProductFixture;
@@ -46,9 +45,6 @@ public class CartDomainServiceIT {
 
     @Autowired
     private ProductOptionRepository productOptionRepository;
-
-    @Autowired
-    private CartRepository cartRepository;
 
     private List<ProductOption> productOptionList;
 

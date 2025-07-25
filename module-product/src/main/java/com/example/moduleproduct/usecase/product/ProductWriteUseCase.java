@@ -1,6 +1,6 @@
 package com.example.moduleproduct.usecase.product;
 
-import com.example.moduleauth.service.MemberReader;
+
 import com.example.modulecommon.customException.CustomAccessDeniedException;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.entity.Product;
@@ -14,6 +14,7 @@ import com.example.moduleproduct.service.product.ProductDomainService;
 import com.example.moduleproduct.service.productLike.ProductLikeDataService;
 import com.example.moduleproduct.service.productLike.ProductLikeDomainService;
 import com.example.moduleproduct.service.productQnA.ProductQnADataService;
+import com.example.moduleuser.service.reader.MemberReader;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -36,7 +37,7 @@ public class ProductWriteUseCase {
     private final MemberReader memberReader;
 
     public String postProductQnA(ProductQnAPostDTO postDTO, String userId) {
-        Member member = memberReader.getMemberByUserId(userId);
+        Member member = memberReader.getMemberByUserIdOrElseNull(userId);
         if(member == null)
             throw new IllegalArgumentException();
         Product product = productDataService.getProductById(postDTO.productId());
@@ -67,7 +68,7 @@ public class ProductWriteUseCase {
         if(userId == null)
             throw new CustomAccessDeniedException(ErrorCode.ACCESS_DENIED, ErrorCode.ACCESS_DENIED.getMessage());
 
-        Member member = memberReader.getMemberByUserId(userId);
+        Member member = memberReader.getMemberByUserIdOrElseAccessDenied(userId);
         Product product = productDataService.getProductById(productId);
 
         return productLikeDomainService.buildLikeProduct(member, product);

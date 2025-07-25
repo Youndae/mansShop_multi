@@ -1,6 +1,5 @@
 package com.example.modulecart.usecase.integration;
 
-import com.example.moduleauth.repository.MemberRepository;
 import com.example.modulecart.ModuleCartApplication;
 import com.example.modulecart.model.dto.out.CartDetailDTO;
 import com.example.modulecart.repository.CartRepository;
@@ -14,6 +13,7 @@ import com.example.modulecommon.model.entity.*;
 import com.example.moduleproduct.repository.classification.ClassificationRepository;
 import com.example.moduleproduct.repository.product.ProductRepository;
 import com.example.moduleproduct.repository.productOption.ProductOptionRepository;
+import com.example.moduleuser.repository.MemberRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;

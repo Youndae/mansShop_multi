@@ -1,6 +1,5 @@
 package com.example.moduleproduct.usecase.product.integration;
 
-import com.example.moduleauth.repository.MemberRepository;
 import com.example.modulecommon.fixture.*;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.entity.*;
@@ -22,6 +21,7 @@ import com.example.moduleproduct.repository.productReview.ProductReviewRepositor
 import com.example.moduleproduct.repository.productReviewReply.ProductReviewReplyRepository;
 import com.example.moduleproduct.repository.productThumbnail.ProductThumbnailRepository;
 import com.example.moduleproduct.usecase.product.ProductReadUseCase;
+import com.example.moduleuser.repository.MemberRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -35,11 +35,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.security.Principal;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 

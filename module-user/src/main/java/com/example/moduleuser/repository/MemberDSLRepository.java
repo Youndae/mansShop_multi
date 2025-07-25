@@ -1,4 +1,4 @@
-package com.example.moduleauth.repository;
+package com.example.moduleuser.repository;
 
 import com.example.moduleauth.model.dto.member.UserSearchDTO;
 import com.example.moduleauth.model.dto.member.UserSearchPwDTO;

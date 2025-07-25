@@ -1,6 +1,6 @@
 package com.example.modulecart.usecase;
 
-import com.example.moduleauth.service.MemberReader;
+
 import com.example.modulecart.model.dto.business.CartMemberDTO;
 import com.example.modulecart.model.dto.in.AddCartDTO;
 import com.example.modulecart.model.dto.out.CartCookieResponseDTO;
@@ -12,6 +12,7 @@ import com.example.modulecommon.model.entity.CartDetail;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.modulecommon.model.enumuration.Result;
+import com.example.moduleuser.service.reader.MemberReader;
 import jakarta.servlet.http.Cookie;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,7 +51,7 @@ public class CartWriteUseCase {
         List<CartDetail> savedDetails = new ArrayList<>();
 
         if(userCart == null) {
-            Member member = memberReader.getMemberById(cartMemberDTO.uid());
+            Member member = memberReader.getMemberByUserIdOrElseNull(cartMemberDTO.uid());
             if(member == null) {
                 log.info("CartWriteUseCase.addProductForCart :: member is null");
                 throw new IllegalArgumentException();

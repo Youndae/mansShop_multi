@@ -1,4 +1,4 @@
-package com.example.moduleauth.repository;
+package com.example.moduleuser.repository;
 
 import com.example.moduleauth.model.dto.member.UserSearchDTO;
 import com.example.moduleauth.model.dto.member.UserSearchPwDTO;
@@ -8,13 +8,13 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
-import static com.example.modulecommon.model.entity.QMember.member;
 import static com.example.modulecommon.model.entity.QAuth.auth1;
+import static com.example.modulecommon.model.entity.QMember.member;
 
 
 @Repository
 @RequiredArgsConstructor
-public class MemberDSLRepositoryImpl implements MemberDSLRepository{
+public class MemberDSLRepositoryImpl implements MemberDSLRepository {
 
     private final JPAQueryFactory jpaQueryFactory;
 

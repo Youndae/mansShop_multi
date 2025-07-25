@@ -1,8 +1,6 @@
 package com.example.moduleuser.usecase.unit;
 
 import com.example.moduleauth.model.dto.member.UserSearchPwDTO;
-import com.example.moduleauth.service.MemberReader;
-import com.example.moduleauth.service.MemberStore;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.Result;
 import com.example.moduleuser.model.dto.member.in.JoinDTO;
@@ -40,12 +38,6 @@ public class UserWriteUseCaseUnitTest {
     @Mock
     private UserExternalService userExternalService;
 
-    @Mock
-    private MemberReader memberReader;
-
-    @Mock
-    private MemberStore memberStore;
-
     @Test
     @DisplayName(value = "회원가입 요청")
     void joinProc() {
@@ -61,7 +53,7 @@ public class UserWriteUseCaseUnitTest {
         Member member = joinDTO.toEntity();
 
         when(userDomainService.getJoinMember(any(JoinDTO.class))).thenReturn(member);
-        doNothing().when(memberStore).saveMemberAndAuth(any(Member.class));
+        doNothing().when(userDataService).saveMemberAndAuthToJoin(any(Member.class));
 
         String result = assertDoesNotThrow(() -> userWriteUseCase.joinProc(joinDTO));
 
@@ -73,7 +65,7 @@ public class UserWriteUseCaseUnitTest {
     void searchPw() throws Exception {
         UserSearchPwDTO searchDTO = new UserSearchPwDTO("userId", "userName", "userEmail@userEmail.com");
 
-        when(memberReader.countMatchingBySearchPwDTO(searchDTO)).thenReturn(1L);
+        when(userDataService.countMatchingBySearchPwDTO(searchDTO)).thenReturn(1L);
         when(userDomainService.createCertificationNumber()).thenReturn(123456);
         doNothing().when(userDataService).saveCertificationNumberToRedis(any(UserSearchPwDTO.class), anyInt());
         doNothing().when(userExternalService).sendCertificationMail(any(UserSearchPwDTO.class), anyInt());
@@ -88,7 +80,7 @@ public class UserWriteUseCaseUnitTest {
     void searchPwUserNotFound() {
         UserSearchPwDTO searchDTO = new UserSearchPwDTO("userId", "userName", "userEmail@userEmail.com");
 
-        when(memberReader.countMatchingBySearchPwDTO(searchDTO)).thenReturn(0L);
+        when(userDataService.countMatchingBySearchPwDTO(searchDTO)).thenReturn(0L);
 
         String result = assertDoesNotThrow(() -> userWriteUseCase.searchPassword(searchDTO));
 
@@ -100,7 +92,7 @@ public class UserWriteUseCaseUnitTest {
     void searchPwMessagingException() throws Exception {
         UserSearchPwDTO searchDTO = new UserSearchPwDTO("userId", "userName", "userEmail@userEmail.com");
 
-        when(memberReader.countMatchingBySearchPwDTO(searchDTO)).thenReturn(1L);
+        when(userDataService.countMatchingBySearchPwDTO(searchDTO)).thenReturn(1L);
         when(userDomainService.createCertificationNumber()).thenReturn(123456);
         doNothing().when(userDataService).saveCertificationNumberToRedis(any(UserSearchPwDTO.class), anyInt());
         doThrow(new RuntimeException("mail send fail")).when(userExternalService).sendCertificationMail(any(UserSearchPwDTO.class), anyInt());

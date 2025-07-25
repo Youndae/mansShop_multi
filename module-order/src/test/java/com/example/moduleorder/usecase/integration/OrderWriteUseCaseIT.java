@@ -1,7 +1,6 @@
 package com.example.moduleorder.usecase.integration;
 
 
-import com.example.moduleauth.repository.MemberRepository;
 import com.example.modulecart.repository.CartDetailRepository;
 import com.example.modulecart.repository.CartRepository;
 import com.example.modulecommon.customException.CustomAccessDeniedException;
@@ -24,6 +23,7 @@ import com.example.moduleorder.usecase.OrderWriteUseCase;
 import com.example.moduleproduct.repository.classification.ClassificationRepository;
 import com.example.moduleproduct.repository.product.ProductRepository;
 import com.example.moduleproduct.repository.productOption.ProductOptionRepository;
+import com.example.moduleuser.repository.MemberRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.AfterEach;

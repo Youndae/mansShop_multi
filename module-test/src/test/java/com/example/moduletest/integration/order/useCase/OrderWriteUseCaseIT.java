@@ -2,7 +2,6 @@ package com.example.moduletest.integration.order.useCase;
 
 import com.example.moduleadmin.repository.PeriodSalesSummaryRepository;
 import com.example.moduleadmin.repository.ProductSalesSummaryRepository;
-import com.example.moduleauth.repository.MemberRepository;
 import com.example.modulecart.repository.CartDetailRepository;
 import com.example.modulecart.repository.CartRepository;
 import com.example.modulecommon.fixture.CartFixture;
@@ -23,6 +22,7 @@ import com.example.moduleproduct.repository.classification.ClassificationReposit
 import com.example.moduleproduct.repository.product.ProductRepository;
 import com.example.moduleproduct.repository.productOption.ProductOptionRepository;
 import com.example.moduletest.ModuleTestApplication;
+import com.example.moduleuser.repository.MemberRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.AfterEach;
@@ -35,10 +35,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.HashMap;

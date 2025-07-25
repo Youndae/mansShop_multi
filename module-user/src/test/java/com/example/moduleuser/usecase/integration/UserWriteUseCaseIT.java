@@ -2,8 +2,6 @@ package com.example.moduleuser.usecase.integration;
 
 import com.example.moduleauth.config.jwt.JWTTokenProvider;
 import com.example.moduleauth.model.dto.member.UserSearchPwDTO;
-import com.example.moduleauth.repository.AuthRepository;
-import com.example.moduleauth.repository.MemberRepository;
 import com.example.modulecommon.customException.CustomAccessDeniedException;
 import com.example.modulecommon.customException.CustomBadCredentialsException;
 import com.example.modulecommon.fixture.MemberAndAuthFixture;
@@ -13,6 +11,8 @@ import com.example.modulecommon.model.enumuration.Result;
 import com.example.moduleuser.ModuleUserApplication;
 import com.example.moduleuser.model.dto.member.in.*;
 import com.example.moduleuser.model.dto.member.out.UserStatusResponseDTO;
+import com.example.moduleuser.repository.AuthRepository;
+import com.example.moduleuser.repository.MemberRepository;
 import com.example.moduleuser.usecase.UserWriteUseCase;
 import com.example.moduleuser.utils.MailHogUtils;
 import jakarta.persistence.EntityManager;

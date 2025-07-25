@@ -2,8 +2,6 @@ package com.example.moduletest.integration.order.controller;
 
 import com.example.moduleadmin.repository.PeriodSalesSummaryRepository;
 import com.example.moduleadmin.repository.ProductSalesSummaryRepository;
-import com.example.moduleauth.repository.AuthRepository;
-import com.example.moduleauth.repository.MemberRepository;
 import com.example.modulecart.repository.CartDetailRepository;
 import com.example.modulecart.repository.CartRepository;
 import com.example.modulecommon.fixture.CartFixture;
@@ -27,6 +25,8 @@ import com.example.moduleproduct.repository.productOption.ProductOptionRepositor
 import com.example.moduletest.ModuleTestApplication;
 import com.example.moduletest.fixture.MemberPaymentMapDTO;
 import com.example.moduletest.fixture.TokenFixture;
+import com.example.moduleuser.repository.AuthRepository;
+import com.example.moduleuser.repository.MemberRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;

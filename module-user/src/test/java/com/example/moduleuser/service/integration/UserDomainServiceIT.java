@@ -3,8 +3,6 @@ package com.example.moduleuser.service.integration;
 
 import com.example.moduleauth.config.jwt.JWTTokenProvider;
 import com.example.moduleauth.config.user.CustomUser;
-import com.example.moduleauth.repository.AuthRepository;
-import com.example.moduleauth.repository.MemberRepository;
 import com.example.modulecommon.customException.CustomAccessDeniedException;
 import com.example.modulecommon.fixture.MemberAndAuthFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
@@ -13,6 +11,8 @@ import com.example.modulecommon.model.enumuration.Role;
 import com.example.moduleuser.ModuleUserApplication;
 import com.example.moduleuser.model.dto.member.in.LoginDTO;
 import com.example.moduleuser.model.dto.member.out.UserStatusResponseDTO;
+import com.example.moduleuser.repository.AuthRepository;
+import com.example.moduleuser.repository.MemberRepository;
 import com.example.moduleuser.service.UserDomainService;
 import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.Cookie;

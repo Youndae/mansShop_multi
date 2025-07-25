@@ -3,7 +3,7 @@ package com.example.moduleauth.config.jwt;
 import com.example.moduleauth.config.oauth.CustomOAuth2User;
 import com.example.moduleauth.config.user.CustomUser;
 import com.example.moduleauth.config.user.CustomUserDetails;
-import com.example.moduleauth.repository.MemberRepository;
+import com.example.moduleauth.port.output.AuthMemberReader;
 import com.example.moduleauth.service.JWTTokenService;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.Result;
@@ -31,7 +31,7 @@ import java.util.Collection;
 @Slf4j
 public class JWTAuthorizationFilter extends OncePerRequestFilter {
 
-    private final MemberRepository memberRepository;
+    private final AuthMemberReader authMemberReader;
 
     private final JWTTokenProvider jwtTokenProvider;
 
@@ -100,7 +100,7 @@ public class JWTAuthorizationFilter extends OncePerRequestFilter {
         }
 
         if(username != null){
-            Member memberEntity = memberRepository.findByUserId(username);
+            Member memberEntity = authMemberReader.findByUserId(username);
             String userId;
             Collection<? extends GrantedAuthority> authorities;
             CustomUserDetails userDetails;

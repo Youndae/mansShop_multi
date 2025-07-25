@@ -1,8 +1,6 @@
 package com.example.moduleproduct.usecase.product.integration;
 
-import com.example.moduleauth.repository.MemberRepository;
 import com.example.modulecommon.customException.CustomAccessDeniedException;
-import com.example.modulecommon.customException.CustomNotFoundException;
 import com.example.modulecommon.fixture.*;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.entity.*;
@@ -14,6 +12,7 @@ import com.example.moduleproduct.repository.product.ProductRepository;
 import com.example.moduleproduct.repository.productLike.ProductLikeRepository;
 import com.example.moduleproduct.repository.productQnA.ProductQnARepository;
 import com.example.moduleproduct.usecase.product.ProductWriteUseCase;
+import com.example.moduleuser.repository.MemberRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

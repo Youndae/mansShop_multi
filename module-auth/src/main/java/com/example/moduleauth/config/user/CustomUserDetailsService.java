@@ -1,6 +1,6 @@
 package com.example.moduleauth.config.user;
 
-import com.example.moduleauth.repository.MemberRepository;
+import com.example.moduleauth.port.output.AuthMemberReader;
 import com.example.modulecommon.customException.CustomBadCredentialsException;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.ErrorCode;
@@ -18,11 +18,11 @@ import org.springframework.stereotype.Service;
 public class CustomUserDetailsService implements UserDetailsService {
 
     @Setter(onMethod_ = {@Autowired})
-    private MemberRepository memberRepository;
+    private AuthMemberReader authMemberReader;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Member member = memberRepository.findByLocalUserId(username);
+        Member member = authMemberReader.findByLocalUserId(username);
 
         if(member == null)
             throw new CustomBadCredentialsException(ErrorCode.BAD_CREDENTIALS, ErrorCode.BAD_CREDENTIALS.getMessage());

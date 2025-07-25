@@ -1,6 +1,6 @@
 package com.example.modulecart.usecase.unit;
 
-import com.example.moduleauth.service.MemberReader;
+
 import com.example.modulecart.model.dto.business.CartMemberDTO;
 import com.example.modulecart.model.dto.in.AddCartDTO;
 import com.example.modulecart.model.dto.out.CartCookieResponseDTO;
@@ -13,6 +13,7 @@ import com.example.modulecommon.model.entity.CartDetail;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.entity.ProductOption;
 import com.example.modulecommon.model.enumuration.Result;
+import com.example.moduleuser.service.reader.MemberReader;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -87,7 +88,7 @@ public class CartWriteUseCaseUnitTest {
 
         when(cartDomainService.setCartMemberDTO(any(), any())).thenReturn(cartMemberDTO);
         when(cartDataService.getCartData(any(CartMemberDTO.class))).thenReturn(null);
-        when(memberReader.getMemberById(any())).thenReturn(Member.builder().userId(cartMemberDTO.uid()).build());
+        when(memberReader.getMemberByUserIdOrElseNull(any())).thenReturn(Member.builder().userId(cartMemberDTO.uid()).build());
         when(cartDomainService.buildCart(any(Member.class), any())).thenReturn(userCart);
         doNothing().when(cartDomainService).mapCartAndCartDetails(anyList(), any(Cart.class), anyList());
         doNothing().when(cartDataService).saveCart(any(Cart.class));
@@ -109,7 +110,7 @@ public class CartWriteUseCaseUnitTest {
 
         when(cartDomainService.setCartMemberDTO(any(), any())).thenReturn(cartMemberDTO);
         when(cartDataService.getCartData(any(CartMemberDTO.class))).thenReturn(null);
-        when(memberReader.getMemberById(any())).thenReturn(null);
+        when(memberReader.getMemberByUserIdOrElseNull(any())).thenReturn(null);
 
         assertThrows(
                 IllegalArgumentException.class,

@@ -23,6 +23,7 @@ dependencies {
     implementation project(':module-api')
     implementation project(':module-admin')
     implementation project(':module-auth')
+    implementation project(':module-user')
     implementation project(':module-cart')
     implementation project(':module-notification')
     implementation project(':module-order')
