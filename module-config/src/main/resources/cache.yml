@@ -1,0 +1,10 @@
+cache:
+  count:
+    admin_product_QnA_count:
+      ttl: 30
+    admin_member_QnA_count:
+      ttl: 30
+    admin_order_count:
+      ttl: 30
+    admin_review_count:
+      ttl: 30

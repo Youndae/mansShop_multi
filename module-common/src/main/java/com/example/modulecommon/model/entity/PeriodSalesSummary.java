@@ -42,13 +42,13 @@ public class PeriodSalesSummary {
             nullable = false)
     private long cardTotal;
 
-    /*public void setPatchData(PeriodSummaryQueueDTO dto) {
-        this.period = dto.getPeriod();
-        this.sales = this.sales + dto.getSales();
-        this.salesQuantity = this.salesQuantity + dto.getSalesQuantity();
-        this.orderQuantity = this.orderQuantity + 1;
-        this.totalDeliveryFee = this.totalDeliveryFee + dto.getTotalDeliveryFee();
-        this.cashTotal = this.cashTotal + dto.getCashSales();
-        this.cardTotal = this.cardTotal + dto.getCardSales();
-    }*/
+    public void setPatchData(PeriodSalesSummary dummyEntity) {
+        this.period = dummyEntity.getPeriod();
+        this.sales += dummyEntity.getSales();
+        this.salesQuantity += dummyEntity.getSalesQuantity();
+        this.orderQuantity += 1;
+        this.totalDeliveryFee += dummyEntity.getTotalDeliveryFee();
+        this.cashTotal += dummyEntity.getCashTotal();
+        this.cardTotal += dummyEntity.getCardTotal();
+    }
 }

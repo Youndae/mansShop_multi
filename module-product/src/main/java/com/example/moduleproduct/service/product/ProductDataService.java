@@ -1,6 +1,7 @@
 package com.example.moduleproduct.service.product;
 
 import com.example.modulecommon.model.entity.Product;
+import com.example.modulecommon.model.entity.ProductOption;
 import com.example.moduleproduct.model.dto.product.business.ProductOptionDTO;
 import com.example.moduleproduct.repository.product.ProductRepository;
 import com.example.moduleproduct.repository.productInfoImage.ProductInfoImageRepository;
@@ -40,5 +41,9 @@ public class ProductDataService {
 
     public List<String> getProductInfoImageNameList(String productId) {
         return productInfoImageRepository.findByProductId(productId);
+    }
+
+    public List<ProductOption> getListByIds(List<Long> ids) {
+        return productOptionRepository.findAllById(ids);
     }
 }

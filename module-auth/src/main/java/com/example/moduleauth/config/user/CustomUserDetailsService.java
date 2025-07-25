@@ -26,7 +26,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         if(member == null)
             throw new CustomBadCredentialsException(ErrorCode.BAD_CREDENTIALS, ErrorCode.BAD_CREDENTIALS.getMessage());
-        else
-            return new CustomUser(member);
+
+        return new CustomUser(member);
     }
 }

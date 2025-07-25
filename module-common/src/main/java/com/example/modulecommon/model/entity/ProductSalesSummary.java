@@ -45,11 +45,11 @@ public class ProductSalesSummary {
     private long orderQuantity;
 
 
-    /*public void setPatchSalesData(OrderProductDTO orderProductDTO) {
-        this.sales += orderProductDTO.getDetailPrice();
-        this.salesQuantity += orderProductDTO.getDetailCount();
+    public void setPatchSalesData(int salesPrice, int salesQuantity) {
+        this.sales += salesPrice;
+        this.salesQuantity += salesQuantity;
         this.orderQuantity += 1;
-    }*/
+    }
 
     @Override
     public String toString() {

@@ -1,0 +1,44 @@
+rabbitmq:
+  exchange:
+    order:
+      name: order-exchange
+      dlq: order-dlq-exchange
+    notification:
+      name: notification-exchange
+      dlq: notification-dlq-exchange
+  queue:
+    orderProduct:
+      name: orderProductQueue
+      routing: order_product
+      dlq: order-product-dlq
+      dlqRouting: orderProductDLQ
+    orderProductOption:
+      name: orderProductOptionQueue
+      routing: order_productOption
+      dlq: order-productOption-dlq
+      dlqRouting: orderProductOptionDLQ
+    periodSalesSummary:
+      name: periodSummaryQueue
+      routing: periodSummary
+      dlq: periodSummary-dlq
+      dlqRouting: periodSummaryDLQ
+    productSalesSummary:
+      name: productSummaryQueue
+      routing: productSummary
+      dlq: productSummary-dlq
+      dlqRouting: productSummaryDLQ
+    orderCart:
+      name: orderCartQueue
+      routing: order_cart
+      dlq: orderCart-dlq
+      dlqRouting: orderCartDLQ
+    failedOrder:
+      name: failedOrderQueue
+      routing: failed_order
+      dlq: failedOrder-dlq
+      dlqRouting: failedOrderDLQ
+    notificationSend:
+      name: notificationQueue
+      routing: notification
+      dlq: notification-dlq
+      dlqRouting: notificationDLQ

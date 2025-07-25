@@ -277,3 +277,18 @@
   - module-product 마무리
     - product 관련 기능 마무리
     - Product 관련 각 서비스, UseCase, Controller에 대한 단위 테스트 및 통합 테스트 완료
+
+<br/>
+
+- 25/07/24
+  - module-cart 마무리
+    - useCase, service, controller 모두 작성 및 테스트 완료.
+    - 주로 사용되는 CartMemberDTO ( userId, CartCookieValue )에 대해서는 api는 DTO 생성을 하지 않고 Cookie, userId만 꺼내서 useCase에 전달하는 구조로 설계
+    - 이 처리와 기능 처리 이후 비회원의 장바구니 쿠키 갱신 또는 추가 설정을 위해 CartUtils라는 유틸 클래스를 생성. 해당 유틸 클래스에서 담당 하도록 설계
+
+<br/>
+
+- 25/07/25
+  - module-order 마무리
+    - module-mypage에 있던 주문 목록 조회를 module-order로 이동.
+    - useCase, service, controller 모두 작성 및 테스트 완료.

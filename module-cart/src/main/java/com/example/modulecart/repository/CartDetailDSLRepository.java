@@ -12,4 +12,6 @@ public interface CartDetailDSLRepository {
     List<CartDetail> findAllCartDetailByCartIdAndOptionIds(long cartId, List<Long> optionIds);
 
     List<Long> findAllIdByCartId(long cartId);
+
+    List<CartDetail> findAllCartDetailByCartId(long cartId);
 }

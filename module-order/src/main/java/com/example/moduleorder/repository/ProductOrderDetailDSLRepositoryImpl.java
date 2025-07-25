@@ -20,7 +20,7 @@ public class ProductOrderDetailDSLRepositoryImpl implements ProductOrderDetailDS
     private final JPAQueryFactory jpaQueryFactory;
 
     @Override
-    public List<OrderListDetailDTO> findByDetailList(List<Long> orderIds) {
+    public List<OrderListDetailDTO> findAllOrderDetailByOrderIds(List<Long> orderIds) {
         return jpaQueryFactory.select(
                         Projections.constructor(
                                 OrderListDetailDTO.class,

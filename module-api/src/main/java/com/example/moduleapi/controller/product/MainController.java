@@ -6,10 +6,10 @@ import com.example.moduleapi.model.response.PagingResponseDTO;
 import com.example.modulecommon.model.dto.response.PagingListDTO;
 import com.example.modulecommon.model.enumuration.Role;
 import com.example.modulefile.usecase.FileReadUseCase;
-import com.example.modulemypage.model.dto.out.MyPageOrderDTO;
-import com.example.modulemypage.usecase.MyPageOrderReadUseCase;
+import com.example.moduleorder.model.dto.out.OrderListDTO;
 import com.example.moduleorder.model.dto.page.OrderPageDTO;
 import com.example.moduleorder.model.dto.in.MemberOrderDTO;
+import com.example.moduleorder.usecase.OrderReadUseCase;
 import com.example.moduleproduct.model.dto.main.out.MainListResponseDTO;
 import com.example.moduleproduct.model.dto.page.MainPageDTO;
 import com.example.moduleproduct.usecase.main.MainReadUseCase;
@@ -37,7 +37,7 @@ public class MainController {
 
     private final FileReadUseCase fileReadUseCase;
 
-    private final MyPageOrderReadUseCase myPageOrderReadUseCase;
+    private final OrderReadUseCase orderReadUseCase;
 
     private final PagingResponseMapper pagingResponseMapper;
 
@@ -193,7 +193,7 @@ public class MainController {
             )
     })
     @GetMapping("/order/{term}")
-    public ResponseEntity<PagingResponseDTO<MyPageOrderDTO>> nonMemberOrderList(@RequestParam(name = "recipient") String recipient,
+    public ResponseEntity<PagingResponseDTO<OrderListDTO>> nonMemberOrderList(@RequestParam(name = "recipient") String recipient,
                                                                                 @RequestParam(name = "phone") String phone,
                                                                                 @PathVariable(name = "term") String term,
                                                                                 @RequestParam(name = "page", required = false, defaultValue = "1") int page){
@@ -210,7 +210,7 @@ public class MainController {
                 .build();
 
 
-        PagingListDTO<MyPageOrderDTO> responseDTO = myPageOrderReadUseCase.getOrderList(orderPageDTO, memberOrderDTO);
+        PagingListDTO<OrderListDTO> responseDTO = orderReadUseCase.getOrderList(orderPageDTO, memberOrderDTO);
 
         return pagingResponseMapper.toPagingResponse(responseDTO);
     }

@@ -6,5 +6,5 @@ import java.util.List;
 
 public interface ProductOrderDetailDSLRepository {
 
-    List<OrderListDetailDTO> findByDetailList(List<Long> orderIds);
+    List<OrderListDetailDTO> findAllOrderDetailByOrderIds(List<Long> orderIds);
 }
