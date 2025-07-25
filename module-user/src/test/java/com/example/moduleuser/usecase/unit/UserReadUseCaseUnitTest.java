@@ -55,7 +55,7 @@ public class UserReadUseCaseUnitTest {
     @Test
     @DisplayName(value = "회원가입시 닉네임 중복체크. 정상인 경우")
     void checkJoinNickname() {
-        when(userDataService.getMemberByIdOrElseNull(any())).thenReturn(null);
+        when(userDataService.getMemberByNickname(any())).thenReturn(null);
 
         String result = assertDoesNotThrow(() -> userReadUseCase.checkNickname("nickname", null));
 

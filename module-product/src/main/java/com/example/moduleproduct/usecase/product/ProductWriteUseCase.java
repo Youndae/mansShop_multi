@@ -10,7 +10,6 @@ import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.modulecommon.model.enumuration.Result;
 import com.example.moduleproduct.model.dto.product.in.ProductQnAPostDTO;
 import com.example.moduleproduct.service.product.ProductDataService;
-import com.example.moduleproduct.service.product.ProductDomainService;
 import com.example.moduleproduct.service.productLike.ProductLikeDataService;
 import com.example.moduleproduct.service.productLike.ProductLikeDomainService;
 import com.example.moduleproduct.service.productQnA.ProductQnADataService;
@@ -25,8 +24,6 @@ import org.springframework.stereotype.Service;
 public class ProductWriteUseCase {
 
     private final ProductDataService productDataService;
-
-    private final ProductDomainService productDomainService;
 
     private final ProductQnADataService productQnADataService;
 

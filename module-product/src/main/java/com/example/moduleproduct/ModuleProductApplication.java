@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @SpringBootApplication(
         scanBasePackages = {
                 "com.example.moduleproduct",
-                "com.example.moduleauth"
+                "com.example.moduleuser"
         }
 )
 public class ModuleProductApplication {

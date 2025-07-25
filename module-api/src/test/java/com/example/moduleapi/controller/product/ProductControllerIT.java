@@ -4,8 +4,6 @@ import com.example.moduleapi.ModuleApiApplication;
 import com.example.moduleapi.config.exception.ExceptionEntity;
 import com.example.moduleapi.fixture.TokenFixture;
 import com.example.moduleapi.model.response.PagingElementsResponseDTO;
-import com.example.moduleauth.repository.AuthRepository;
-import com.example.moduleauth.repository.MemberRepository;
 import com.example.modulecommon.fixture.*;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.dto.response.ResponseMessageDTO;
@@ -29,6 +27,8 @@ import com.example.moduleproduct.repository.productOption.ProductOptionRepositor
 import com.example.moduleproduct.repository.productQnA.ProductQnARepository;
 import com.example.moduleproduct.repository.productReview.ProductReviewRepository;
 import com.example.moduleproduct.repository.productThumbnail.ProductThumbnailRepository;
+import com.example.moduleuser.repository.AuthRepository;
+import com.example.moduleuser.repository.MemberRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;

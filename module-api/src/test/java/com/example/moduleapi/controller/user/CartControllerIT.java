@@ -3,8 +3,6 @@ package com.example.moduleapi.controller.user;
 
 import com.example.moduleapi.ModuleApiApplication;
 import com.example.moduleapi.fixture.TokenFixture;
-import com.example.moduleauth.repository.AuthRepository;
-import com.example.moduleauth.repository.MemberRepository;
 import com.example.modulecart.model.dto.business.CartMemberDTO;
 import com.example.modulecart.model.dto.in.AddCartDTO;
 import com.example.modulecart.model.dto.out.CartDetailDTO;
@@ -21,6 +19,8 @@ import com.example.modulecommon.model.enumuration.Result;
 import com.example.moduleproduct.repository.classification.ClassificationRepository;
 import com.example.moduleproduct.repository.product.ProductRepository;
 import com.example.moduleproduct.repository.productOption.ProductOptionRepository;
+import com.example.moduleuser.repository.AuthRepository;
+import com.example.moduleuser.repository.MemberRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;

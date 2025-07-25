@@ -2,8 +2,6 @@ package com.example.moduleapi.controller.product;
 
 import com.example.moduleapi.ModuleApiApplication;
 import com.example.moduleapi.model.response.PagingResponseDTO;
-import com.example.moduleauth.repository.AuthRepository;
-import com.example.moduleauth.repository.MemberRepository;
 import com.example.modulecommon.fixture.ClassificationFixture;
 import com.example.modulecommon.fixture.MemberAndAuthFixture;
 import com.example.modulecommon.fixture.ProductFixture;
@@ -16,6 +14,8 @@ import com.example.moduleproduct.model.dto.main.out.MainListResponseDTO;
 import com.example.moduleproduct.repository.classification.ClassificationRepository;
 import com.example.moduleproduct.repository.product.ProductRepository;
 import com.example.moduleproduct.repository.productOption.ProductOptionRepository;
+import com.example.moduleuser.repository.AuthRepository;
+import com.example.moduleuser.repository.MemberRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;

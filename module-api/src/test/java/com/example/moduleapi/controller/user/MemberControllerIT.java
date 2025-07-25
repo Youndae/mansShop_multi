@@ -315,7 +315,7 @@ public class MemberControllerIT {
         assertEquals(birth, saveMember.getBirth());
         assertEquals(joinDTO.userEmail(), saveMember.getUserEmail());
         assertEquals(1, saveMember.getAuths().size());
-        assertEquals(Role.MEMBER.getKey(), saveMember.getAuths().get(0).getAuth());
+        assertEquals(Role.MEMBER.getRole(), saveMember.getAuths().get(0).getAuth());
     }
 
     @Test
