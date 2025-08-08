@@ -13,6 +13,8 @@
   - mailhog(integration-test)
 - IntelliJ
 
+<img src="./README_image/dependency_diagram.png">
+
 ## Architecture
 - Clean Architecture
   - Architecture 규칙
@@ -302,3 +304,136 @@
     - module-auth가 module-user를 참조하지 않기 때문에 구현체가 module-user에 있으면 참조하지 않고 DI가 주입하지 못할것이라고 생각했는데 가능하다는 점을 알게됨
     - module-auth에서는 AuthMemberReader, AuthMemberStore 인터페이스를 갖고 있고, 이 두 인터페이스에 대한 구현체를 module-user에서 작성하는 방법으로 의존성 없이 사용이 가능.
     - 이 개선 사항으로 인해 이전에 module-auth의 MemberReader를 참조하고 사용하던 부분들을 모두 수정. 확인까지 완료
+
+<br/>
+
+- 25/07/27
+  - module-mypage 작업 중
+    - 이미 작성된 코드를 활용한다는 점에서 다른 모듈들에 대해서는 서비스 -> 컨트롤러 방향으로 작성해 나가며 테스트를 수행했지만, myPage, admin은 자신의 모듈들 내에서만 처리되는 것이 아닌 기능에 따라 다른 모듈로 요청을 보내는 경우가 발생하기 때문에 컨트롤러 -> 서비스 방향으로 탑다운 방식으로 진행.
+
+<br/>
+
+- 25/07/28
+  - module-mypage 테스트 제외 마무리.
+    - 컨트롤러 통합 테스트는 확인.
+
+<br/>
+
+- 25/07/29
+  - module-admin 작업 중
+    - 알림, 캐싱 작성 필요
+
+<br/>
+
+- 25/07/30
+  - module-admin 테스트 제외 마무리.
+    - 컨트롤러 통합 테스트는 확인.
+  - 각 모듈의 service, usecase, repository, consumer 및 참조 관계에 대한 다이어그램 작성
+
+<br/>
+
+- 25/07/31
+  - 작성한 다이어그램 기반 모듈간 의존성 수정
+  - 의존성 수정 이후 테스트에서 문제 발생
+    - controller 테스트에서는 문제가 없었으나, 기존에 작성했던 각 모듈 내부의 통합 테스트에서 문제 발생.
+    - 이유는 의존하지 않는 모듈에 대한 interface 문제. 
+    - Product 모듈에서는 review 처리 과정에서 OrderDetail 데이터의 리뷰 상태값을 수정하는 과정이 포함되어 있음. 하지만 order가 product를 참조해야만 하기 때문에 product가 order를 참조할 수 없음.
+    - 이 문제 해결을 위해 interface - impl 구조로 orderDetail 데이터 수정을 처리.
+    - 그러나, 컨트롤러 테스트를 담당하는 api 모듈에서는 모든 서비스 모듈을 참조하기 때문에 문제가 발생하지 않았지만, product 모듈 내부의 통합 테스트는 order 모듈에 대한 참조가 없기 때문에 구현체를 찾을 수 없어 No Qualifying bean of type..... 이라는 NoSuchBeanDefinitionException이 발생.
+    - 특히 Cache 관련해서 common 모듈에 작성했는데 이 common 모듈을 모든 모듈이 참조하다보니 문제가 더 커짐.
+  - 문제 해결 방안
+    - 이 의존성 문제를 해결하는 방법은 2가지.
+    - 각 테스트 클래스에서 @MokitoBean을 통해 Mocking하는 방법과 module-test로 분리하는 방법
+    - mocking을 하기에는 Cart와 같이 캐싱과 관련없는 모듈에서 조차 문제가 발생하므로 모든 테스트 클래스에 대한 Mocking이 필요하다는 문제가 있음.
+    - 또한, 점점 인터페이스를 통한 접근이 늘어날수록 Mocking 해야하는 양도 늘어나기 때문에 비효율.
+    - 1차 문제 해결로 module-cache로 캐싱 서비스를 분리하는 것이 필요.
+    - 이게 완전한 해결책은 아닌게 만약 나중에 장바구니 기능에서도 캐싱이 적용된다면 Cart 모듈의 통합 테스트에서 또 Mocking이 필요하게 됨.
+    - 그래서 2차 문제 해결로 각 모듈 내부에는 단위 테스트만 배치. Service, UseCase에 대한 통합 테스트는 module-test 라는 테스트 모듈에서 전부 작성하는 것으로 규칙을 생성.
+    - 이유는 어느 모듈에서 캐싱이 적용될지 모르고 캐싱이 아니더라도 테스트에서만 다른 의존성이 필요할 수 있게 될 수 있는데 그때마다 module-test로 테스트 코드를 옮기는 것 보다 처음부터 일관성 있게 module-test에서 작성하는 것이 앞으로의 유지보수 측면에서 더 유리할 것이라고 생각
+    - testImplementation을 사용한다는 방법도 있지만, 이 경우 테스트 환경에서의 양방향 참조가 발생할 수 있으므로 제외.
+
+<br/>
+
+- 25/08/01
+  - module-test로 테스트 코드 분리 작업
+    - admin 관련 usecase들 통합 테스트 분리 및 테스트
+
+<br/>
+
+- 25/08/02
+  - module-test로 테스트 코드 분리 작업
+    - module-product 관련 usecase 통합 테스트 분리 및 테스트
+    - admin 관련 단위 테스트 각 모듈에 작성 및 테스트
+
+<br/>
+
+- 25/08/03
+  - module-test로 테스트 코드 분리 작업
+    - module-product 관련 단위 테스트 작성 및 테스트
+
+<br/>
+
+- 25/08/04
+  - module-test로 테스트 코드 분리 작업
+    - module-mypage 단위 테스트 작성 및 테스트
+    - module-mypage 통합 테스트 분리 및 테스트
+
+<br/>
+
+- 25/08/05
+  - module-test로 테스트 코드 분리 작업
+    - module-cart, module-order, module-user 단위 테스트 작성 및 테스트
+    - module-cart, module-order, module-user 통합 테스트 분리 및 테스트
+
+<br/>
+
+- 25/08/06
+  - module-test로 테스트 코드 분리작업. ( 마무리 )
+    - module-notification 단위 테스트 작성 및 테스트
+    - module-notification 통합 테스트 분리 및 테스트
+  - 전체 테스트 재수행으로 오류 발생하지 않는 것 확인.
+  - 문제 발생
+    - 테스트 코드에서 수행하는 경우 테스트가 모두 통과하지만 gradlew build로 빌드 시 테스트에서는 오류가 발생.
+    - 원인 파악 중.
+
+<br/>
+
+- 25/08/07
+  - 문제 원인 파악
+    - 의존성이 없거나 의존할 수 없는 구조의 모듈에서 사용해야 할 Repository가 있는 경우 interface - impl로 사용했었으나, 이 부분에서 문제가 발생.
+    - 한 예로 auth 모듈에서 MemberRepository를 사용하기 위해 AuthMemberReader, AuthMemberStore라는 인터페이스를 갖고 user 모듈에서 그 구현체를 갖는 구조로 개선했었음.
+    - 그러나, 이 경우 api 모듈이나 test 모듈처럼 auth와 user 모듈에 대해 모두 의존성을 갖고 있다면 문제가 되지 않지만 auth 모듈만 놓고 봤을때는 구현체를 전혀 찾을 수 없는 구조.
+    - 그렇기 때문에 테스트 클래스 단위로 실행하는 경우 문제가 발생하지 않지만 build 과정에서는 문제가 발생할 수 밖에 없음.
+    - 이유는 빌드시 이 프로젝트륾 통째로 한번에 빌드하는 것이 아닌 각 모듈별로 빌드한다음 합치는 개념이기 때문.
+    - 그래서 auth 모듈을 빌드할 때 그 구현체 component를 찾을 수 없다는 점 때문에 문제가 발생함.
+    - 이런식으로 처리했던 모든 부분들을 개선해야 하기 때문에 대대적인 수정이 필요.
+  - 문제 해결
+    - 모든 모듈에 대해 Interface - impl 을 통해 다른 모듈에 간접적으로 참조하는 케이스를 분리.
+    - 대부분은 api 모듈의 컨트롤러에서 필요한 모듈의 UseCase들을 호출해 조합하는 방식으로 처리했으나, auth와 user의 경우 그렇게 처리할 수 없기 떄문에 auth-api 라는 모듈을 추가.
+    - auth-api 모듈에서는 user 모듈이 필요로하는 JWTTokenProvider, JWTTokenService를 갖도록 설계.
+    - auth-api 모듈이 추가되면서 user -> auth 였던 의존성 구조를 auth -> user, auth-api로 수정. user 역시 auth-api 참조로 수정.
+    - 그럼 user는 auth 모듈에서 필요했던 JWTTokenProvider, JWTTokenService를 auth-api를 통해 사용할 수 있게 되고, auth 역시 user를 참조함으로써 MemberRepository 사용이 가능. JWTTokenProvider와 JWTTokenService 역시 auth-api를 참조하기 때문에 사용이 가능해짐.
+    - 이렇게 처리하면서 CustomUser를 통해 처리하던 user 모듈의 로그인 로직에도 약간의 수정이 발생.
+    - user 모듈의 UseCase에서는 CustomUser를 직접 사용하는 것이 아닌 api 모듈에서 auth 모듈을 통해 CustomUser 객체를 받아내도록 해 인증 / 인가를 처리하도록 하고
+    - user 모듈의 UseCase는 userId만 받아서 JWT를 생성하도록 수정.
+    - 비슷한 문제로 Notification과 cache 문제가 있었음.
+    - Notification은 불가피하게 NotificationConsumer와 WebSocket을 통해 사용자에게 알림을 반환하는 처리를 api 모듈로 이동.
+    - api 모듈에서 WebSocket을 관리해야 하므로 SimpMessagingTemplate을 사용해야 하고 이것 역시 Interface - impl 구조로 처리할 순 없었기 때문에 부득이하게 이동.
+    - cache의 경우 의존성 구조와 로직을 수정하는 것으로 해결.
+    - 기존에는 필요한 서비스 모듈에서 cache 모듈을 참조하는 구조였지만, interface - impl 구조가 안된다는 시점에서 이런 의존성 구조로는 문제를 해결할 수가 없었음.
+    - 그래서 cache 모듈이 각 서비스 모듈을 참조하는 구조로 수정하고 cache 모듈을 참조하는 api 모듈에서 데이터 조회 이전 캐싱 데이터 조회 및 갱신을 우선 수행하도록 수정.
+
+<br/>
+
+- 25/08/08
+  - 2차 문제 발생
+    - test 모듈에서 RabbitMQ가 호출되는 UseCase의 테스트에서 정상처리 되지 못하는 것을 확인.
+    - 이 문제 역시 테스트 클래스 단위로 실행하는 경우에는 문제가 발생하지 않지만 build 를 통한 테스트에서만 문제가 발생.
+  - 2차 문제 원인 파악
+    - 기존 단일 모듈 모놀리식 구조에서는 build 시에도 정상적으로 처리되었기 때문에 의문이 있었음.
+    - 알아보니 단일 모듈에서는 Application context가 하나만 존재하기 때문에 build 테스트에서도 RabbitMQ의 consumer가 동일 트랜잭션에서 동작하는 게 가능했음
+    - 반면, 멀티모듈 구조에서는 각 모듈마다 Application Context가 따로 존재하기 때문에 build 테스트에서는 모든 Application Context를 가져오지 않아 발생하는 문제라는 것을 알게 됨.
+    - 그래서 결과적으로 테스트 트랜잭션과 consumer의 트랜잭션이 분리되어 마치 @Transactional을 사용했을때처럼 별개의 트랜잭션으로 동작한다는 것이 문제의 원인.
+  - 2차 문제 해결
+    - 불가파하게 UseCase 통합 테스트에서는 RabbitMQ로 처리되는 부분을 Mocking처리하고 RabbitMQ의 동작은 api 모듈의 컨트롤러 통합 테스트에서 검증하는 방법으로 처리
+    - 컨트롤러 통합 테스트는 정상 동작하는 이유가 MockMvc 사용으로 인해 Controller -> Service -> Repository 까지 모든 호출이 같은 트랜잭션 경계 안에서 실행되기 때문.

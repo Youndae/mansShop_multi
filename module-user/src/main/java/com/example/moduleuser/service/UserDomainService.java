@@ -1,26 +1,22 @@
 package com.example.moduleuser.service;
 
-import com.example.moduleauth.config.jwt.JWTTokenProvider;
-import com.example.moduleauth.config.user.CustomUser;
+import com.example.moduleauthapi.service.JWTTokenProvider;
 import com.example.modulecommon.customException.CustomAccessDeniedException;
 import com.example.modulecommon.customException.CustomTokenStealingException;
 import com.example.modulecommon.model.entity.Auth;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.ErrorCode;
+import com.example.modulecommon.model.enumuration.MailSuffix;
 import com.example.modulecommon.model.enumuration.Result;
 import com.example.modulecommon.model.enumuration.Role;
 import com.example.moduleuser.model.dto.member.in.JoinDTO;
-import com.example.moduleuser.model.dto.member.in.LoginDTO;
-import com.example.moduleuser.model.dto.member.out.UserStatusResponseDTO;
+import com.example.moduleuser.model.dto.member.out.MyPageInfoDTO;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.WebUtils;
 
@@ -32,8 +28,6 @@ import java.util.Random;
 public class UserDomainService {
 
     private final JWTTokenProvider jwtTokenProvider;
-
-    private final AuthenticationManagerBuilder authenticationManagerBuilder;
 
     @Value("#{jwt['token.temporary.header']}")
     private String temporaryHeader;
@@ -52,24 +46,14 @@ public class UserDomainService {
         return memberEntity;
     }
 
-    public CustomUser loginAuthenticated(LoginDTO dto) throws Exception {
-        UsernamePasswordAuthenticationToken authenticationToken =
-                new UsernamePasswordAuthenticationToken(dto.userId(), dto.userPw());
-        Authentication authentication =
-                authenticationManagerBuilder.getObject().authenticate(authenticationToken);
-
-        return (CustomUser) authentication.getPrincipal();
-    }
-
-    public UserStatusResponseDTO getLoginUserStatusResponse(CustomUser authenticateUser,
+    public String getLoginUserStatusResponse(String userId,
                                                             HttpServletRequest request,
                                                             HttpServletResponse response) {
-        String userId = authenticateUser.getUsername();
 
         if(checkInoAndIssueToken(userId, request, response))
-            return new UserStatusResponseDTO(authenticateUser);
+            return Result.OK.getResultKey();
 
-        return null;
+        return Result.FAIL.getResultKey();
     }
 
     private boolean checkInoAndIssueToken(String userId,
@@ -115,5 +99,13 @@ public class UserDomainService {
 
     public boolean validateCertificationNo(String certification, String saveCertification) {
         return certification.equals(saveCertification);
+    }
+
+    public MyPageInfoDTO createMyPageInfoDTO(Member member) {
+        String[] splitMail = member.getUserEmail().split("@");
+        String mailSuffix = splitMail[1].substring(0, splitMail[1].indexOf('.'));
+        String type = MailSuffix.findSuffixType(mailSuffix);
+
+        return new MyPageInfoDTO(member, splitMail, type);
     }
 }

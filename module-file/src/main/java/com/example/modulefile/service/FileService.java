@@ -11,11 +11,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -81,5 +84,77 @@ public class FileService {
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .contentLength(s3Object.getObjectMetadata().getContentLength())
                 .body(resource);
+    }*/
+
+    public String imageInsert(MultipartFile image) throws Exception{
+        StringBuffer sb = new StringBuffer();
+        String saveName = sb.append(new SimpleDateFormat("yyyyMMddHHmmss")
+                        .format(System.currentTimeMillis()))
+                .append(UUID.randomUUID().toString())
+                .append(image.getOriginalFilename().substring(image.getOriginalFilename().lastIndexOf(".")))
+                .toString();
+        String saveFile = filePath + saveName;
+
+        image.transferTo(new File(saveFile));
+
+        return saveName;
+    }
+
+    /**
+     *
+     * @param image
+     * S3에 파일 저장
+     */
+    /*
+    @Override
+    public String imageInsert(MultipartFile image) throws Exception{
+        StringBuffer sb = new StringBuffer();
+        String saveName = sb.append(new SimpleDateFormat("yyyyMMddHHmmss")
+                        .format(System.currentTimeMillis()))
+                .append(UUID.randomUUID().toString())
+                .append(image.getOriginalFilename().substring(image.getOriginalFilename().lastIndexOf(".")))
+                .toString();
+
+        ObjectMetadata objectMetadata = new ObjectMetadata();
+        objectMetadata.setContentLength(image.getSize());
+        objectMetadata.setContentType(image.getContentType());
+
+        try{
+            amazonS3.putObject(
+                    new PutObjectRequest(
+                            bucket
+                            , saveName
+                            , image.getInputStream()
+                            , objectMetadata
+                    )
+                            .withCannedAcl(CannedAccessControlList.PublicRead)
+            );
+        }catch (Exception e) {
+            log.warn("productImage insert IOException");
+            e.printStackTrace();
+            throw new NullPointerException();
+        }
+
+        return saveName;
+    }*/
+
+    public void deleteImage(String imageName) {
+        File file = new File(filePath + imageName);
+
+        if(file.exists())
+            file.delete();
+    }
+
+    /**
+     *
+     *
+     * S3 파일 삭제
+     */
+    /*
+    @Override
+    public void deleteImage(String imageName) {
+        amazonS3.deleteObject(
+                new DeleteObjectRequest(bucket, imageName)
+        );
     }*/
 }

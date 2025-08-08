@@ -1,6 +1,7 @@
 package com.example.moduleapi.fixture;
 
-import com.example.moduleauth.config.jwt.JWTTokenProvider;
+
+import com.example.moduleauthapi.service.JWTTokenProvider;
 import com.example.modulecommon.model.entity.Member;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;

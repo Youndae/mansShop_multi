@@ -12,7 +12,8 @@ import com.example.moduleproduct.model.dto.product.in.ProductQnAPostDTO;
 import com.example.moduleproduct.model.dto.product.out.ProductDetailDTO;
 import com.example.moduleproduct.model.dto.product.out.ProductDetailReviewDTO;
 import com.example.moduleproduct.usecase.product.ProductReadUseCase;
-import com.example.moduleproduct.usecase.product.ProductWriteUseCase;
+import com.example.moduleproduct.usecase.productLike.ProductLikeWriteUseCase;
+import com.example.moduleproduct.usecase.productQnA.ProductQnAWriteUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
@@ -39,11 +40,13 @@ public class ProductController {
 
     private final ProductReadUseCase productReadUseCase;
 
-    private final ProductWriteUseCase productWriteUseCase;
-
     private final PrincipalService principalService;
 
     private final PagingResponseMapper pagingResponseMapper;
+
+    private final ProductLikeWriteUseCase productLikeWriteUseCase;
+
+    private final ProductQnAWriteUseCase productQnAWriteUseCase;
 
     /**
      *
@@ -171,7 +174,7 @@ public class ProductController {
     public ResponseEntity<ResponseMessageDTO> postProductQnA(@RequestBody ProductQnAPostDTO postDTO, Principal principal) {
 
         String userId = principalService.extractUserId(principal);
-        String responseMessage = productWriteUseCase.postProductQnA(postDTO, userId);
+        String responseMessage = productQnAWriteUseCase.postProductQnA(postDTO, userId);
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new ResponseMessageDTO(responseMessage));
@@ -202,7 +205,7 @@ public class ProductController {
         }
 
         String userId = principalService.extractUserId(principal);
-        String responseMessage = productWriteUseCase.likeProduct(productId, userId);
+        String responseMessage = productLikeWriteUseCase.likeProduct(productId, userId);
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new ResponseMessageDTO(responseMessage));
@@ -231,7 +234,7 @@ public class ProductController {
                                                             Principal principal) {
 
         String userId = principalService.extractUserId(principal);
-        String responseMessage = productWriteUseCase.deleteProductLike(productId, userId);
+        String responseMessage = productLikeWriteUseCase.deleteProductLike(productId, userId);
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new ResponseMessageDTO(responseMessage));

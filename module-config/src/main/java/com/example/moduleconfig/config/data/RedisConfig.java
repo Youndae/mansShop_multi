@@ -7,6 +7,9 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.GenericToStringSerializer;
+import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 @Configuration
@@ -23,14 +26,18 @@ public class RedisConfig {
         return new LettuceConnectionFactory(redisHost, redisPort);
     }
 
+    private <V> RedisTemplate<String, V> buildTemplate(RedisSerializer<V> redisSerializer) {
+        RedisTemplate<String, V> template = new RedisTemplate<>();
+        template.setConnectionFactory(redisConnectionFactory());
+        template.setKeySerializer(redisSerializer);
+        template.setValueSerializer(redisSerializer);
+
+        return template;
+    }
+
     @Bean
     public RedisTemplate<?, ?> redisTemplate() {
-        RedisTemplate<byte[], byte[]> redisTemplate = new RedisTemplate<>();
-        redisTemplate.setConnectionFactory(redisConnectionFactory());
-        redisTemplate.setKeySerializer(new StringRedisSerializer());
-        redisTemplate.setValueSerializer(new StringRedisSerializer());
-
-        return redisTemplate;
+        return buildTemplate(new GenericJackson2JsonRedisSerializer());
     }
 
     @Bean
@@ -41,5 +48,10 @@ public class RedisConfig {
         stringRedisTemplate.setConnectionFactory(redisConnectionFactory());
 
         return stringRedisTemplate;
+    }
+
+    @Bean
+    public RedisTemplate<String, Long> longRedisTemplate() {
+        return buildTemplate(new GenericToStringSerializer<>(Long.class));
     }
 }

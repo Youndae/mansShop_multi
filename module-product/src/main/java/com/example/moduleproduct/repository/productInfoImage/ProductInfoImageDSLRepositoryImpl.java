@@ -24,4 +24,11 @@ public class ProductInfoImageDSLRepositoryImpl implements ProductInfoImageDSLRep
                 .orderBy(productInfoImage.imageName.asc())
                 .fetch();
     }
+
+    @Override
+    public void deleteAllByImageNames(List<String> imageNames) {
+        jpaQueryFactory.delete(productInfoImage)
+                .where(productInfoImage.imageName.in(imageNames))
+                .execute();
+    }
 }

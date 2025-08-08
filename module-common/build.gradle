@@ -28,6 +28,8 @@ repositories {
 
 dependencies {
 
+//    implementation project(':module-config')
+
     testFixturesImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 

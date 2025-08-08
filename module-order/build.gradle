@@ -20,7 +20,6 @@ repositories {
 dependencies {
     implementation project(':module-common')
     implementation project(':module-config')
-    implementation project(':module-auth')
     implementation project(':module-user')
     implementation project(':module-cart')
     implementation project(':module-product')

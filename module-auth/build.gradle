@@ -20,6 +20,8 @@ repositories {
 dependencies {
     implementation project(':module-common')
     implementation project(':module-config')
+    implementation project(':module-user')
+    implementation project(':module-auth-api')
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'

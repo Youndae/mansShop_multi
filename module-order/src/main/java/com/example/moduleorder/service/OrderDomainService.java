@@ -3,11 +3,18 @@ package com.example.moduleorder.service;
 
 import com.example.modulecart.model.dto.business.CartMemberDTO;
 import com.example.modulecommon.customException.CustomOrderSessionExpiredException;
+import com.example.modulecommon.model.dto.response.PagingListDTO;
+import com.example.modulecommon.model.dto.response.PagingMappingDTO;
 import com.example.modulecommon.model.entity.ProductOption;
 import com.example.modulecommon.model.entity.ProductOrder;
 import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.modulecommon.model.enumuration.FallbackMapKey;
 import com.example.moduleconfig.properties.FallbackProperties;
+import com.example.moduleorder.model.dto.admin.business.AdminOrderDTO;
+import com.example.moduleorder.model.dto.admin.business.AdminOrderDetailListDTO;
+import com.example.moduleorder.model.dto.admin.out.AdminOrderDetailDTO;
+import com.example.moduleorder.model.dto.admin.out.AdminOrderResponseDTO;
+import com.example.moduleorder.model.dto.admin.page.AdminOrderPageDTO;
 import com.example.moduleorder.model.dto.business.FailedOrderDTO;
 import com.example.moduleorder.model.dto.business.OrderDataDTO;
 import com.example.moduleorder.model.dto.business.OrderListDetailDTO;
@@ -159,5 +166,24 @@ public class OrderDomainService {
         }
 
         return responseList;
+    }
+
+    public PagingListDTO<AdminOrderResponseDTO> mapOrderResponsePagingList(List<AdminOrderDTO> orderDTOList,
+                                                                           List<AdminOrderDetailListDTO> detailList,
+                                                                           long totalElements,
+                                                                           AdminOrderPageDTO pageDTO) {
+        List<AdminOrderResponseDTO> responseContent = orderDTOList.stream()
+                .map(v -> {
+                    List<AdminOrderDetailDTO> detail = detailList.stream()
+                            .filter(entity -> v.orderId() == entity.orderId())
+                            .map(AdminOrderDetailDTO::new)
+                            .toList();
+
+                    return v.toResponseDTO(detail);
+                })
+                .toList();
+        PagingMappingDTO pagingMappingDTO = new PagingMappingDTO(totalElements, pageDTO.page(), pageDTO.amount());
+
+        return new PagingListDTO<>(responseContent, pagingMappingDTO);
     }
 }

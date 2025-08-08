@@ -1,7 +1,9 @@
 package com.example.moduleproduct.repository.productLike;
 
 import com.example.modulecommon.model.entity.ProductLike;
+import com.example.moduleproduct.model.dto.productLike.out.ProductLikeDTO;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface ProductLikeDSLRepository {
 
@@ -9,5 +11,5 @@ public interface ProductLikeDSLRepository {
 
     void deleteByUserIdAndProductId(ProductLike entity);
 
-    Page<?> findByUserId();
+    Page<ProductLikeDTO> findListByUserId(String userId, Pageable pageable);
 }

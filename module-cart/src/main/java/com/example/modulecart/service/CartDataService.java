@@ -61,4 +61,16 @@ public class CartDataService {
     public void deleteSelectProductFromCartDetail(List<Long> deleteSelectIds) {
         cartDetailRepository.deleteAllByIdInBatch(deleteSelectIds);
     }
+
+    public List<CartDetail> getCartDetailListByCartId(long cartId) {
+        return cartDetailRepository.findAllCartDetailByCartId(cartId);
+    }
+
+    public List<CartDetail> getCartDetailListByIds(List<Long> cartDetailIds) {
+        return cartDetailRepository.findAllById(cartDetailIds);
+    }
+
+    public Cart getCartByIdOrElseIllegal(long cartId) {
+        return cartRepository.findById(cartId).orElseThrow(IllegalArgumentException::new);
+    }
 }

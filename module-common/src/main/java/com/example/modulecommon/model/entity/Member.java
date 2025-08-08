@@ -116,13 +116,12 @@ public class Member {
         this.userEmail = userEmail;
     }
 
-    /*public void patchUser(MyPageInfoPatchDTO patchDTO) {
-        String phoneRegEx = "(\\d{3})(\\d{3,4})(\\d{4})";
+    public void patchUser(String nickname, String phone, String userEmail) {
 
-        this.nickname = patchDTO.nickname();
-        this.phone = patchDTO.phone().replaceAll(phoneRegEx, "$1-$2-$3");
-        this.userEmail = patchDTO.mail();
-    }*/
+        this.nickname = nickname;
+        this.phone = PhoneNumberUtils.format(phone);
+        this.userEmail = userEmail;
+    }
 
     public OAuth2DTO toOAuth2DTOUseFilter() {
         return new OAuth2DTO(

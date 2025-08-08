@@ -3,10 +3,11 @@ package com.example.moduleauth.config.jwt;
 import com.example.moduleauth.config.oauth.CustomOAuth2User;
 import com.example.moduleauth.config.user.CustomUser;
 import com.example.moduleauth.config.user.CustomUserDetails;
-import com.example.moduleauth.port.output.AuthMemberReader;
-import com.example.moduleauth.service.JWTTokenService;
+import com.example.moduleauthapi.service.JWTTokenProvider;
+import com.example.moduleauthapi.service.JWTTokenService;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.Result;
+import com.example.moduleuser.service.UserDataService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -31,7 +32,7 @@ import java.util.Collection;
 @Slf4j
 public class JWTAuthorizationFilter extends OncePerRequestFilter {
 
-    private final AuthMemberReader authMemberReader;
+    private final UserDataService userDataService;
 
     private final JWTTokenProvider jwtTokenProvider;
 
@@ -100,7 +101,7 @@ public class JWTAuthorizationFilter extends OncePerRequestFilter {
         }
 
         if(username != null){
-            Member memberEntity = authMemberReader.findByUserId(username);
+            Member memberEntity = userDataService.getMemberByUserIdFetchAuthsOrElseIllegal(username);
             String userId;
             Collection<? extends GrantedAuthority> authorities;
             CustomUserDetails userDetails;

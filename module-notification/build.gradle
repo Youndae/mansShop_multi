@@ -20,7 +20,7 @@ repositories {
 dependencies {
     implementation project(':module-common')
     implementation project(':module-config')
-    implementation project(':module-auth')
+    implementation project(':module-user')
 
     testImplementation(testFixtures(project(':module-common')))
 }

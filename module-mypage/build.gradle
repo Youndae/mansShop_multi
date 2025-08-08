@@ -20,10 +20,7 @@ repositories {
 dependencies {
     implementation project(':module-common')
     implementation project(':module-config')
-    implementation project(':module-auth')
-    implementation project(':module-notification')
-    implementation project(':module-order')
-    implementation project(':module-product')
+    implementation project(':module-user')
 
     testImplementation(testFixtures(project(':module-common')))
 }

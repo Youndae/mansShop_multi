@@ -3,8 +3,7 @@ package com.example.moduleapi.controller.user;
 import com.example.moduleapi.annotation.swagger.DefaultApiResponse;
 import com.example.moduleapi.annotation.swagger.SwaggerAuthentication;
 import com.example.moduleapi.config.exception.ExceptionEntity;
-import com.example.moduleauth.model.dto.member.UserSearchDTO;
-import com.example.moduleauth.model.dto.member.UserSearchPwDTO;
+import com.example.moduleauth.service.AuthenticationService;
 import com.example.modulecommon.customException.CustomAccessDeniedException;
 import com.example.modulecommon.model.dto.response.ResponseMessageDTO;
 import com.example.modulecommon.model.enumuration.ErrorCode;
@@ -51,6 +50,8 @@ public class MemberController {
 
     private final UserWriteUseCase userWriteUseCase;
 
+    private final AuthenticationService authenticationService;
+
     /**
      *
      * @param loginDTO
@@ -77,10 +78,12 @@ public class MemberController {
                                                            HttpServletRequest request,
                                                            HttpServletResponse response){
 
-        UserStatusResponseDTO result = userWriteUseCase.loginProc(loginDTO, request, response);
+        UserStatusResponseDTO responseDTO = authenticationService.loginAuthenticated(loginDTO);
+
+        userWriteUseCase.loginProc(responseDTO.getUserId(), request, response);
 
         return ResponseEntity.status(HttpStatus.OK)
-                .body(result);
+                .body(responseDTO);
     }
 
     /**

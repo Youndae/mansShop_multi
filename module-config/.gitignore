@@ -25,6 +25,9 @@ application-prod.yml
 application-test.yml
 filePath.properties
 jwt.properties
+rabbitMQ.yml
+recovery.yml
+cache.yml
 .idea
 *.iws
 *.iml

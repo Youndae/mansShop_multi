@@ -1,5 +1,7 @@
 package com.example.moduleproduct.repository.productOption;
 
+import com.example.moduleproduct.model.dto.admin.product.business.AdminOptionStockDTO;
+import com.example.moduleproduct.model.dto.admin.product.out.AdminProductOptionDTO;
 import com.example.moduleproduct.model.dto.product.business.OrderProductInfoDTO;
 import com.example.moduleproduct.model.dto.product.business.PatchOrderStockDTO;
 import com.example.moduleproduct.model.dto.product.business.ProductOptionDTO;
@@ -12,7 +14,6 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.example.modulecommon.model.entity.QProductOption.productOption;
 import static com.example.modulecommon.model.entity.QProduct.product;
@@ -91,6 +92,42 @@ public class ProductOptionDSLRepositoryImpl implements ProductOptionDSLRepositor
                 .innerJoin(product)
                 .on(productOption.product.id.eq(product.id))
                 .where(productOption.id.in(optionIds))
+                .fetch();
+    }
+
+    @Override
+    public List<AdminProductOptionDTO> findAllAdminOptionDTOByProductId(String productId) {
+        return jpaQueryFactory.select(
+                        Projections.constructor(
+                                AdminProductOptionDTO.class
+                                , productOption.id.as("optionId")
+                                , productOption.size
+                                , productOption.color
+                                , productOption.stock.as("optionStock")
+                                , productOption.isOpen.as("optionIsOpen")
+                        )
+                )
+                .from(productOption)
+                .where(productOption.product.id.eq(productId))
+                .fetch();
+    }
+
+    @Override
+    public List<AdminOptionStockDTO> findAllProductOptionStockByProductIds(List<String> productIds) {
+        return jpaQueryFactory.select(
+                        Projections.constructor(
+                                AdminOptionStockDTO.class,
+                                product.id.as("productId"),
+                                productOption.size,
+                                productOption.color,
+                                productOption.stock.as("optionStock"),
+                                productOption.isOpen.as("optionIsOpen")
+                        )
+                )
+                .from(productOption)
+                .innerJoin(product)
+                .on(productOption.product.id.eq(product.id))
+                .where(product.id.in(productIds))
                 .fetch();
     }
 }

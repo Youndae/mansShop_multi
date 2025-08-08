@@ -18,18 +18,40 @@ repositories {
 }
 
 dependencies {
-    implementation project(':module-common')
+    testImplementation(project(':module-common'))
+    testImplementation(project(':module-config'))
+    testImplementation(project(':module-auth'))
+    testImplementation(project(':module-auth-api'))
+    testImplementation(project(':module-api'))
+    testImplementation(project(':module-admin'))
+    testImplementation(project(':module-product'))
+    testImplementation(project(':module-user'))
+    testImplementation(project(':module-order'))
+    testImplementation(project(':module-cart'))
+    testImplementation(project(':module-cache'))
+    testImplementation(project(':module-file'))
+    testImplementation(project(':module-mypage'))
+    testImplementation(project(':module-notification'))
+
+    /*implementation project(':module-common')
     implementation project(':module-config')
+    implementation project(':module-auth')
+    implementation project(':module-auth-api')
     implementation project(':module-api')
     implementation project(':module-admin')
-    implementation project(':module-auth')
-    implementation project(':module-user')
-    implementation project(':module-cart')
-    implementation project(':module-notification')
-    implementation project(':module-order')
     implementation project(':module-product')
+    implementation project(':module-user')
+    implementation project(':module-order')
+    implementation project(':module-cart')
+    implementation project(':module-cache')
+    implementation project(':module-file')
+    implementation project(':module-mypage')
+    implementation project(':module-notification')*/
+
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-mail:3.3.0'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux:3.4.0'
 
     testImplementation(testFixtures(project(':module-common')))
 }
@@ -37,4 +59,9 @@ dependencies {
 tasks.register("prepareKotlinBuildScriptModel"){}
 
 tasks.bootJar { enabled = false }
-tasks.jar { enabled = true }
+tasks.jar { enabled = false }
+
+tasks.named('test') {
+    useJUnitPlatform()
+    maxParallelForks = 1
+}

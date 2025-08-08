@@ -1,8 +1,8 @@
 package com.example.moduleorder.usecase;
 
 import com.example.modulecart.model.dto.business.CartMemberDTO;
+import com.example.modulecart.service.CartDataService;
 import com.example.modulecart.service.CartDomainService;
-import com.example.modulecart.service.CartReader;
 import com.example.modulecommon.customException.CustomAccessDeniedException;
 import com.example.modulecommon.customException.CustomNotFoundException;
 import com.example.modulecommon.customException.CustomOrderDataFailedException;
@@ -28,7 +28,7 @@ import com.example.moduleorder.service.OrderDataService;
 import com.example.moduleorder.service.OrderDomainService;
 import com.example.moduleorder.service.OrderExternalService;
 import com.example.moduleproduct.model.dto.product.business.OrderProductInfoDTO;
-import com.example.moduleproduct.service.product.ProductOptionReader;
+import com.example.moduleproduct.service.product.ProductDataService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.Cookie;
@@ -59,10 +59,11 @@ public class OrderWriteUseCase {
 
     private final OrderExternalService orderExternalService;
 
-    private final ProductOptionReader productOptionReader;
+    private final ProductDataService productDataService;
 
     private final OrderCookieWriter orderCookieWriter;
-    private final CartReader cartReader;
+
+    private final CartDataService cartDataService;
 
     /**
      * 결제 이후 데이터 처리
@@ -78,7 +79,7 @@ public class OrderWriteUseCase {
         ProductOrderDataDTO productOrderDataDTO = orderDomainService.mapProductOrderDataDTO(paymentDTO, cartMemberDTO, LocalDateTime.now());
 
         try {
-            List<ProductOption> validateOptions = productOptionReader.getListByIds(productOrderDataDTO.orderOptionIds());
+            List<ProductOption> validateOptions = productDataService.getProductOptionListByIds(productOrderDataDTO.orderOptionIds());
             List<OrderDataDTO> validateDTOFieldList = orderDomainService.mapValidateFieldList(paymentDTO.orderProduct(), validateOptions);
             OrderDataResponseDTO validateDTO = new OrderDataResponseDTO(validateDTOFieldList, paymentDTO.totalPrice());
             validateOrderData(validateDTO, cartMemberDTO.uid(), orderTokenCookie, response);
@@ -248,13 +249,13 @@ public class OrderWriteUseCase {
                                                  HttpServletResponse response) {
         CartMemberDTO cartMemberDTO = cartDomainService.setCartMemberDTO(cartCookie, userId);
 
-        List<CartDetail> cartDetails = cartReader.findAllCartDetailByIds(cartDetailIds);
+        List<CartDetail> cartDetails = cartDataService.getCartDetailListByIds(cartDetailIds);
 
         if(cartDetails.isEmpty())
             throw new CustomNotFoundException(ErrorCode.NOT_FOUND, ErrorCode.NOT_FOUND.getMessage());
 
         Long cartId = cartDetails.get(0).getCart().getId();
-        Cart cart = cartReader.findCartById(cartId);
+        Cart cart = cartDataService.getCartByIdOrElseIllegal(cartId);
 
         if(!cart.getMember().getUserId().equals(cartMemberDTO.uid())
                 || !Objects.equals(cart.getCookieId(), cartMemberDTO.cartCookieValue()))
@@ -279,7 +280,7 @@ public class OrderWriteUseCase {
     private List<OrderProductInfoDTO> getOrderDataDTOList(List<OrderProductRequestDTO> optionIdAndCountDTO) {
         List<Long> optionIds = optionIdAndCountDTO.stream().map(OrderProductRequestDTO::optionId).toList();
 
-        return productOptionReader.findOrderData(optionIds);
+        return productDataService.getOrderInfoDTOListByOptionIds(optionIds);
     }
 
     private void saveOrderValidateData(Cookie orderTokenCookie, HttpServletResponse response, OrderDataResponseDTO requestDTO, String userId) {

@@ -52,11 +52,11 @@ public class MemberQnA {
     )
     private boolean memberQnAStat;
 
-    /*public void setModifyData(MemberQnAModifyDTO modifyDTO, QnAClassification qnaClassification) {
+    public void setModifyData(String title, String content, QnAClassification qnaClassification) {
         this.qnAClassification = qnaClassification;
-        this.memberQnATitle = modifyDTO.title();
-        this.memberQnAContent = modifyDTO.content();
-    }*/
+        this.memberQnATitle = title;
+        this.memberQnAContent = content;
+    }
 
     public void setMemberQnAStat(boolean memberQnAStat) {
         this.memberQnAStat = memberQnAStat;

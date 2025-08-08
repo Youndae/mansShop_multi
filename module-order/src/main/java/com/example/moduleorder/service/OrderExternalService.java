@@ -1,8 +1,10 @@
 package com.example.moduleorder.service;
 
 import com.example.modulecart.model.dto.business.CartMemberDTO;
+import com.example.modulecommon.model.dto.notification.NotificationSendDTO;
 import com.example.modulecommon.model.entity.ProductOrder;
 import com.example.modulecommon.model.enumuration.FallbackMapKey;
+import com.example.modulecommon.model.enumuration.NotificationType;
 import com.example.moduleconfig.config.rabbitMQ.RabbitMQPrefix;
 import com.example.moduleconfig.properties.RabbitMQProperties;
 import com.example.moduleorder.model.dto.business.FailedOrderDTO;
@@ -67,5 +69,18 @@ public class OrderExternalService {
 
         sendOrderMessageQueue(failedOrderDTO.paymentDTO(), failedOrderDTO.cartMemberDTO(), productOrderDataDTO, order);
 
+    }
+
+    public void sendOrderNotification(String userId) {
+        rabbitTemplate.convertAndSend(
+                rabbitMQProperties.getExchange().get(RabbitMQPrefix.EXCHANGE_NOTIFICATION.getKey()).getName(),
+                rabbitMQProperties.getQueue().get(RabbitMQPrefix.QUEUE_NOTIFICATION.getKey()).getRouting(),
+                new NotificationSendDTO(
+                        userId,
+                        NotificationType.ORDER_STATUS,
+                        NotificationType.ORDER_STATUS.getTitle(),
+                        null
+                )
+        );
     }
 }

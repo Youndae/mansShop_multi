@@ -24,6 +24,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.Cookie;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -138,6 +139,18 @@ public class MemberControllerIT {
         em.clear();
     }
 
+    @AfterEach
+    void cleanUp() {
+        if(tokenMap != null) {
+            String accessKey = tokenMap.get("accessKey");
+            String refreshKey = tokenMap.get("refreshKey");
+
+            redisTemplate.delete(accessKey);
+            redisTemplate.delete(refreshKey);
+        }
+        redisTemplate.delete(member.getUserId());
+    }
+
     private void setRedisByCertification() {
         redisTemplate.opsForValue().set(member.getUserId(), CERTIFICATION_FIXTURE);
     }
@@ -147,15 +160,6 @@ public class MemberControllerIT {
         accessTokenValue = tokenMap.get(accessHeader);
         refreshTokenValue = tokenMap.get(refreshHeader);
         inoValue = tokenMap.get(inoHeader);
-    }
-
-    private void cleanUp() {
-        String accessKey = tokenMap.get("accessKey");
-        String refreshKey = tokenMap.get("refreshKey");
-
-        redisTemplate.delete(accessKey);
-        redisTemplate.delete(refreshKey);
-        redisTemplate.delete(member.getUserId());
     }
 
     @Test
@@ -538,7 +542,6 @@ public class MemberControllerIT {
 
         assertNotNull(response);
         assertEquals(Result.NO_DUPLICATE.getResultKey(), response.message());
-        cleanUp();
     }
 
     @Test
@@ -560,8 +563,6 @@ public class MemberControllerIT {
         assertNotNull(response);
         assertEquals(member.getUserId(), response.getUserId());
         assertEquals(Role.MEMBER.getRole(), response.getRole());
-
-        cleanUp();
     }
 
     @Test

@@ -1,18 +1,26 @@
 package com.example.moduleuser.service;
 
-import com.example.moduleauth.config.jwt.JWTTokenProvider;
-import com.example.moduleauth.model.dto.member.UserSearchDTO;
-import com.example.moduleauth.model.dto.member.UserSearchPwDTO;
+import com.example.moduleauthapi.service.JWTTokenProvider;
+import com.example.modulecommon.customException.CustomAccessDeniedException;
 import com.example.modulecommon.model.entity.Auth;
 import com.example.modulecommon.model.entity.Member;
+import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.modulecommon.model.enumuration.Result;
 import com.example.modulecommon.model.enumuration.Role;
+import com.example.moduleuser.model.dto.admin.out.AdminMemberDTO;
+import com.example.moduleuser.model.dto.admin.page.AdminMemberPageDTO;
 import com.example.moduleuser.model.dto.member.in.LogoutDTO;
+import com.example.moduleuser.model.dto.member.in.UserSearchDTO;
+import com.example.moduleuser.model.dto.member.in.UserSearchPwDTO;
 import com.example.moduleuser.repository.AuthRepository;
 import com.example.moduleuser.repository.MemberRepository;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
@@ -41,12 +49,39 @@ public class UserDataService {
         authRepository.save(auth);
     }
 
-    public Long countMatchingBySearchPwDTO(UserSearchPwDTO searchDTO) {
-        return memberRepository.findByPassword(searchDTO);
+    public Member getMemberByLocalUserId(String userId) {
+        return memberRepository.findByLocalUserId(userId);
     }
 
-    public Member getMemberByIdOrElseNull(String userId){
+    public Member getMemberByUserIdOrElseIllegal(String userId) {
+        return memberRepository.findById(userId).orElseThrow(IllegalArgumentException::new);
+    }
+
+    public Member getMemberByUserIdOrElseNull(String userId){
         return memberRepository.findById(userId).orElse(null);
+    }
+
+    public Member getMemberByUserIdOrElseAccessDenied(String userId) {
+        return memberRepository.findById(userId)
+                .orElseThrow(() ->
+                        new CustomAccessDeniedException(
+                                ErrorCode.ACCESS_DENIED,
+                                ErrorCode.ACCESS_DENIED.getMessage()
+                        )
+                );
+    }
+
+    public Member getMemberByUserIdFetchAuthsOrElseIllegal(String userId) {
+        Member member = memberRepository.findByUserId(userId);
+
+        if(member == null)
+            throw new IllegalArgumentException("Member fetch auths Data is null");
+
+        return member;
+    }
+
+    public Long countMatchingBySearchPwDTO(UserSearchPwDTO searchDTO) {
+        return memberRepository.findByPassword(searchDTO);
     }
 
     public void saveMember(Member member) {
@@ -90,5 +125,14 @@ public class UserDataService {
 
     public void deleteCertificationNumberFromRedis(String userId) throws Exception {
         redisTemplate.delete(userId);
+    }
+
+    public Page<AdminMemberDTO> getAdminMemberPageList(AdminMemberPageDTO pageDTO) {
+        Pageable pageable = PageRequest.of(pageDTO.page() - 1,
+                                        pageDTO.amount(),
+                                        Sort.by("createdAt").descending()
+                                );
+
+        return memberRepository.findMember(pageDTO, pageable);
     }
 }

@@ -1,8 +1,6 @@
 package com.example.moduleorder.rabbitMQ.consumer;
 
-import com.example.modulecart.service.CartReader;
-import com.example.modulecart.service.CartStore;
-import com.example.modulecommon.model.entity.Cart;
+import com.example.modulecart.service.CartDataService;
 import com.example.modulecommon.model.entity.CartDetail;
 import com.example.modulecommon.model.entity.ProductOrder;
 import com.example.moduleorder.model.dto.business.ProductOrderDataDTO;
@@ -11,8 +9,7 @@ import com.example.moduleorder.model.dto.rabbitMQ.OrderCartDTO;
 import com.example.moduleorder.model.dto.rabbitMQ.OrderProductMessageDTO;
 import com.example.moduleorder.repository.ProductOrderRepository;
 import com.example.moduleproduct.model.dto.product.business.PatchOrderStockDTO;
-import com.example.moduleproduct.service.product.ProductOptionStore;
-import com.example.moduleproduct.service.product.ProductStore;
+import com.example.moduleproduct.service.product.ProductDataService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
@@ -33,25 +30,17 @@ public class OrderConsumer {
      * 주문 데이터 처리이기 때문에 요청은 admin으로 전달되더라도 여기에 두는게 맞다고 생각.
      */
 
-    private final ProductStore productStore;
+    private final ProductDataService productDataService;
 
-    private final ProductOptionStore productOptionStore;
-
-    private final CartReader cartReader;
-
-    private final CartStore cartStore;
+    private final CartDataService cartDataService;
 
     private final ProductOrderRepository productOrderRepository;
 
-    public OrderConsumer(ProductStore productStore,
-                         ProductOptionStore productOptionStore,
-                         CartReader cartReader,
-                         CartStore cartStore,
+    public OrderConsumer(ProductDataService productDataService,
+                         CartDataService cartDataService,
                          ProductOrderRepository productOrderRepository) {
-        this.productStore = productStore;
-        this.productOptionStore = productOptionStore;
-        this.cartReader = cartReader;
-        this.cartStore = cartStore;
+        this.productDataService = productDataService;
+        this.cartDataService = cartDataService;
         this.productOrderRepository = productOrderRepository;
     }
 
@@ -77,7 +66,7 @@ public class OrderConsumer {
             );
         }
 
-        productStore.patchProductSalesQuantity(productMap);
+        productDataService.patchProductSalesQuantity(productMap);
     }
 
     /**
@@ -96,7 +85,7 @@ public class OrderConsumer {
                                                 .stream()
                                                 .map(OrderProductDTO::toPatchOrderStockDTO)
                                                 .toList();
-        productOptionStore.patchOrderStock(patchDTO);
+        productDataService.patchOrderStock(patchDTO);
     }
 
     /**
@@ -116,19 +105,13 @@ public class OrderConsumer {
      */
     @RabbitListener(queues = "${rabbitmq.queue.orderCart.name}", concurrency = "3")
     public void consumeOrderCart(OrderCartDTO orderCartDTO) {
-        Long cartId = cartReader.findIdByUserId(orderCartDTO.getCartMemberDTO());
-        System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!cart consumer userId : " + orderCartDTO.getCartMemberDTO());
-        System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!cart consumer cartId : " + cartId);
-
-        List<Cart> testCart = cartReader.findAll();
-        System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!cart consumer testCart size : " + testCart.size());
-//        System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!cart consumer cartId : " + cartId);
+        Long cartId = cartDataService.getUserCartId(orderCartDTO.getCartMemberDTO());
 
         if(cartId != null){
-            List<CartDetail> cartDetailList = cartReader.findAllCartDetailByCartId(cartId);
+            List<CartDetail> cartDetailList = cartDataService.getCartDetailListByCartId(cartId);
 
             if(cartDetailList.size() == orderCartDTO.getProductOptionIds().size())
-                cartStore.deleteById(cartId);
+                cartDataService.deleteUserCart(cartId);
             else {
                 List<Long> deleteCartDetailIds = cartDetailList.stream()
                         .filter(cartDetail ->
@@ -139,7 +122,7 @@ public class OrderConsumer {
                         .map(CartDetail::getId)
                         .toList();
 
-                cartStore.deleteAllByIds(deleteCartDetailIds);
+                cartDataService.deleteSelectProductFromCartDetail(deleteCartDetailIds);
             }
         }else
             log.error("OrderConsumer::consumeOrderCart : cartId is null. cartMemberDTO is {}", orderCartDTO.getCartMemberDTO());

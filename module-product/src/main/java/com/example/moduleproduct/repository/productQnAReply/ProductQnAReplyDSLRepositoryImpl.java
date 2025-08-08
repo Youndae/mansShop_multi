@@ -1,5 +1,6 @@
 package com.example.moduleproduct.repository.productQnAReply;
 
+import com.example.modulecommon.model.dto.qna.out.QnADetailReplyDTO;
 import com.example.moduleproduct.model.dto.product.out.ProductDetailQnAReplyListDTO;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.CaseBuilder;
@@ -36,6 +37,27 @@ public class ProductQnAReplyDSLRepositoryImpl implements ProductQnAReplyDSLRepos
                 .where(productQnAReply.productQnA.id.in(qnaIds))
                 .orderBy(productQnAReply.productQnA.id.desc())
                 .orderBy(productQnAReply.productQnA.createdAt.asc())
+                .fetch();
+    }
+
+    @Override
+    public List<QnADetailReplyDTO> findAllByQnAId(long qnaId) {
+        return jpaQueryFactory.select(
+                        Projections.constructor(
+                                QnADetailReplyDTO.class,
+                                productQnAReply.id.as("replyId"),
+                                new CaseBuilder()
+                                        .when(productQnAReply.member.nickname.isNull())
+                                        .then(productQnAReply.member.userName)
+                                        .otherwise(productQnAReply.member.nickname)
+                                        .as("writer"),
+                                productQnAReply.replyContent,
+                                productQnAReply.updatedAt
+                        )
+                )
+                .from(productQnAReply)
+                .where(productQnAReply.productQnA.id.eq(qnaId))
+                .orderBy(productQnAReply.id.asc())
                 .fetch();
     }
 }

@@ -1,10 +1,10 @@
 package com.example.moduleauth.config.user;
 
-import com.example.moduleauth.port.output.AuthMemberReader;
 import com.example.modulecommon.customException.CustomBadCredentialsException;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.ErrorCode;
 
+import com.example.moduleuser.service.UserDataService;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,11 +18,11 @@ import org.springframework.stereotype.Service;
 public class CustomUserDetailsService implements UserDetailsService {
 
     @Setter(onMethod_ = {@Autowired})
-    private AuthMemberReader authMemberReader;
+    private UserDataService userDataService;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Member member = authMemberReader.findByLocalUserId(username);
+        Member member = userDataService.getMemberByLocalUserId(username);
 
         if(member == null)
             throw new CustomBadCredentialsException(ErrorCode.BAD_CREDENTIALS, ErrorCode.BAD_CREDENTIALS.getMessage());

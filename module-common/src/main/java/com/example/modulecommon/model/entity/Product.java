@@ -97,14 +97,6 @@ public class Product {
         this.id = productId;
     }
 
-    /*public void setPatchData(AdminProductPatchDTO patchDTO, Classification classification) {
-        this.productName = patchDTO.getProductName();
-        this.classification = classification;
-        this.productPrice = patchDTO.getPrice();
-        this.isOpen = patchDTO.getIsOpen();
-        this.productDiscount = patchDTO.getDiscount();
-    }*/
-
     @Override
     public String toString() {
         return "Product{" +
@@ -120,5 +112,17 @@ public class Product {
                 ", updatedAt=" + updatedAt +
                 ", productOptions=" + productOptions +
                 '}';
+    }
+
+    public void setPatchData(String productName,
+                             int price,
+                             Boolean isOpen,
+                             int discount,
+                             Classification classification) {
+        this.productName = productName;
+        this.classification = classification;
+        this.productPrice = price;
+        this.isOpen = isOpen;
+        this.productDiscount = discount;
     }
 }

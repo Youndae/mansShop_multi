@@ -1,6 +1,6 @@
 package com.example.moduleuser.service;
 
-import com.example.moduleauth.model.dto.member.UserSearchPwDTO;
+import com.example.moduleuser.model.dto.member.in.UserSearchPwDTO;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;

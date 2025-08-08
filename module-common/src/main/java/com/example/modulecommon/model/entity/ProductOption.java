@@ -46,13 +46,6 @@ public class ProductOption {
         this.stock = stock;
     }
 
-    /*public void patchOptionData(PatchOptionDTO dto) {
-        this.size = dto.getSize();
-        this.color = dto.getColor();
-        this.stock = dto.getOptionStock();
-        this.isOpen = dto.isOptionIsOpen();
-    }*/
-
     @Override
     public String toString() {
         return "ProductOption{" +
@@ -62,5 +55,15 @@ public class ProductOption {
                 ", stock=" + stock +
                 ", isOpen=" + isOpen +
                 '}';
+    }
+
+    public void patchOptionData(String size,
+                                String color,
+                                int optionStock,
+                                boolean optionIsOpen) {
+        this.size = size;
+        this.color = color;
+        this.stock = optionStock;
+        this.isOpen = optionIsOpen;
     }
 }

@@ -1,6 +1,6 @@
 package com.example.moduleauth.config.oauth;
 
-import com.example.moduleauth.config.jwt.JWTTokenProvider;
+import com.example.moduleauthapi.service.JWTTokenProvider;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

@@ -3,6 +3,7 @@ package com.example.moduleproduct.repository.productThumbnail;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -23,5 +24,13 @@ public class ProductThumbnailDSLRepositoryImpl implements ProductThumbnailDSLRep
                 .where(productThumbnail.product.id.eq(productId))
                 .orderBy(productThumbnail.imageName.asc())
                 .fetch();
+    }
+
+    @Override
+    @Transactional
+    public void deleteAllByImageNames(List<String> imageNames) {
+        jpaQueryFactory.delete(productThumbnail)
+                .where(productThumbnail.imageName.in(imageNames))
+                .execute();
     }
 }

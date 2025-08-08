@@ -6,7 +6,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication(
         scanBasePackages = {
                 "com.example.moduleuser",
-                "com.example.moduleauth"
+                "com.example.modulecommon",
+                "com.example.moduleconfig",
+                "com.example.moduleauthapi"
         }
 )
 public class ModuleUserApplication {

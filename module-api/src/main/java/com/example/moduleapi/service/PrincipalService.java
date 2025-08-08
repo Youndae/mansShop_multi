@@ -3,7 +3,7 @@ package com.example.moduleapi.service;
 import com.example.modulecommon.customException.CustomAccessDeniedException;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.ErrorCode;
-import com.example.moduleuser.service.reader.MemberReader;
+import com.example.moduleuser.service.UserDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -15,7 +15,7 @@ import java.security.Principal;
 @Slf4j
 public class PrincipalService {
 
-    private final MemberReader memberReader;
+    private final UserDataService userDataService;
 
     public String extractUserId(Principal principal) {
         if(principal == null) {
@@ -39,7 +39,7 @@ public class PrincipalService {
             throw new CustomAccessDeniedException(ErrorCode.ACCESS_DENIED, ErrorCode.ACCESS_DENIED.getMessage());
         }
 
-        Member member = memberReader.getMemberByUserIdOrElseAccessDenied(principal.getName());
+        Member member = userDataService.getMemberByUserIdOrElseAccessDenied(principal.getName());
 
         return member.getNickname() == null ? member.getUserName() : member.getNickname();
     }

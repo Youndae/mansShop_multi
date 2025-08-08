@@ -12,7 +12,7 @@ import com.example.modulecommon.model.entity.CartDetail;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.modulecommon.model.enumuration.Result;
-import com.example.moduleuser.service.reader.MemberReader;
+import com.example.moduleuser.service.UserDataService;
 import jakarta.servlet.http.Cookie;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,7 +40,7 @@ public class CartWriteUseCase {
 
     private final CartDomainService cartDomainService;
 
-    private final MemberReader memberReader;
+    private final UserDataService userDataService;
 
     @Transactional(rollbackFor = Exception.class)
     public CartCookieResponseDTO addProductForCart(List<AddCartDTO> addList,
@@ -51,7 +51,7 @@ public class CartWriteUseCase {
         List<CartDetail> savedDetails = new ArrayList<>();
 
         if(userCart == null) {
-            Member member = memberReader.getMemberByUserIdOrElseNull(cartMemberDTO.uid());
+            Member member = userDataService.getMemberByUserIdOrElseNull(cartMemberDTO.uid());
             if(member == null) {
                 log.info("CartWriteUseCase.addProductForCart :: member is null");
                 throw new IllegalArgumentException();

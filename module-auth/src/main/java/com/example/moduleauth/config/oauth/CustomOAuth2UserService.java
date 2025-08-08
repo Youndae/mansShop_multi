@@ -1,11 +1,10 @@
 package com.example.moduleauth.config.oauth;
 
-import com.example.moduleauth.port.output.AuthMemberReader;
-import com.example.moduleauth.port.output.AuthMemberStore;
 import com.example.modulecommon.model.dto.oAuth.*;
 import com.example.modulecommon.model.entity.Auth;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.OAuthProvider;
+import com.example.moduleuser.service.UserDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -19,9 +18,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
-    private final AuthMemberReader authMemberReader;
-
-    private final AuthMemberStore authMemberStore;
+    private final UserDataService userDataService;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -37,17 +34,17 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             oAuth2Response = new KakaoResponse(oAuth2User.getAttributes());
 
         String userId = oAuth2Response.getProvider() + "_" + oAuth2Response.getProviderId();
-        Member existsData = authMemberReader.findByIdOrElseNull(userId);
+        Member existsData = userDataService.getMemberByUserIdOrElseNull(userId);
 
         if(existsData == null) {
             Member member = OAuth2ResponseEntityConverter.toEntity(oAuth2Response, userId);
             member.addMemberAuth(new Auth().toMemberAuth());
-            authMemberStore.saveMember(member);
+            userDataService.saveMember(member);
             existsData = member;
         }else if(!existsData.getUserEmail().equals(oAuth2Response.getEmail()) || !existsData.getUserName().equals(oAuth2Response.getName())){
             existsData.setUserEmail(oAuth2Response.getEmail());
             existsData.setUserName(oAuth2Response.getName());
-            authMemberStore.saveMember(existsData);
+            userDataService.saveMember(existsData);
         }
 
         OAuth2DTO oAuth2DTO = new OAuth2DTO(existsData);

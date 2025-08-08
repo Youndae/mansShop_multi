@@ -3,11 +3,12 @@ package com.example.moduleadmin.rabbitMQ.consumer;
 import com.example.moduleadmin.repository.PeriodSalesSummaryRepository;
 import com.example.moduleadmin.repository.ProductSalesSummaryRepository;
 import com.example.modulecommon.model.entity.*;
+import com.example.moduleconfig.properties.RabbitMQProperties;
 import com.example.moduleorder.model.dto.in.OrderProductDTO;
 import com.example.moduleorder.model.dto.rabbitMQ.OrderProductSummaryDTO;
 import com.example.moduleorder.model.dto.rabbitMQ.PeriodSummaryQueueDTO;
 import com.example.moduleproduct.model.dto.product.business.ProductIdClassificationDTO;
-import com.example.moduleproduct.service.product.ProductReader;
+import com.example.moduleproduct.service.product.ProductDataService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
@@ -28,14 +29,14 @@ public class OrderSalesConsumer {
 
     private final ProductSalesSummaryRepository productSalesSummaryRepository;
 
-    private final ProductReader productReader;
+    private final ProductDataService productDataService;
 
     public OrderSalesConsumer(PeriodSalesSummaryRepository periodSalesSummaryRepository,
                               ProductSalesSummaryRepository productSalesSummaryRepository,
-                              ProductReader productReader) {
+                              ProductDataService productDataService) {
         this.periodSalesSummaryRepository = periodSalesSummaryRepository;
         this.productSalesSummaryRepository = productSalesSummaryRepository;
-        this.productReader = productReader;
+        this.productDataService = productDataService;
     }
 
     @RabbitListener(queues = "${rabbitmq.queue.periodSalesSummary.name}", concurrency = "1")
@@ -155,7 +156,7 @@ public class OrderSalesConsumer {
                                           List<OrderProductDTO> requestDTO,
                                           List<String> productIds,
                                           LocalDate periodMonth) {
-        List<ProductIdClassificationDTO> searchDTO = productReader.findClassificationIdAndProductIdByProductIds(productIds);
+        List<ProductIdClassificationDTO> searchDTO = productDataService.getClassificationIdAndProductIdByProductIds(productIds);
         for(OrderProductDTO dto : requestDTO) {
             String productId = dto.getProductId();
 

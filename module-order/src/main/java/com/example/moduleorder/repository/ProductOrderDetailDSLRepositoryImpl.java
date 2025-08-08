@@ -1,5 +1,6 @@
 package com.example.moduleorder.repository;
 
+import com.example.moduleorder.model.dto.admin.business.AdminOrderDetailListDTO;
 import com.example.moduleorder.model.dto.business.OrderListDetailDTO;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -12,6 +13,7 @@ import static com.example.modulecommon.model.entity.QProductOrder.productOrder;
 import static com.example.modulecommon.model.entity.QProductOrderDetail.productOrderDetail;
 import static com.example.modulecommon.model.entity.QProduct.product;
 import static com.example.modulecommon.model.entity.QProductOption.productOption;
+import static com.example.modulecommon.model.entity.QClassification.classification;
 
 @Repository
 @RequiredArgsConstructor
@@ -43,6 +45,31 @@ public class ProductOrderDetailDSLRepositoryImpl implements ProductOrderDetailDS
                 .innerJoin(productOrderDetail.product, product)
                 .where(productOrderDetail.productOrder.id.in(orderIds))
                 .orderBy(productOrderDetail.product.id.asc())
+                .fetch();
+    }
+
+    @Override
+    public List<AdminOrderDetailListDTO> findAllAdminOrderDetailByOrderIds(List<Long> orderIds) {
+        return jpaQueryFactory.select(
+                        Projections.constructor(
+                                AdminOrderDetailListDTO.class,
+                                productOrder.id.as("orderId"),
+                                classification.id.as("classification"),
+                                product.productName,
+                                productOption.size,
+                                productOption.color,
+                                productOrderDetail.orderDetailCount.as("count"),
+                                productOrderDetail.orderDetailPrice.as("price"),
+                                productOrderDetail.orderReviewStatus.as("reviewStatus")
+                        )
+                )
+                .from(productOrderDetail)
+                .innerJoin(productOrderDetail.product, product)
+                .innerJoin(productOrderDetail.productOption, productOption)
+                .innerJoin(productOrderDetail.productOrder, productOrder)
+                .innerJoin(product.classification, classification)
+                .where(productOrderDetail.productOrder.id.in(orderIds))
+                .orderBy(productOrder.id.desc())
                 .fetch();
     }
 }

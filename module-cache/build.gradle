@@ -1,0 +1,42 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.4.0'
+    id 'io.spring.dependency-management' version '1.1.6'
+    id 'java-test-fixtures'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs += 'build/generated/sources/annotationProcessor/java/main'
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':module-config')
+    implementation project(':module-common')
+    implementation project(':module-order')
+    implementation project(':module-mypage')
+    implementation project(':module-product')
+
+    testImplementation(testFixtures(project(':module-common')))
+}
+
+tasks.register("prepareKotlinBuildScriptModel"){}
+
+tasks.bootJar { enabled = false }
+tasks.jar { enabled = true }

@@ -1,6 +1,6 @@
 package com.example.moduleapi.utils;
 
-import com.example.moduleauth.config.jwt.JWTTokenProvider;
+import com.example.moduleauthapi.service.JWTTokenProvider;
 import com.example.modulecommon.customException.CustomAccessDeniedException;
 import com.example.modulecommon.model.enumuration.ErrorCode;
 import jakarta.servlet.http.Cookie;

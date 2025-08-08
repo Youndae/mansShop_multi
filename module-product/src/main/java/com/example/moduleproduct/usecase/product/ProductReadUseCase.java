@@ -13,7 +13,7 @@ import com.example.moduleproduct.service.product.ProductDataService;
 import com.example.moduleproduct.service.product.ProductDomainService;
 import com.example.moduleproduct.service.productLike.ProductLikeDataService;
 import com.example.moduleproduct.service.productQnA.ProductQnADataService;
-import com.example.moduleproduct.service.review.ProductReviewDataService;
+import com.example.moduleproduct.service.productReview.ProductReviewDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
@@ -38,7 +38,7 @@ public class ProductReadUseCase {
     private final ProductLikeDataService productLikeDataService;
 
     public ProductDetailDTO getProductDetail(String productId, String userId) {
-        Product product = productDataService.getProductById(productId);
+        Product product = productDataService.getProductByIdOrElseIllegal(productId);
 
         boolean likeStatus = false;
         if(userId != null)

@@ -15,7 +15,8 @@ public enum Result {
     ERROR("error"),
     NOTFOUND("not found"),
     DUPLICATE("duplicated"),
-    NO_DUPLICATE("No duplicates");
+    NO_DUPLICATE("No duplicates"),
+    EMPTY("empty");
 
     private final String resultKey;
 }

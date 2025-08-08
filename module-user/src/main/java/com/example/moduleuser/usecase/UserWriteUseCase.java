@@ -1,13 +1,10 @@
 package com.example.moduleuser.usecase;
 
-import com.example.moduleauth.config.user.CustomUser;
-import com.example.moduleauth.model.dto.member.UserSearchPwDTO;
 import com.example.modulecommon.customException.CustomBadCredentialsException;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.modulecommon.model.enumuration.Result;
 import com.example.moduleuser.model.dto.member.in.*;
-import com.example.moduleuser.model.dto.member.out.UserStatusResponseDTO;
 import com.example.moduleuser.service.UserDataService;
 import com.example.moduleuser.service.UserDomainService;
 import com.example.moduleuser.service.UserExternalService;
@@ -39,18 +36,17 @@ public class UserWriteUseCase {
         return Result.OK.getResultKey();
     }
 
-    public UserStatusResponseDTO loginProc(LoginDTO loginDTO,
-                                           HttpServletRequest request,
-                                           HttpServletResponse response) {
+    public String loginProc(String userId,
+                           HttpServletRequest request,
+                           HttpServletResponse response) {
 
         try {
-            CustomUser authenticateUser = userDomainService.loginAuthenticated(loginDTO);
-            UserStatusResponseDTO responseDTO = userDomainService.getLoginUserStatusResponse(authenticateUser, request, response);
+            String statusResponse = userDomainService.getLoginUserStatusResponse(userId, request, response);
 
-            if(responseDTO == null)
+            if(statusResponse.equals(Result.FAIL.getResultKey()))
                 throw new CustomBadCredentialsException(ErrorCode.BAD_CREDENTIALS, ErrorCode.BAD_CREDENTIALS.getMessage());
 
-            return responseDTO;
+            return statusResponse;
         }catch (Exception e) {
             log.info("login fail : {}", e.getMessage());
             throw new CustomBadCredentialsException(ErrorCode.BAD_CREDENTIALS, ErrorCode.BAD_CREDENTIALS.getMessage());
@@ -123,11 +119,20 @@ public class UserWriteUseCase {
             return Result.ERROR.getResultKey();
         }
 
-        Member member = userDataService.getMemberByIdOrElseNull(resetDTO.userId());
+        Member member = userDataService.getMemberByUserIdOrElseNull(resetDTO.userId());
         if(member == null)
             throw new IllegalArgumentException();
 
         member.setUserPw(resetDTO.userPw());
+        userDataService.saveMember(member);
+
+        return Result.OK.getResultKey();
+    }
+
+    public String patchMyPageUserInfo(MyPageInfoPatchDTO infoDTO, String userId) {
+        Member member = userDataService.getMemberByUserIdOrElseIllegal(userId);
+        member.patchUser(infoDTO.nickname(), infoDTO.phone(), infoDTO.mail());
+
         userDataService.saveMember(member);
 
         return Result.OK.getResultKey();

@@ -1,15 +1,13 @@
 package com.example.modulecommon.model.dto.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.data.domain.Page;
 
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString
 public class PagingMappingDTO {
     private Long totalElements;
 
@@ -21,19 +19,10 @@ public class PagingMappingDTO {
 
 
     public PagingMappingDTO(Long totalElements, int page, int amount) {
-        long totalPages = 0;
-
-        if(totalElements != null){
-            totalPages = totalElements / amount;
-
-            if(totalElements % amount != 0)
-                totalPages += 1;
-        }
-
         this.totalElements = totalElements;
-        this.empty = totalElements == null;
+        this.empty = totalElements == 0L;
         this.number = page;
-        this.totalPages = totalPages;
+        this.totalPages = (int) Math.ceil((double) totalElements / amount);
     }
 
     public <T> PagingMappingDTO (Page<T> pageObject) {

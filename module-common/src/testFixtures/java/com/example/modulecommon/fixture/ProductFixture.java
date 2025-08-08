@@ -87,4 +87,28 @@ public class ProductFixture {
 
         return infoImages;
     }
+
+    public static List<Product> createAdditionalProduct (int startIdx, int endIdx, Classification classification) {
+        List<Product> result = new ArrayList<>();
+        for(int i = startIdx; i < startIdx + endIdx; i++) {
+            Product product = createProduct(i, classification);
+            createSaveOptionAndThumbnailAndInfoImage(product, (i - (startIdx - 1)) * 3);
+
+            result.add(product);
+        }
+
+        return result;
+    }
+
+    public static List<Product> createDefaultProductByOUTER(int count) {
+        List<Product> result = new ArrayList<>();
+        for(int i = 1; i <= count; i++) {
+            Product product = createProduct(i, Classification.builder().id("OUTER").build());
+            createSaveOptionAndThumbnailAndInfoImage(product, (i * 3));
+
+            result.add(product);
+        }
+
+        return result;
+    }
 }
