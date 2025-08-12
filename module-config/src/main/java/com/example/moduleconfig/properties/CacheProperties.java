@@ -19,13 +19,6 @@ public class CacheProperties {
         this.count = count;
     }
 
-    @Override
-    public String toString() {
-        return "CacheProperties{" +
-                "count=" + count +
-                '}';
-    }
-
     public static class Count {
         private long ttl;
 
@@ -35,13 +28,6 @@ public class CacheProperties {
 
         public void setTtl(long ttl) {
             this.ttl = ttl;
-        }
-
-        @Override
-        public String toString() {
-            return "Count{" +
-                    "ttl=" + ttl +
-                    '}';
         }
     }
 }

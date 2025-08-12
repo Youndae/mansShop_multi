@@ -31,7 +31,7 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 import java.util.Map;
 
-@Tag(name = "ProductController")
+@Tag(name = "Product Controller")
 @RestController
 @RequestMapping("/api/product")
 @RequiredArgsConstructor
@@ -170,7 +170,6 @@ public class ProductController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PostMapping("/qna")
-    @PreAuthorize("hasAnyRole('ROLE_MEMBER', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public ResponseEntity<ResponseMessageDTO> postProductQnA(@RequestBody ProductQnAPostDTO postDTO, Principal principal) {
 
         String userId = principalService.extractUserId(principal);
@@ -192,7 +191,6 @@ public class ProductController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PostMapping("/like")
-    @PreAuthorize("hasAnyRole('ROLE_MEMBER', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public ResponseEntity<ResponseMessageDTO> likeProduct(@Schema(name = "productId", description = "상품 아이디")
                                                           @RequestBody Map<String, String> productIdMap,
                                                           Principal principal) {
@@ -229,7 +227,6 @@ public class ProductController {
             in = ParameterIn.PATH
     )
     @DeleteMapping("/like/{productId}")
-    @PreAuthorize("hasAnyRole('ROLE_MEMBER', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public ResponseEntity<ResponseMessageDTO> deLikeProduct(@PathVariable(name = "productId") String productId,
                                                             Principal principal) {
 

@@ -24,17 +24,17 @@ public record AdminProductDetailDTO(
                                 List<String> infoImageList,
                                 List<AdminProductOptionDTO> productOptionList) {
         this(
-                productId
-                , product.getClassification().getId()
-                , product.getProductName()
-                , product.getThumbnail()
-                , thumbnailList
-                , infoImageList
-                , productOptionList
-                , product.getProductPrice()
-                , product.isOpen()
-                , product.getProductSalesQuantity()
-                , product.getProductDiscount()
+                productId,
+                product.getClassification().getId(),
+                product.getProductName(),
+                product.getThumbnail(),
+                thumbnailList,
+                infoImageList,
+                productOptionList,
+                product.getProductPrice(),
+                product.isOpen(),
+                product.getProductSalesQuantity(),
+                product.getProductDiscount()
         );
     }
 }

@@ -3,7 +3,6 @@ package com.example.moduleadmin.rabbitMQ.consumer;
 import com.example.moduleadmin.repository.PeriodSalesSummaryRepository;
 import com.example.moduleadmin.repository.ProductSalesSummaryRepository;
 import com.example.modulecommon.model.entity.*;
-import com.example.moduleconfig.properties.RabbitMQProperties;
 import com.example.moduleorder.model.dto.in.OrderProductDTO;
 import com.example.moduleorder.model.dto.rabbitMQ.OrderProductSummaryDTO;
 import com.example.moduleorder.model.dto.rabbitMQ.PeriodSummaryQueueDTO;

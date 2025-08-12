@@ -3,6 +3,7 @@ package com.example.moduleorder.service;
 import com.example.modulecart.model.dto.business.CartMemberDTO;
 import com.example.modulecommon.model.entity.*;
 import com.example.modulecommon.model.enumuration.OrderStatus;
+import com.example.modulecommon.utils.PhoneNumberUtils;
 import com.example.moduleorder.model.dto.business.OrderDataDTO;
 import com.example.moduleorder.model.dto.business.OrderListDetailDTO;
 import com.example.moduleorder.model.dto.business.ProductOrderDataDTO;
@@ -88,7 +89,7 @@ public class OrderDomainServiceUnitTest {
         ProductOrder resultOrder = result.productOrder();
         assertEquals(orderFixture.getMember().getUserId(), resultOrder.getMember().getUserId());
         assertEquals(orderFixture.getRecipient(), resultOrder.getRecipient());
-        assertEquals(orderFixture.getOrderPhone(), resultOrder.getOrderPhone());
+        assertEquals(PhoneNumberUtils.format(orderFixture.getOrderPhone()), resultOrder.getOrderPhone());
         assertEquals(orderFixture.getOrderAddress(), resultOrder.getOrderAddress());
         assertEquals(orderFixture.getOrderMemo(), resultOrder.getOrderMemo());
         assertEquals(orderFixture.getOrderTotalPrice(), resultOrder.getOrderTotalPrice());

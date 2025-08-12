@@ -40,6 +40,6 @@ public class CartDetail {
     }
 
     public void addCartCount(int cartCount) {
-        this.cartCount = this.cartCount + cartCount;
+        this.cartCount += cartCount;
     }
 }

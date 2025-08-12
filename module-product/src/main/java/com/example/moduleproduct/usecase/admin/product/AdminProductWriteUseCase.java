@@ -56,6 +56,7 @@ public class AdminProductWriteUseCase {
         return resultId;
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public String patchProduct(String productId,
                                List<Long> deleteOptionList,
                                AdminProductPatchDTO patchDTO,

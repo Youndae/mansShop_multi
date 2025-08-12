@@ -3,6 +3,7 @@ package com.example.moduleorder.model.dto.in;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.entity.ProductOrder;
 import com.example.modulecommon.model.enumuration.OrderStatus;
+import com.example.modulecommon.utils.PhoneNumberUtils;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 
@@ -44,7 +45,7 @@ public record PaymentDTO(
                                 .build()
                 )
                 .recipient(recipient)
-                .orderPhone(phone)
+                .orderPhone(PhoneNumberUtils.format(phone))
                 .orderAddress(address)
                 .orderMemo(orderMemo)
                 .orderTotalPrice(totalPrice)

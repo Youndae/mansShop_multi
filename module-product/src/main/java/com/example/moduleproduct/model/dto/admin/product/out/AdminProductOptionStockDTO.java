@@ -11,10 +11,10 @@ public record AdminProductOptionStockDTO(
 
     public AdminProductOptionStockDTO(AdminOptionStockDTO productOption) {
         this(
-                productOption.size()
-                , productOption.color()
-                , productOption.optionStock()
-                , productOption.optionIsOpen()
+                productOption.size(),
+                productOption.color(),
+                productOption.optionStock(),
+                productOption.optionIsOpen()
         );
     }
 }

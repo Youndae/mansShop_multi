@@ -6,6 +6,7 @@ import com.example.moduleauthapi.model.dto.TokenDTO;
 import com.example.moduleauthapi.service.JWTTokenService;
 import com.example.modulecommon.model.dto.response.ResponseMessageDTO;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.WebUtils;
 
+@Tag(name = "Token Controller")
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor

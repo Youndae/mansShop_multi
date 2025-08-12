@@ -1,5 +1,6 @@
 package com.example.modulecommon.model.entity;
 
+import com.example.modulecommon.utils.PhoneNumberUtils;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -76,24 +77,5 @@ public class ProductOrder {
 
     public void setProductCount(int productCount) {
         this.productCount = productCount;
-    }
-
-
-    @Override
-    public String toString() {
-        return "ProductOrder{" +
-                "id=" + id +
-                ", member=" + member +
-                ", recipient='" + recipient + '\'' +
-                ", orderPhone='" + orderPhone + '\'' +
-                ", orderAddress='" + orderAddress + '\'' +
-                ", orderMemo='" + orderMemo + '\'' +
-                ", orderTotalPrice=" + orderTotalPrice +
-                ", deliveryFee=" + deliveryFee +
-                ", createdAt=" + createdAt +
-                ", paymentType='" + paymentType + '\'' +
-                ", orderStat='" + orderStat + '\'' +
-                ", productCount=" + productCount +
-                '}';
     }
 }

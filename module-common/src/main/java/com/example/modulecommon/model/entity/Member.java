@@ -1,7 +1,6 @@
 package com.example.modulecommon.model.entity;
 
 import com.example.modulecommon.model.dto.oAuth.OAuth2DTO;
-import com.example.modulecommon.model.enumuration.OAuthProvider;
 import com.example.modulecommon.utils.PhoneNumberUtils;
 import jakarta.persistence.*;
 import lombok.*;

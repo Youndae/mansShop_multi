@@ -115,10 +115,9 @@ public class OrderWriteUseCase {
                 handleOrderMQFallback(paymentDTO, cartMemberDTO, e);
                 return Result.OK.getResultKey();
             }
+        }finally {
+            orderCookieWriter.deleteOrderTokenCookie(response);
         }
-
-
-        //TODO: response 이후 controller에서는 orderToken Cookie의 제거 수행 필요.
     }
 
     private void handleOrderFallback(PaymentDTO paymentDTO, CartMemberDTO cartMemberDTO, Exception e) {

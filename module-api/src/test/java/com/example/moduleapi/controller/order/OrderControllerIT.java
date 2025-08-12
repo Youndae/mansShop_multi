@@ -18,6 +18,7 @@ import com.example.modulecommon.model.entity.*;
 import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.modulecommon.model.enumuration.OrderStatus;
 import com.example.modulecommon.model.enumuration.Result;
+import com.example.modulecommon.utils.PhoneNumberUtils;
 import com.example.moduleorder.model.dto.business.OrderDataDTO;
 import com.example.moduleorder.model.dto.in.OrderProductDTO;
 import com.example.moduleorder.model.dto.in.OrderProductRequestDTO;
@@ -291,7 +292,7 @@ public class OrderControllerIT {
         ProductOrder saveOrder = saveOrderList.get(0);
         assertEquals(paymentMember.getUserId(), saveOrder.getMember().getUserId());
         assertEquals(paymentDTO.recipient(), saveOrder.getRecipient());
-        assertEquals(paymentDTO.phone(), saveOrder.getOrderPhone());
+        assertEquals(PhoneNumberUtils.format(paymentDTO.phone()), saveOrder.getOrderPhone());
         assertEquals(paymentDTO.address(), saveOrder.getOrderAddress());
         assertEquals(paymentDTO.totalPrice(), saveOrder.getOrderTotalPrice());
         assertEquals(paymentDTO.deliveryFee(), saveOrder.getDeliveryFee());

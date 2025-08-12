@@ -8,6 +8,7 @@ import com.example.moduleapi.annotation.swagger.SwaggerAuthentication;
 import com.example.moduleapi.model.response.ResponseIdDTO;
 import com.example.modulecommon.model.dto.response.ResponseMessageDTO;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "Admin FailedData Controller")
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor

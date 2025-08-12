@@ -4,7 +4,6 @@ import com.example.moduleapi.annotation.swagger.DefaultApiResponse;
 import com.example.moduleapi.annotation.swagger.SwaggerAuthentication;
 import com.example.moduleapi.service.PrincipalService;
 import com.example.moduleapi.utils.CartUtils;
-import com.example.modulecart.model.dto.business.CartMemberDTO;
 import com.example.modulecart.model.dto.in.AddCartDTO;
 import com.example.modulecart.model.dto.out.CartCookieResponseDTO;
 import com.example.modulecart.model.dto.out.CartDetailDTO;

@@ -7,7 +7,6 @@ import com.example.moduleorder.service.OrderDataService;
 import com.example.moduleorder.service.OrderExternalService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
 @Service

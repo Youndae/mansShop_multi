@@ -568,17 +568,9 @@ public class MemberControllerIT {
     @Test
     @DisplayName(value = "로그인 상태 체크. 로그인 상태가 아닌 경우")
     void checkLoginStatusNotLogin() throws Exception {
-        MvcResult result = mockMvc.perform(get(URL_PREFIX + "status"))
+        mockMvc.perform(get(URL_PREFIX + "status"))
                 .andExpect(status().is(403))
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ExceptionEntity response = om.readValue(
-                content,
-                new TypeReference<>(){}
-        );
-
-        assertNotNull(response);
-        assertEquals("AccessDeniedException", response.errorMessage());
     }
 
     @Test

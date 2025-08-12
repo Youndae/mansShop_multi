@@ -3,6 +3,7 @@ package com.example.moduleapi.controller.notification;
 import com.example.moduleapi.service.PrincipalService;
 import com.example.modulenotification.usecase.NotificationWriteUseCase;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.security.Principal;
 
+@Tag(name = "Notification Controller")
 @RestController
 @RequestMapping("/api/notification")
 @RequiredArgsConstructor

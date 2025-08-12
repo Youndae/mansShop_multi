@@ -7,10 +7,10 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public enum MailSuffix {
 
-    NAVER("naver")
-    , DAUM("daum")
-    , GOOGLE("google")
-    , NONE("none");
+    NAVER("naver"),
+    DAUM("daum"),
+    GOOGLE("google"),
+    NONE("none");
 
     private final String mailSuffixType;
 
