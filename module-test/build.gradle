@@ -33,22 +33,6 @@ dependencies {
     testImplementation(project(':module-mypage'))
     testImplementation(project(':module-notification'))
 
-    /*implementation project(':module-common')
-    implementation project(':module-config')
-    implementation project(':module-auth')
-    implementation project(':module-auth-api')
-    implementation project(':module-api')
-    implementation project(':module-admin')
-    implementation project(':module-product')
-    implementation project(':module-user')
-    implementation project(':module-order')
-    implementation project(':module-cart')
-    implementation project(':module-cache')
-    implementation project(':module-file')
-    implementation project(':module-mypage')
-    implementation project(':module-notification')*/
-
-
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-mail:3.3.0'
     implementation 'org.springframework.boot:spring-boot-starter-webflux:3.4.0'

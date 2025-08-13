@@ -26,6 +26,8 @@ out/
 !**/src/main/**/out/
 !**/src/test/**/out/
 **/logback-spring/
+.env.dev
+.env.test
 
 ### NetBeans ###
 /nbproject/private/

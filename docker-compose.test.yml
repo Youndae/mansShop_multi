@@ -1,0 +1,13 @@
+# 테스트 환경 compose
+# 개발 환경인 docker-compose와 같이 실행
+# Local Docker
+version: "3.8"
+
+services:
+  mailhog:
+    container_name: mailhog
+    image: jcalonso/mailhog:latest
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"

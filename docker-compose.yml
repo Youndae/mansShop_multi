@@ -1,0 +1,39 @@
+# 개발 환경 compose
+# Local Docker
+version: "3.8"
+
+services:
+  mysql:
+    container_name: docker_mysql_test
+    image: mysql:8.3.0
+    restart: unless-stopped
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./db/ddl/tableDDL.sql:/docker-entrypoint-initdb.d/tableDDL.sql
+    environment:
+      MYSQL_ROOT_PASSWORD: dm1234
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-mansShop}
+  redis:
+    container_name: docker_redis
+    image: redis:latest
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+  rabbitmq:
+    container_name: docker_rabbitmq
+    image: rabbitmq:3.12-management
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin123
+
+volumes:
+  mysql-data:
+  redis-data:

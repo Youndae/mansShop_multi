@@ -1,0 +1,28 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea/
+.vscode/
+
+.DS_Store
+
+# build
+build/
+out/
+target/
+.gradle/
+*.jar
+*.war
+
+# log file
+*.log
+
+# envritionment
+.env
+.env.*
+
+# test / coverage
+test/
+coverage/
