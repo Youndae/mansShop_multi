@@ -1,7 +1,7 @@
 package com.example.moduleuser.service;
 
 import com.example.moduleauthapi.service.JWTTokenProvider;
-import com.example.modulecommon.customException.CustomAccessDeniedException;
+import com.example.modulecommon.customException.CustomBadCredentialsException;
 import com.example.modulecommon.customException.CustomTokenStealingException;
 import com.example.modulecommon.model.entity.Auth;
 import com.example.modulecommon.model.entity.Member;
@@ -79,7 +79,7 @@ public class UserDomainService {
 
         if(temporaryClaimByUserId.equals(Result.WRONG_TOKEN.getResultKey())
                 || temporaryClaimByUserId.equals(Result.TOKEN_EXPIRATION.getResultKey()))
-            throw new CustomAccessDeniedException(ErrorCode.ACCESS_DENIED, ErrorCode.ACCESS_DENIED.getMessage());
+            throw new CustomBadCredentialsException(ErrorCode.UNAUTHORIZED, ErrorCode.UNAUTHORIZED.getMessage());
         else if(temporaryClaimByUserId.equals(Result.TOKEN_STEALING.getResultKey()))
             throw new CustomTokenStealingException(ErrorCode.TOKEN_STEALING, ErrorCode.TOKEN_STEALING.getMessage());
 

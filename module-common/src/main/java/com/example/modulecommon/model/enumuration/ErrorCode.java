@@ -2,22 +2,27 @@ package com.example.modulecommon.model.enumuration;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 
 @Getter
 @RequiredArgsConstructor
 public enum ErrorCode {
 
-    ACCESS_DENIED(403, "AccessDeniedException"),
-    BAD_CREDENTIALS(403, "BadCredentialsException"),
-    TOKEN_STEALING(800, "TokenStealingException"),
-    TOKEN_EXPIRED(401, "TokenExpiredException"),
-    NOT_FOUND(400, "NotFoundException"),
-    NULL_POINTER(500, "NullPointerException"),
-    ORDER_SESSION_EXPIRED(440, "OrderSessionExpiredException"),
-    ORDER_DATA_FAILED(441, "OrderDataFailedException"),
-    DB_CONNECTION_ERROR(500, "DBConnectionError");
+    BAD_REQUEST(HttpStatus.BAD_REQUEST, "BAD_REQUEST"),
+    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED"),
+    TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "TOKEN_INVALID"),
+    TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "TOKEN_EXPIRED"),
+    TOKEN_STEALING(HttpStatus.UNAUTHORIZED, "TOKEN_STEALING"),
+    ORDER_SESSION_EXPIRED(HttpStatus.UNAUTHORIZED, "ORDER_SESSION_EXPIRED"),
+    FORBIDDEN(HttpStatus.FORBIDDEN, "FORBIDDEN"),
+    CONFLICT(HttpStatus.CONFLICT, "CONFLICT"),
+    UNPROCESSABLE_ENTITY(HttpStatus.UNPROCESSABLE_ENTITY, "UNPROCESSABLE_ENTITY"),
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR"),
+    ORDER_DATA_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "ORDER_DATA_FAILED"),
+    DB_CONNECTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "DB_CONNECTION_ERROR"),
+    BAD_GATEWAY(HttpStatus.BAD_GATEWAY, "BAD_GATEWAY");
 
-    private final int httpStatus;
+    private final HttpStatus httpStatus;
 
     private final String message;
 }

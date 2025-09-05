@@ -2,6 +2,7 @@ package com.example.moduletest.user.service;
 
 import com.example.moduleauthapi.service.JWTTokenProvider;
 import com.example.modulecommon.customException.CustomAccessDeniedException;
+import com.example.modulecommon.customException.CustomBadCredentialsException;
 import com.example.modulecommon.fixture.MemberAndAuthFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.entity.Member;
@@ -134,7 +135,7 @@ public class UseDomainServiceIT {
         Cookie temporaryCookie = new Cookie(temporaryHeader, "WrongTokenValue");
 
         assertThrows(
-                CustomAccessDeniedException.class,
+                CustomBadCredentialsException.class,
                 () -> userDomainService.validateTemporaryClaimByUserId(temporaryCookie)
         );
     }

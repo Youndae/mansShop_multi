@@ -20,7 +20,6 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -52,8 +51,7 @@ public class MainController {
         MainPageDTO mainPageDTO = new MainPageDTO("BEST");
         List<MainListResponseDTO> responseDTO = mainReadUseCase.getBestProductList(mainPageDTO);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(responseDTO);
+        return ResponseEntity.ok(responseDTO);
     }
 
     @Operation(summary = "메인 NEW 상품 카테고리 조회")
@@ -63,8 +61,7 @@ public class MainController {
         MainPageDTO mainPageDTO = new MainPageDTO("NEW");
         List<MainListResponseDTO> responseDTO = mainReadUseCase.getNewProductList(mainPageDTO);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(responseDTO);
+        return ResponseEntity.ok(responseDTO);
     }
 
 

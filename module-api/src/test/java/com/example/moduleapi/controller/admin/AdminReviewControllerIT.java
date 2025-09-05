@@ -9,12 +9,10 @@ import com.example.modulecommon.fixture.MemberAndAuthFixture;
 import com.example.modulecommon.fixture.ProductFixture;
 import com.example.modulecommon.fixture.ProductReviewFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
-import com.example.modulecommon.model.dto.response.ResponseMessageDTO;
 import com.example.modulecommon.model.entity.*;
 import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.modulecommon.model.enumuration.NotificationType;
 import com.example.modulecommon.model.enumuration.RedisCaching;
-import com.example.modulecommon.model.enumuration.Result;
 import com.example.modulecommon.utils.PaginationUtils;
 import com.example.modulenotification.repository.NotificationRepository;
 import com.example.moduleproduct.model.dto.admin.review.in.AdminReviewReplyRequestDTO;
@@ -533,7 +531,7 @@ public class AdminReviewControllerIT {
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue)))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -542,7 +540,7 @@ public class AdminReviewControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -552,22 +550,14 @@ public class AdminReviewControllerIT {
         AdminReviewReplyRequestDTO insertDTO = new AdminReviewReplyRequestDTO(fixture.getId(), "test insert review reply content");
         String requestDTO = om.writeValueAsString(insertDTO);
 
-        MvcResult result = mockMvc.perform(post(URL_PREFIX + "review/reply")
+        mockMvc.perform(post(URL_PREFIX + "review/reply")
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(requestDTO))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         ProductReview patchData = productReviewRepository.findById(fixture.getId()).orElse(null);
         assertNotNull(patchData);
@@ -604,7 +594,7 @@ public class AdminReviewControllerIT {
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(requestDTO))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -613,7 +603,7 @@ public class AdminReviewControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -629,7 +619,7 @@ public class AdminReviewControllerIT {
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(requestDTO))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -638,7 +628,7 @@ public class AdminReviewControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
 
         ProductReview patchData = productReviewRepository.findById(fixture.getId()).orElse(null);
         assertNotNull(patchData);

@@ -274,10 +274,7 @@ public class OrderWriteUseCaseIT {
                         any(ProductOrder.class)
                 );
 
-        String result = assertDoesNotThrow(() -> orderWriteUseCase.orderDataProcessAfterPayment(paymentDTO, null, null, orderToken, response));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> orderWriteUseCase.orderDataProcessAfterPayment(paymentDTO, null, null, orderToken, response));
 
         List<ProductOrder> saveOrder = productOrderRepository.findAll();
         assertFalse(saveOrder.isEmpty());
@@ -351,10 +348,7 @@ public class OrderWriteUseCaseIT {
                         any(ProductOrder.class)
                 );
 
-        String result = assertDoesNotThrow(() -> orderWriteUseCase.orderDataProcessAfterPayment(paymentDTO, null, member.getUserId(), orderToken, response));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> orderWriteUseCase.orderDataProcessAfterPayment(paymentDTO, null, member.getUserId(), orderToken, response));
 
         List<ProductOrder> saveOrder = productOrderRepository.findAll();
         assertFalse(saveOrder.isEmpty());
@@ -567,10 +561,7 @@ public class OrderWriteUseCaseIT {
 
         orderRedisTemplate.opsForValue().set(ORDER_TOKEN, fixtureOrderDataVO);
 
-        String result = assertDoesNotThrow(() -> orderWriteUseCase.validateOrderData(requestDTO, member.getUserId(), orderToken, response));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> orderWriteUseCase.validateOrderData(requestDTO, member.getUserId(), orderToken, response));
 
         orderRedisTemplate.delete(ORDER_TOKEN);
     }

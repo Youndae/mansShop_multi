@@ -42,7 +42,7 @@ public class CartUtils {
      */
     public void exceptionAfterValidateCartMemberDTO(Cookie cartCookie, String userId) {
         if(!validateCartMemberDTO(cartCookie, userId))
-            throw new CustomAccessDeniedException(ErrorCode.ACCESS_DENIED, ErrorCode.ACCESS_DENIED.getMessage());
+            throw new CustomAccessDeniedException(ErrorCode.FORBIDDEN, ErrorCode.FORBIDDEN.getMessage());
     }
 
     public boolean validateCartMemberDTO(Cookie cartCookie, String userId) {

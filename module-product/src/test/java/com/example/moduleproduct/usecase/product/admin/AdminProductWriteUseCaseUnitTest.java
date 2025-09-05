@@ -547,9 +547,7 @@ public class AdminProductWriteUseCaseUnitTest {
         when(productDataService.getProductListByIds(anyList())).thenReturn(productFixture);
         doNothing().when(productDataService).patchProductDiscount(any(AdminDiscountPatchDTO.class));
 
-        String result = assertDoesNotThrow(() -> adminProductWriteUseCase.patchDiscountProduct(patchDTO));
-
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> adminProductWriteUseCase.patchDiscountProduct(patchDTO));
     }
 
     @Test

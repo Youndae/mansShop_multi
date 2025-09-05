@@ -40,7 +40,7 @@ public class UserDataService {
 
     private final AuthRepository authRepository;
 
-    public void saveMemberAndAuthToJoin(Member member) {
+    public void saveMemberAndAuthToJoin(Member member) throws Exception {
         Auth auth = Auth.builder()
                         .auth(Role.MEMBER.getRole())
                         .build();
@@ -65,8 +65,8 @@ public class UserDataService {
         return memberRepository.findById(userId)
                 .orElseThrow(() ->
                         new CustomAccessDeniedException(
-                                ErrorCode.ACCESS_DENIED,
-                                ErrorCode.ACCESS_DENIED.getMessage()
+                                ErrorCode.FORBIDDEN,
+                                ErrorCode.FORBIDDEN.getMessage()
                         )
                 );
     }

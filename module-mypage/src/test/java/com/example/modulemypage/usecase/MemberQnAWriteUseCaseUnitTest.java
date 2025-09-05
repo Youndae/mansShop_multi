@@ -137,12 +137,9 @@ public class MemberQnAWriteUseCaseUnitTest {
         doNothing().when(memberQnADataService)
                 .saveMemberQnAReply(any(MemberQnAReply.class));
 
-        String result = assertDoesNotThrow(
+        assertDoesNotThrow(
                 () -> memberQnAWriteUseCase.postMemberQnAReply(insertDTO, USER_ID)
         );
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
     }
 
     @Test
@@ -237,12 +234,9 @@ public class MemberQnAWriteUseCaseUnitTest {
 
         doNothing().when(memberQnADataService).saveMemberQnAReply(any(MemberQnAReply.class));
 
-        String result = assertDoesNotThrow(
+        assertDoesNotThrow(
                 () -> memberQnAWriteUseCase.patchMemberQnAReply(replyDTO, USER_ID)
         );
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
     }
 
     @Test
@@ -357,12 +351,9 @@ public class MemberQnAWriteUseCaseUnitTest {
                 .thenReturn(memberQnAFixture);
         doNothing().when(memberQnADataService).deleteMemberQnAById(anyLong());
 
-        String result = assertDoesNotThrow(
+        assertDoesNotThrow(
                 () -> memberQnAWriteUseCase.deleteMemberQnA(1L, USER_ID)
         );
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
     }
 
     @Test

@@ -409,7 +409,7 @@ public class ProductControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -509,22 +509,14 @@ public class ProductControllerIT {
         ProductQnAPostDTO postDTO = new ProductQnAPostDTO(product.getId(), "test insert Product QnA content");
         String requestDTO = om.writeValueAsString(postDTO);
 
-        MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna")
+        mockMvc.perform(post(URL_PREFIX + "qna")
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         List<ProductQnA> insertList = productQnARepository.findAll();
         assertNotNull(insertList);
@@ -558,7 +550,7 @@ public class ProductControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -569,23 +561,15 @@ public class ProductControllerIT {
         params.put("productId", product.getId());
         String requestMap = om.writeValueAsString(params);
 
-        MvcResult result = mockMvc.perform(post(URL_PREFIX + "like")
+        mockMvc.perform(post(URL_PREFIX + "like")
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestMap))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
 
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
         List<ProductLike> likeList = productLikeRepository.findAll();
         assertNotNull(likeList);
         assertFalse(likeList.isEmpty());
@@ -620,7 +604,7 @@ public class ProductControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -647,25 +631,18 @@ public class ProductControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
     @DisplayName(value = "관심상품 해제")
     void deLikeProduct() throws Exception{
-        MvcResult result = mockMvc.perform(delete(URL_PREFIX + "like/" + product.getId())
+        mockMvc.perform(delete(URL_PREFIX + "like/" + product.getId())
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue)))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
         List<ProductLike> checkDataList = productLikeRepository.findByMember_UserId(member.getUserId());
 
         assertNotNull(checkDataList);
@@ -697,6 +674,6 @@ public class ProductControllerIT {
                 new TypeReference<>() {}
         );
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 }

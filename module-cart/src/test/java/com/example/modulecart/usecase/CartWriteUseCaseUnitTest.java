@@ -292,10 +292,7 @@ public class CartWriteUseCaseUnitTest {
         when(cartDataService.getUserCartId(any(CartMemberDTO.class))).thenReturn(cartId);
         doNothing().when(cartDataService).deleteUserCart(anyLong());
 
-        String result = assertDoesNotThrow(() -> cartWriteUseCase.deleteAllProductFromCart(null, cartMemberDTO.uid()));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> cartWriteUseCase.deleteAllProductFromCart(null, cartMemberDTO.uid()));
     }
 
     @Test

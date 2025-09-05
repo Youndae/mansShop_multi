@@ -5,7 +5,6 @@ import com.example.modulecommon.model.dto.qna.in.QnAReplyPatchDTO;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.entity.ProductQnA;
 import com.example.modulecommon.model.entity.ProductQnAReply;
-import com.example.modulecommon.model.enumuration.Result;
 import com.example.moduleproduct.service.productQnA.ProductQnADataService;
 import com.example.moduleproduct.service.productQnA.ProductQnADomainService;
 import com.example.moduleproduct.service.productQnA.ProductQnAExternalService;
@@ -27,11 +26,9 @@ public class AdminProductQnAWriteUseCase {
 
     private final UserDataService userDataService;
 
-    public String patchProductQnAComplete(long qnaId) {
+    public void patchProductQnAComplete(long qnaId) {
         ProductQnA entity = productQnADataService.findProductQnAByIdOrElseIllegal(qnaId);
         patchProductQnAStatusAndSave(entity);
-
-        return Result.OK.getResultKey();
     }
 
     private void patchProductQnAStatusAndSave(ProductQnA productQnA) {
@@ -39,7 +36,7 @@ public class AdminProductQnAWriteUseCase {
         productQnADataService.saveProductQnA(productQnA);
     }
 
-    public String postProductQnAReply(QnAReplyInsertDTO insertDTO, String userId) {
+    public void postProductQnAReply(QnAReplyInsertDTO insertDTO, String userId) {
         Member member = userDataService.getMemberByUserIdOrElseIllegal(userId);
         ProductQnA productQnA = productQnADataService.findProductQnAByIdOrElseIllegal(insertDTO.qnaId());
         ProductQnAReply productQnAReply = productQnADomainService.buildProductQnAReply(member, productQnA, insertDTO.content());
@@ -48,11 +45,9 @@ public class AdminProductQnAWriteUseCase {
         patchProductQnAStatusAndSave(productQnA);
 
         productQnAExternalService.sendProductQnANotification(productQnA);
-
-        return Result.OK.getResultKey();
     }
 
-    public String patchProductQnAReply(QnAReplyPatchDTO replyDTO, String userId) {
+    public void patchProductQnAReply(QnAReplyPatchDTO replyDTO, String userId) {
         ProductQnAReply productQnAReply = productQnADataService.getProductQnAReplyByIdOrElseIllegal(replyDTO.replyId());
 
         if(!productQnAReply.getMember().getUserId().equals(userId))
@@ -60,7 +55,5 @@ public class AdminProductQnAWriteUseCase {
 
         productQnAReply.setReplyContent(replyDTO.content());
         productQnADataService.saveProductQnAReply(productQnAReply);
-
-        return Result.OK.getResultKey();
     }
 }

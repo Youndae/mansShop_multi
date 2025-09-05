@@ -12,7 +12,6 @@ import com.example.modulecommon.model.dto.page.AdminQnAPageDTO;
 import com.example.modulecommon.model.dto.qna.in.QnAReplyInsertDTO;
 import com.example.modulecommon.model.dto.qna.in.QnAReplyPatchDTO;
 import com.example.modulecommon.model.dto.response.PagingListDTO;
-import com.example.modulecommon.model.dto.response.ResponseMessageDTO;
 import com.example.modulecommon.model.enumuration.AdminListType;
 import com.example.modulecommon.model.enumuration.RedisCaching;
 import com.example.modulemypage.model.dto.memberQnA.out.MemberQnADetailResponseDTO;
@@ -132,8 +131,7 @@ public class AdminQnAController {
 
         ProductQnADetailResponseDTO responseDTO = productQnAReadUseCase.getProductQnADetailData(qnaId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(responseDTO);
+        return ResponseEntity.ok(responseDTO);
     }
 
     /**
@@ -152,12 +150,11 @@ public class AdminQnAController {
             in = ParameterIn.PATH
     )
     @PatchMapping("/qna/product/{qnaId}")
-    public ResponseEntity<ResponseMessageDTO> patchProductQnAComplete(@PathVariable(name = "qnaId") long qnaId) {
+    public ResponseEntity<Void> patchProductQnAComplete(@PathVariable(name = "qnaId") long qnaId) {
 
-        String responseMessage = adminProductQnAWriteUseCase.patchProductQnAComplete(qnaId);
+        adminProductQnAWriteUseCase.patchProductQnAComplete(qnaId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     /**
@@ -171,13 +168,12 @@ public class AdminQnAController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PostMapping("/qna/product/reply")
-    public ResponseEntity<ResponseMessageDTO> postProductQnAReply(@RequestBody QnAReplyInsertDTO insertDTO, Principal principal) {
+    public ResponseEntity<Void> postProductQnAReply(@RequestBody QnAReplyInsertDTO insertDTO, Principal principal) {
 
         String userId = principalService.extractUserId(principal);
-        String responseMessage = adminProductQnAWriteUseCase.postProductQnAReply(insertDTO, userId);
+        adminProductQnAWriteUseCase.postProductQnAReply(insertDTO, userId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     /**
@@ -191,13 +187,12 @@ public class AdminQnAController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PatchMapping("/qna/product/reply")
-    public ResponseEntity<ResponseMessageDTO> patchProductQnAReply(@RequestBody QnAReplyPatchDTO replyDTO, Principal principal) {
+    public ResponseEntity<Void> patchProductQnAReply(@RequestBody QnAReplyPatchDTO replyDTO, Principal principal) {
 
         String userId = principalService.extractUserId(principal);
-        String responseMessage = adminProductQnAWriteUseCase.patchProductQnAReply(replyDTO, userId);
+        adminProductQnAWriteUseCase.patchProductQnAReply(replyDTO, userId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     /**
@@ -265,8 +260,7 @@ public class AdminQnAController {
 
         MemberQnADetailResponseDTO responseDTO = memberQnAReadUseCase.getMemberQnADetailData(qnaId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(responseDTO);
+        return ResponseEntity.ok(responseDTO);
     }
 
     /**
@@ -285,11 +279,10 @@ public class AdminQnAController {
             in = ParameterIn.PATH
     )
     @PatchMapping("/qna/member/{qnaId}")
-    public ResponseEntity<ResponseMessageDTO> patchMemberQnAComplete(@PathVariable(name = "qnaId") long qnaId) {
-        String responseMessage = adminMemberQnAWriteUseCase.patchMemberQnAComplete(qnaId);
+    public ResponseEntity<Void> patchMemberQnAComplete(@PathVariable(name = "qnaId") long qnaId) {
+        adminMemberQnAWriteUseCase.patchMemberQnAComplete(qnaId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     /**
@@ -303,13 +296,12 @@ public class AdminQnAController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PostMapping("/qna/member/reply")
-    public ResponseEntity<ResponseMessageDTO> postMemberQnAReply(@RequestBody QnAReplyInsertDTO insertDTO, Principal principal) {
+    public ResponseEntity<Void> postMemberQnAReply(@RequestBody QnAReplyInsertDTO insertDTO, Principal principal) {
 
         String userId = principalService.extractUserId(principal);
-        String responseMessage = adminMemberQnAWriteUseCase.postMemberQnAReply(insertDTO, userId);
+        adminMemberQnAWriteUseCase.postMemberQnAReply(insertDTO, userId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     /**
@@ -323,13 +315,12 @@ public class AdminQnAController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PatchMapping("/qna/member/reply")
-    public ResponseEntity<ResponseMessageDTO> patchMemberQnAReply(@RequestBody QnAReplyPatchDTO replyDTO, Principal principal) {
+    public ResponseEntity<Void> patchMemberQnAReply(@RequestBody QnAReplyPatchDTO replyDTO, Principal principal) {
 
         String userId = principalService.extractUserId(principal);
-        String responseMessage = memberQnAWriteUseCase.patchMemberQnAReply(replyDTO, userId);
+        memberQnAWriteUseCase.patchMemberQnAReply(replyDTO, userId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     /**
@@ -346,8 +337,7 @@ public class AdminQnAController {
 
         List<QnAClassificationDTO> responseDTO = memberQnAReadUseCase.getQnAClassification();
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(responseDTO);
+        return ResponseEntity.ok(responseDTO);
     }
 
     /**
@@ -360,11 +350,10 @@ public class AdminQnAController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PostMapping("/qna/classification")
-    public ResponseEntity<ResponseMessageDTO> postQnAClassification(@RequestBody String classification) {
-        String responseMessage = adminMemberQnAWriteUseCase.postQnAClassification(classification);
+    public ResponseEntity<Void> postQnAClassification(@RequestBody String classification) {
+        adminMemberQnAWriteUseCase.postQnAClassification(classification);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     /**
@@ -383,11 +372,10 @@ public class AdminQnAController {
             in = ParameterIn.PATH
     )
     @DeleteMapping("/qna/classification/{qnaClassificationId}")
-    public ResponseEntity<ResponseMessageDTO> deleteQnAClassification(@PathVariable(name = "qnaClassificationId") Long classificationId) {
+    public ResponseEntity<Void> deleteQnAClassification(@PathVariable(name = "qnaClassificationId") Long classificationId) {
 
-        String responseMessage = adminMemberQnAWriteUseCase.deleteQnAClassification(classificationId);
+        adminMemberQnAWriteUseCase.deleteQnAClassification(classificationId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

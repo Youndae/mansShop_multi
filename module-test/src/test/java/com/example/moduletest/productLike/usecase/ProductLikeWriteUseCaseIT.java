@@ -97,10 +97,7 @@ public class ProductLikeWriteUseCaseIT {
     @DisplayName(value = "관심상품 등록")
     void likeProduct() {
         String userId = memberList.get(1).getUserId();
-        String result = assertDoesNotThrow(() -> productLikeWriteUseCase.likeProduct(product.getId(), userId));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> productLikeWriteUseCase.likeProduct(product.getId(), userId));
 
         ProductLike saveProductLike = productLikeRepository.findByMember_UserId(userId).get(0);
 
@@ -135,10 +132,7 @@ public class ProductLikeWriteUseCaseIT {
     void deLikeProduct() {
         String productId = productLike.getProduct().getId();
 
-        String result = assertDoesNotThrow(() -> productLikeWriteUseCase.deleteProductLike(productId, member.getUserId()));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> productLikeWriteUseCase.deleteProductLike(productId, member.getUserId()));
 
         List<ProductLike> productLikeList = productLikeRepository.findByMember_UserId(member.getUserId());
 

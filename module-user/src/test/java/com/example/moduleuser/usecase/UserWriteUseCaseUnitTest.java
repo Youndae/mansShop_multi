@@ -1,5 +1,7 @@
 package com.example.moduleuser.usecase;
 
+import com.example.modulecommon.customException.CustomBadCredentialsException;
+import com.example.modulecommon.customException.CustomNotFoundException;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.Result;
 import com.example.moduleuser.model.dto.member.in.JoinDTO;
@@ -39,7 +41,7 @@ public class UserWriteUseCaseUnitTest {
 
     @Test
     @DisplayName(value = "회원가입 요청")
-    void joinProc() {
+    void joinProc() throws Exception {
         JoinDTO joinDTO = new JoinDTO(
                 "userId",
                 "userPw",
@@ -54,9 +56,7 @@ public class UserWriteUseCaseUnitTest {
         when(userDomainService.getJoinMember(any(JoinDTO.class))).thenReturn(member);
         doNothing().when(userDataService).saveMemberAndAuthToJoin(any(Member.class));
 
-        String result = assertDoesNotThrow(() -> userWriteUseCase.joinProc(joinDTO));
-
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> userWriteUseCase.joinProc(joinDTO));
     }
 
     @Test
@@ -69,9 +69,7 @@ public class UserWriteUseCaseUnitTest {
         doNothing().when(userDataService).saveCertificationNumberToRedis(any(UserSearchPwDTO.class), anyInt());
         doNothing().when(userExternalService).sendCertificationMail(any(UserSearchPwDTO.class), anyInt());
 
-        String result = assertDoesNotThrow(() -> userWriteUseCase.searchPassword(searchDTO));
-
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> userWriteUseCase.searchPassword(searchDTO));
     }
 
     @Test
@@ -81,9 +79,7 @@ public class UserWriteUseCaseUnitTest {
 
         when(userDataService.countMatchingBySearchPwDTO(searchDTO)).thenReturn(0L);
 
-        String result = assertDoesNotThrow(() -> userWriteUseCase.searchPassword(searchDTO));
-
-        assertEquals(Result.NOTFOUND.getResultKey(), result);
+        assertThrows(CustomNotFoundException.class, () -> userWriteUseCase.searchPassword(searchDTO));
     }
 
     @Test
@@ -97,9 +93,7 @@ public class UserWriteUseCaseUnitTest {
         doThrow(new RuntimeException("mail send fail")).when(userExternalService).sendCertificationMail(any(UserSearchPwDTO.class), anyInt());
 
 
-        String result = assertDoesNotThrow(() -> userWriteUseCase.searchPassword(searchDTO));
-
-        assertEquals(Result.FAIL.getResultKey(), result);
+        assertThrows(RuntimeException.class, () -> userWriteUseCase.searchPassword(searchDTO));
     }
 
     @Test
@@ -110,9 +104,7 @@ public class UserWriteUseCaseUnitTest {
         when(userDataService.getCertificationNumberFromRedis(any())).thenReturn(certificationDTO.certification());
         when(userDomainService.validateCertificationNo(any(), any())).thenReturn(true);
 
-        String result = assertDoesNotThrow(() -> userWriteUseCase.checkCertificationNo(certificationDTO));
-
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> userWriteUseCase.checkCertificationNo(certificationDTO));
     }
 
     @Test
@@ -122,9 +114,7 @@ public class UserWriteUseCaseUnitTest {
 
         when(userDataService.getCertificationNumberFromRedis(any())).thenReturn(null);
 
-        String result = assertDoesNotThrow(() -> userWriteUseCase.checkCertificationNo(certificationDTO));
-
-        assertEquals(Result.FAIL.getResultKey(), result);
+        assertThrows(CustomBadCredentialsException.class, () -> userWriteUseCase.checkCertificationNo(certificationDTO));
     }
 
     @Test
@@ -135,9 +125,7 @@ public class UserWriteUseCaseUnitTest {
         when(userDataService.getCertificationNumberFromRedis(any())).thenReturn("456123");
         when(userDomainService.validateCertificationNo(any(), any())).thenReturn(false);
 
-        String result = assertDoesNotThrow(() -> userWriteUseCase.checkCertificationNo(certificationDTO));
-
-        assertEquals(Result.FAIL.getResultKey(), result);
+        assertThrows(CustomBadCredentialsException.class, () -> userWriteUseCase.checkCertificationNo(certificationDTO));
     }
 
     @Test
@@ -147,8 +135,6 @@ public class UserWriteUseCaseUnitTest {
 
         doThrow(new RuntimeException("Redis Connection Exception")).when(userDataService).getCertificationNumberFromRedis(any());
 
-        String result = assertDoesNotThrow(() -> userWriteUseCase.checkCertificationNo(certificationDTO));
-
-        assertEquals(Result.ERROR.getResultKey(), result);
+        assertThrows(RuntimeException.class, () -> userWriteUseCase.checkCertificationNo(certificationDTO));
     }
 }

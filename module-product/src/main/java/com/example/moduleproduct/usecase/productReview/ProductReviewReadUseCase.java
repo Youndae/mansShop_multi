@@ -29,7 +29,7 @@ public class ProductReviewReadUseCase {
 
         if(!productReview.getMember().getUserId().equals(userId)) {
             log.info("patchReview writer not match. userId: {}, writer: {}", userId, productReview.getMember().getUserId());
-            throw new CustomAccessDeniedException(ErrorCode.ACCESS_DENIED, ErrorCode.ACCESS_DENIED.getMessage());
+            throw new CustomAccessDeniedException(ErrorCode.FORBIDDEN, ErrorCode.FORBIDDEN.getMessage());
         }
 
         return new MyPagePatchReviewDataDTO(reviewId, productReview.getReviewContent(), productReview.getProduct().getProductName());

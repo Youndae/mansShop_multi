@@ -1,5 +1,7 @@
 package com.example.moduleuser.usecase;
 
+import com.example.modulecommon.customException.CustomDuplicateException;
+import com.example.modulecommon.customException.CustomNotFoundException;
 import com.example.modulecommon.fixture.MemberAndAuthFixture;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.Result;
@@ -38,9 +40,7 @@ public class UserReadUseCaseUnitTest {
     void checkJoinId() {
         when(userDataService.getMemberByUserIdOrElseNull(any())).thenReturn(null);
 
-        String result = assertDoesNotThrow(() -> userReadUseCase.checkJoinUserId("userId"));
-
-        assertEquals(Result.NO_DUPLICATE.getResultKey(), result);
+        assertDoesNotThrow(() -> userReadUseCase.checkJoinUserId("userId"));
     }
 
     @Test
@@ -50,9 +50,7 @@ public class UserReadUseCaseUnitTest {
 
         when(userDataService.getMemberByUserIdOrElseNull(any())).thenReturn(member);
 
-        String result = assertDoesNotThrow(() -> userReadUseCase.checkJoinUserId(member.getUserId()));
-
-        assertEquals(Result.DUPLICATE.getResultKey(), result);
+        assertThrows(CustomDuplicateException.class, () -> userReadUseCase.checkJoinUserId(member.getUserId()));
     }
 
     @Test
@@ -60,9 +58,7 @@ public class UserReadUseCaseUnitTest {
     void checkJoinNickname() {
         when(userDataService.getMemberByNickname(any())).thenReturn(null);
 
-        String result = assertDoesNotThrow(() -> userReadUseCase.checkNickname("nickname", null));
-
-        assertEquals(Result.NO_DUPLICATE.getResultKey(), result);
+        assertDoesNotThrow(() -> userReadUseCase.checkNickname("nickname", null));
     }
 
     @Test
@@ -72,9 +68,10 @@ public class UserReadUseCaseUnitTest {
 
         when(userDataService.getMemberByNickname(any())).thenReturn(member);
 
-        String result = assertDoesNotThrow(() -> userReadUseCase.checkNickname("nickname", null));
-
-        assertEquals(Result.DUPLICATE.getResultKey(), result);
+        assertThrows(
+                CustomDuplicateException.class,
+                () -> userReadUseCase.checkNickname("nickname", null)
+        );
     }
 
     @Test
@@ -84,9 +81,7 @@ public class UserReadUseCaseUnitTest {
 
         when(userDataService.getMemberByNickname(any())).thenReturn(null);
 
-        String result = assertDoesNotThrow(() -> userReadUseCase.checkNickname("nicknameElse", principal));
-
-        assertEquals(Result.NO_DUPLICATE.getResultKey(), result);
+        assertDoesNotThrow(() -> userReadUseCase.checkNickname("nicknameElse", principal));
     }
 
     @Test
@@ -99,9 +94,10 @@ public class UserReadUseCaseUnitTest {
         when(principal.getName()).thenReturn("userId");
         when(userDataService.getMemberByNickname(any())).thenReturn(member);
 
-        String result = assertDoesNotThrow(() -> userReadUseCase.checkNickname(member.getNickname(), principal));
-
-        assertEquals(Result.DUPLICATE.getResultKey(), result);
+        assertThrows(
+                CustomDuplicateException.class,
+                () -> userReadUseCase.checkNickname(member.getNickname(), principal)
+        );
     }
 
     @Test
@@ -117,9 +113,7 @@ public class UserReadUseCaseUnitTest {
         when(principal.getName()).thenReturn(member.getUserId());
         when(userDataService.getMemberByNickname(any())).thenReturn(member);
 
-        String result = assertDoesNotThrow(() -> userReadUseCase.checkNickname(member.getNickname(), principal));
-
-        assertEquals(Result.NO_DUPLICATE.getResultKey(), result);
+        assertDoesNotThrow(() -> userReadUseCase.checkNickname(member.getNickname(), principal));
     }
 
     @Test
@@ -130,10 +124,9 @@ public class UserReadUseCaseUnitTest {
 
         when(userDataService.getSearchUserId(searchDTO)).thenReturn(userId);
 
-        UserSearchIdResponseDTO result = assertDoesNotThrow(() -> userReadUseCase.searchId(searchDTO));
+        String result = assertDoesNotThrow(() -> userReadUseCase.searchId(searchDTO));
 
-        assertEquals(Result.OK.getResultKey(), result.message());
-        assertEquals(userId, result.userId());
+        assertEquals(userId, result);
     }
 
     @Test
@@ -143,10 +136,7 @@ public class UserReadUseCaseUnitTest {
 
         when(userDataService.getSearchUserId(searchDTO)).thenReturn(null);
 
-        UserSearchIdResponseDTO result = assertDoesNotThrow(() -> userReadUseCase.searchId(searchDTO));
-
-        assertEquals(Result.NOTFOUND.getResultKey(), result.message());
-        assertNull(result.userId());
+        assertThrows(CustomNotFoundException.class, () -> userReadUseCase.searchId(searchDTO));
     }
 
 }

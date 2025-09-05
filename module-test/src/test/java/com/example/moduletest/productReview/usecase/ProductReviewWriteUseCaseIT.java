@@ -119,10 +119,7 @@ public class ProductReviewWriteUseCaseIT {
                 "test patch review content"
         );
 
-        String result = assertDoesNotThrow(() -> productReviewWriteUseCase.patchReview(reviewDTO, userId));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> productReviewWriteUseCase.patchReview(reviewDTO, userId));
 
         ProductReview patchReview = productReviewRepository.findById(fixture.getId()).orElse(null);
 
@@ -167,10 +164,7 @@ public class ProductReviewWriteUseCaseIT {
         long reviewId = fixture.getId();
         String userId = fixture.getMember().getUserId();
 
-        String result = assertDoesNotThrow(() -> productReviewWriteUseCase.deleteReview(reviewId, userId));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> productReviewWriteUseCase.deleteReview(reviewId, userId));
 
         ProductReview deleteReview = productReviewRepository.findById(reviewId).orElse(null);
 

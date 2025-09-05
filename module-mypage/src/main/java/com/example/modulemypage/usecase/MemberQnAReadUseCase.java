@@ -35,7 +35,7 @@ public class MemberQnAReadUseCase {
 
         if(!responseDTO.writer().equals(nickname)){
             log.info("MemberQnA Detail writer not match nickname. writer : {}, nickname : {}", responseDTO.writer(), nickname);
-            throw new CustomAccessDeniedException(ErrorCode.ACCESS_DENIED, ErrorCode.ACCESS_DENIED.getMessage());
+            throw new CustomAccessDeniedException(ErrorCode.FORBIDDEN, ErrorCode.FORBIDDEN.getMessage());
         }
 
         return responseDTO;
@@ -46,7 +46,7 @@ public class MemberQnAReadUseCase {
 
         if(qnaDTO == null) {
             log.info("MemberQnA Detail data is null. qnaId = {}", qnaId);
-            throw new CustomNotFoundException(ErrorCode.NOT_FOUND, ErrorCode.NOT_FOUND.getMessage());
+            throw new CustomNotFoundException(ErrorCode.BAD_REQUEST, ErrorCode.BAD_REQUEST.getMessage());
         }
 
         List<QnADetailReplyDTO> replyDTOList = memberQnADataService.getMemberQnADetailAllReplies(qnaId);

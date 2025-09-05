@@ -18,14 +18,12 @@ public class AdminOrderWriteUseCase {
 
     private final OrderExternalService orderExternalService;
 
-    public String orderPreparation(long orderId) {
+    public void orderPreparation(long orderId) {
         ProductOrder productOrder = orderDataService.findProductOrderByIdOrElseIllegal(orderId);
         productOrder.setOrderStat(OrderStatus.PREPARATION.getStatusStr());
 
         orderDataService.saveProductOrder(productOrder);
 
         orderExternalService.sendOrderNotification(productOrder.getMember().getUserId());
-
-        return Result.OK.getResultKey();
     }
 }

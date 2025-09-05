@@ -980,7 +980,7 @@ public class AdminSalesControllerIT {
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue)))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -989,6 +989,6 @@ public class AdminSalesControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 }

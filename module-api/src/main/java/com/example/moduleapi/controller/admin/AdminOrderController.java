@@ -8,7 +8,6 @@ import com.example.moduleapi.model.response.PagingResponseDTO;
 import com.example.modulecache.model.cache.CacheRequest;
 import com.example.modulecache.service.FullCountScanCachingService;
 import com.example.modulecommon.model.dto.response.PagingListDTO;
-import com.example.modulecommon.model.dto.response.ResponseMessageDTO;
 import com.example.modulecommon.model.enumuration.RedisCaching;
 import com.example.moduleorder.model.dto.admin.out.AdminOrderResponseDTO;
 import com.example.moduleorder.model.dto.admin.page.AdminOrderPageDTO;
@@ -140,10 +139,9 @@ public class AdminOrderController {
             in = ParameterIn.PATH
     )
     @PatchMapping("/order/{orderId}")
-    public ResponseEntity<ResponseMessageDTO> patchOrder(@PathVariable(name = "orderId") long orderId) {
-        String responseMessage = adminOrderWriteUseCase.orderPreparation(orderId);
+    public ResponseEntity<Void> patchOrder(@PathVariable(name = "orderId") long orderId) {
+        adminOrderWriteUseCase.orderPreparation(orderId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

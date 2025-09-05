@@ -1,5 +1,6 @@
 package com.example.modulemypage.usecase.admin;
 
+import com.example.modulecommon.customException.CustomAccessDeniedException;
 import com.example.modulecommon.model.dto.qna.in.QnAReplyInsertDTO;
 import com.example.modulecommon.model.entity.MemberQnA;
 import com.example.modulecommon.model.enumuration.Result;
@@ -36,9 +37,10 @@ public class AdminMemberQnAWriteUseCaseUnitTest {
     void postMemberQnAReplyFiledPost() {
         QnAReplyInsertDTO insertDTO = new QnAReplyInsertDTO(1L, "testContent");
 
-        when(memberQnAWriteUseCase.postMemberQnAReply(any(QnAReplyInsertDTO.class), any())).thenReturn(Result.FAIL.getResultKey());
+        doThrow(CustomAccessDeniedException.class)
+                .when(memberQnAWriteUseCase).postMemberQnAReply(any(QnAReplyInsertDTO.class), any());
 
-        assertThrows(IllegalArgumentException.class, () -> adminMemberQnAWriteUseCase.postMemberQnAReply(insertDTO, "tester"));
+        assertThrows(CustomAccessDeniedException.class, () -> adminMemberQnAWriteUseCase.postMemberQnAReply(insertDTO, "tester"));
 
         verify(memberQnADataService, never()).findMemberQnAByIdOrElseIllegal(anyLong());
         verify(memberQnADataService, never()).saveMemberQnA(any(MemberQnA.class));

@@ -68,10 +68,7 @@ public class AdminMemberWriteUseCaseIT {
         Member member = memberList.get(0);
         AdminPostPointDTO pointDTO = new AdminPostPointDTO(member.getUserId(), 100);
 
-        String result = assertDoesNotThrow(() -> adminMemberWriteUseCase.postPoint(pointDTO));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> adminMemberWriteUseCase.postPoint(pointDTO));
 
         Member resultMember = memberRepository.findById(member.getUserId()).orElse(null);
 

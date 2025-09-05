@@ -153,10 +153,7 @@ public class MemberQnAWriteUseCaseIT {
         String userId = fixture.getMember().getUserId();
         QnAReplyInsertDTO replyInsertDTO = new QnAReplyInsertDTO(fixture.getId(), "test reply content");
 
-        String result = assertDoesNotThrow(() -> memberQnAWriteUseCase.postMemberQnAReply(replyInsertDTO, userId));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> memberQnAWriteUseCase.postMemberQnAReply(replyInsertDTO, userId));
 
         MemberQnA patchData = memberQnARepository.findById(fixture.getId()).orElse(null);
         List<QnADetailReplyDTO> replyList = memberQnAReplyRepository.findAllByQnAId(fixture.getId());
@@ -210,10 +207,7 @@ public class MemberQnAWriteUseCaseIT {
         String userId = fixture.getMember().getUserId();
         QnAReplyPatchDTO replyDTO = new QnAReplyPatchDTO(fixture.getId(), "test patch reply Content");
 
-        String result = assertDoesNotThrow(() -> memberQnAWriteUseCase.patchMemberQnAReply(replyDTO, userId));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> memberQnAWriteUseCase.patchMemberQnAReply(replyDTO, userId));
 
         MemberQnAReply patchData = memberQnAReplyRepository.findById(fixture.getId()).orElse(null);
 
@@ -257,10 +251,7 @@ public class MemberQnAWriteUseCaseIT {
                 classificationId
         );
 
-        String result = assertDoesNotThrow(() -> memberQnAWriteUseCase.patchMemberQnA(modifyDTO, userId));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> memberQnAWriteUseCase.patchMemberQnA(modifyDTO, userId));
 
         MemberQnA patchData = memberQnARepository.findById(fixture.getId()).orElse(null);
 
@@ -311,10 +302,7 @@ public class MemberQnAWriteUseCaseIT {
         MemberQnA fixture = allMemberQnAList.get(0);
         String userId = fixture.getMember().getUserId();
 
-        String result = assertDoesNotThrow(() -> memberQnAWriteUseCase.deleteMemberQnA(fixture.getId(), userId));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> memberQnAWriteUseCase.deleteMemberQnA(fixture.getId(), userId));
 
         MemberQnA deleteData = memberQnARepository.findById(fixture.getId()).orElse(null);
         assertNull(deleteData);

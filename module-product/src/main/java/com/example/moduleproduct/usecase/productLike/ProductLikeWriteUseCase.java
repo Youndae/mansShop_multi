@@ -27,25 +27,21 @@ public class ProductLikeWriteUseCase {
 
     private final ProductDataService productDataService;
 
-    public String likeProduct(String productId, String userId) {
+    public void likeProduct(String productId, String userId) {
         ProductLike productLike = getProductLike(productId, userId);
 
         productLikeDataService.saveProductLike(productLike);
-
-        return Result.OK.getResultKey();
     }
 
-    public String deleteProductLike(String productId, String userId) {
+    public void deleteProductLike(String productId, String userId) {
         ProductLike productLike = getProductLike(productId, userId);
 
         productLikeDataService.deleteProductLike(productLike);
-
-        return Result.OK.getResultKey();
     }
 
     private ProductLike getProductLike(String productId, String userId) {
         if(userId == null)
-            throw new CustomAccessDeniedException(ErrorCode.ACCESS_DENIED, ErrorCode.ACCESS_DENIED.getMessage());
+            throw new CustomAccessDeniedException(ErrorCode.FORBIDDEN, ErrorCode.FORBIDDEN.getMessage());
 
         Member member = userDataService.getMemberByUserIdOrElseAccessDenied(userId);
         Product product = productDataService.getProductByIdOrElseIllegal(productId);

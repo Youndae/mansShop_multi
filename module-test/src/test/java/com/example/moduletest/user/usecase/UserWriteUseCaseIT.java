@@ -1,8 +1,8 @@
 package com.example.moduletest.user.usecase;
 
 import com.example.moduleauthapi.service.JWTTokenProvider;
-import com.example.modulecommon.customException.CustomAccessDeniedException;
 import com.example.modulecommon.customException.CustomBadCredentialsException;
+import com.example.modulecommon.customException.CustomNotFoundException;
 import com.example.modulecommon.fixture.MemberAndAuthFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.entity.Member;
@@ -92,10 +92,7 @@ public class UserWriteUseCaseIT {
                 "joinTester@join.com"
         );
         LocalDate birth = LocalDate.of(2000, 1, 1);
-        String result = assertDoesNotThrow(() -> userWriteUseCase.joinProc(joinDTO));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> userWriteUseCase.joinProc(joinDTO));
 
         Member joinMember = memberRepository.findByLocalUserId(joinDTO.userId());
 
@@ -115,10 +112,7 @@ public class UserWriteUseCaseIT {
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        String result = assertDoesNotThrow(() -> userWriteUseCase.loginProc(member.getUserId(), request, response));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> userWriteUseCase.loginProc(member.getUserId(), request, response));
 
         String accessToken = response.getHeader("Authorization").substring(6);
         Map<String, String> cookieMap = response.getHeaders("Set-Cookie").stream()
@@ -203,10 +197,7 @@ public class UserWriteUseCaseIT {
         request.setCookies(new Cookie("temporary", temporaryToken));
         MockHttpServletResponse newResponse = new MockHttpServletResponse();
 
-        String result = assertDoesNotThrow(() -> userWriteUseCase.issueOAuthUserToken(request, newResponse));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> userWriteUseCase.issueOAuthUserToken(request, newResponse));
 
         String accessToken = newResponse.getHeader("Authorization").substring(6);
         Map<String, String> cookieMap = newResponse.getHeaders("Set-Cookie").stream()
@@ -255,7 +246,7 @@ public class UserWriteUseCaseIT {
         request.setCookies(new Cookie("temporary", "wrongToken"));
 
         assertThrows(
-                CustomAccessDeniedException.class,
+                CustomBadCredentialsException.class,
                 () -> userWriteUseCase.issueOAuthUserToken(request, response)
         );
     }
@@ -267,10 +258,7 @@ public class UserWriteUseCaseIT {
         Member member = memberList.get(0);
         UserSearchPwDTO searchPwDTO = new UserSearchPwDTO(member.getUserId(), member.getUserName(), member.getUserEmail());
 
-        String result = assertDoesNotThrow(() -> userWriteUseCase.searchPassword(searchPwDTO));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> userWriteUseCase.searchPassword(searchPwDTO));
 
         String redisCertificationValue = redisTemplate.opsForValue().get(member.getUserId());
         assertNotNull(redisCertificationValue);
@@ -287,10 +275,7 @@ public class UserWriteUseCaseIT {
     void searchPWUserNotFound() {
         UserSearchPwDTO searchPwDTO = new UserSearchPwDTO("noneUserId", "noneUserName", "noneUserEmail");
 
-        String result = assertDoesNotThrow(() -> userWriteUseCase.searchPassword(searchPwDTO));
-
-        assertNotNull(result);
-        assertEquals(Result.NOTFOUND.getResultKey(), result);
+        assertThrows(CustomNotFoundException.class, () -> userWriteUseCase.searchPassword(searchPwDTO));
     }
 
     @Test
@@ -301,10 +286,7 @@ public class UserWriteUseCaseIT {
         UserCertificationDTO certificationDTO = new UserCertificationDTO(member.getUserId(), certificationFixture);
         redisTemplate.opsForValue().set(member.getUserId(), certificationFixture);
 
-        String result = assertDoesNotThrow(() -> userWriteUseCase.checkCertificationNo(certificationDTO));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> userWriteUseCase.checkCertificationNo(certificationDTO));
 
         redisTemplate.delete(member.getUserId());
     }
@@ -317,10 +299,7 @@ public class UserWriteUseCaseIT {
         UserCertificationDTO certificationDTO = new UserCertificationDTO(member.getUserId(), "102031");
         redisTemplate.opsForValue().set(member.getUserId(), certificationFixture);
 
-        String result = assertDoesNotThrow(() -> userWriteUseCase.checkCertificationNo(certificationDTO));
-
-        assertNotNull(result);
-        assertEquals(Result.FAIL.getResultKey(), result);
+        assertThrows(CustomBadCredentialsException.class, () -> userWriteUseCase.checkCertificationNo(certificationDTO));
 
         redisTemplate.delete(member.getUserId());
     }
@@ -334,10 +313,7 @@ public class UserWriteUseCaseIT {
         UserResetPwDTO resetPwDTO = new UserResetPwDTO(member.getUserId(), certificationFixture, newUserPw);
         redisTemplate.opsForValue().set(member.getUserId(), certificationFixture);
 
-        String result = assertDoesNotThrow(() -> userWriteUseCase.resetPw(resetPwDTO));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> userWriteUseCase.resetPw(resetPwDTO));
 
         Member patchMember = memberRepository.findByLocalUserId(member.getUserId());
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
@@ -358,10 +334,7 @@ public class UserWriteUseCaseIT {
         UserResetPwDTO resetPwDTO = new UserResetPwDTO(member.getUserId(), "102031", newUserPw);
         redisTemplate.opsForValue().set(member.getUserId(), certificationFixture);
 
-        String result = assertDoesNotThrow(() -> userWriteUseCase.resetPw(resetPwDTO));
-
-        assertNotNull(result);
-        assertEquals(Result.FAIL.getResultKey(), result);
+        assertThrows(CustomBadCredentialsException.class, () -> userWriteUseCase.resetPw(resetPwDTO));
 
         Member patchMember = memberRepository.findByLocalUserId(member.getUserId());
 
@@ -380,10 +353,7 @@ public class UserWriteUseCaseIT {
         String newUserPw = "5678";
         UserResetPwDTO resetPwDTO = new UserResetPwDTO(member.getUserId(), certificationFixture, newUserPw);
 
-        String result = assertDoesNotThrow(() -> userWriteUseCase.resetPw(resetPwDTO));
-
-        assertNotNull(result);
-        assertEquals(Result.FAIL.getResultKey(), result);
+        assertThrows(CustomBadCredentialsException.class, () -> userWriteUseCase.resetPw(resetPwDTO));
 
         Member patchMember = memberRepository.findByLocalUserId(member.getUserId());
 

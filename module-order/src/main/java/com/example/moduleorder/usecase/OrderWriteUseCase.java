@@ -69,7 +69,7 @@ public class OrderWriteUseCase {
      * 결제 이후 데이터 처리
      */
     @Transactional(rollbackFor = Exception.class)
-    public String orderDataProcessAfterPayment(PaymentDTO paymentDTO,
+    public void orderDataProcessAfterPayment(PaymentDTO paymentDTO,
                                              Cookie cartCookie,
                                              String userId,
                                              Cookie orderTokenCookie,
@@ -98,8 +98,6 @@ public class OrderWriteUseCase {
             successFlag = true;
 
             orderExternalService.sendOrderMessageQueue(paymentDTO, cartMemberDTO, productOrderDataDTO, order);
-
-            return Result.OK.getResultKey();
         }catch (Exception e) {
             log.error("payment Error : ", e);
             if(!successFlag) {
@@ -113,7 +111,6 @@ public class OrderWriteUseCase {
                 // RabbitMQ 연결 또는 장애 이슈 등으로 메시지가 아예 전달이 안된 경우
                 // 메시지가 전달되었지만 실패하는 경우는 DLQ로 넘어가기 때문에 여기까지 넘어오지 않음.
                 handleOrderMQFallback(paymentDTO, cartMemberDTO, e);
-                return Result.OK.getResultKey();
             }
         }finally {
             orderCookieWriter.deleteOrderTokenCookie(response);
@@ -155,7 +152,10 @@ public class OrderWriteUseCase {
      *
      * 결제하고자 하는 데이터와 Redis에 캐싱된 주문 데이터 비교 검증
      */
-    public String validateOrderData(OrderDataResponseDTO validateDTO, String userId, Cookie orderTokenCookie, HttpServletResponse response) {
+    public void validateOrderData(OrderDataResponseDTO validateDTO,
+                                  String userId,
+                                  Cookie orderTokenCookie,
+                                  HttpServletResponse response) {
         String orderTokenValue = orderDomainService.extractOrderTokenValue(orderTokenCookie);
         PreOrderDataVO cachingOrderData = orderDataService.getCachingOrderData(orderTokenValue);
         ObjectMapper om = new ObjectMapper();
@@ -183,8 +183,6 @@ public class OrderWriteUseCase {
                     ErrorCode.ORDER_SESSION_EXPIRED.getMessage()
             );
         }
-
-        return Result.OK.getResultKey();
     }
 
     public String retryFailedOrder(FailedOrderDTO failedOrderDTO, FallbackMapKey fallbackMapKey) {
@@ -251,14 +249,14 @@ public class OrderWriteUseCase {
         List<CartDetail> cartDetails = cartDataService.getCartDetailListByIds(cartDetailIds);
 
         if(cartDetails.isEmpty())
-            throw new CustomNotFoundException(ErrorCode.NOT_FOUND, ErrorCode.NOT_FOUND.getMessage());
+            throw new CustomNotFoundException(ErrorCode.BAD_REQUEST, ErrorCode.BAD_REQUEST.getMessage());
 
         Long cartId = cartDetails.get(0).getCart().getId();
         Cart cart = cartDataService.getCartByIdOrElseIllegal(cartId);
 
         if(!cart.getMember().getUserId().equals(cartMemberDTO.uid())
                 || !Objects.equals(cart.getCookieId(), cartMemberDTO.cartCookieValue()))
-            throw new CustomAccessDeniedException(ErrorCode.ACCESS_DENIED, ErrorCode.ACCESS_DENIED.getMessage());
+            throw new CustomAccessDeniedException(ErrorCode.FORBIDDEN, ErrorCode.FORBIDDEN.getMessage());
 
         List<OrderProductRequestDTO> optionIdAndCountDTO = cartDetails.stream()
                                                                     .map(dto ->

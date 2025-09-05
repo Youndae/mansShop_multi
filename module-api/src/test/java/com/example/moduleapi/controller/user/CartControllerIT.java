@@ -161,9 +161,9 @@ public class CartControllerIT {
         productOptionRepository.saveAll(optionList);
         List<ProductOption> saveCartProductOptionList = productList.get(0).getProductOptions();
         memberCart = CartFixture.createDefaultMemberCart(memberList, saveCartProductOptionList).get(0);
-        CartDetail count1MemberCartDetail = memberCart.getCartDetailList().get(0);
-        int count = -Math.abs(count1MemberCartDetail.getCartCount() - 1);
-        count1MemberCartDetail.addCartCount(count);
+        CartDetail countMemberCartDetail = memberCart.getCartDetailList().get(0);
+        int count = -Math.abs(countMemberCartDetail.getCartCount() - 1);
+        countMemberCartDetail.addCartCount(count);
         anonymousCart = CartFixture.createSaveAnonymousCart(saveCartProductOptionList.get(0), anonymous, ANONYMOUS_CART_COOKIE);
 
         List<Cart> saveCartList = new ArrayList<>();
@@ -337,25 +337,15 @@ public class CartControllerIT {
 
         String addCartRequestBody = om.writeValueAsString(requestDTO);
 
-        MvcResult result = mockMvc.perform(post(URL_PREFIX)
+        mockMvc.perform(post(URL_PREFIX)
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(addCartRequestBody)
                 )
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-
-        String content = result.getResponse().getContentAsString();
-
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         List<CartDetailDTO> patchDataList = cartDetailRepository.findAllByCartId(memberCart.getId());
 
@@ -387,25 +377,15 @@ public class CartControllerIT {
         int fixtureDetailCount = memberCart.getCartDetailList().size() + optionFixtureList.size();
         String addCartRequestBody = om.writeValueAsString(requestDTO);
 
-        MvcResult result = mockMvc.perform(post(URL_PREFIX)
+        mockMvc.perform(post(URL_PREFIX)
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(addCartRequestBody)
                 )
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-
-        String content = result.getResponse().getContentAsString();
-
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         List<CartDetailDTO> patchDataList = cartDetailRepository.findAllByCartId(memberCart.getId());
 
@@ -437,25 +417,15 @@ public class CartControllerIT {
 
         String addCartRequestBody = om.writeValueAsString(requestDTO);
 
-        MvcResult result = mockMvc.perform(post(URL_PREFIX)
+        mockMvc.perform(post(URL_PREFIX)
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(addCartRequestBody)
                 )
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-
-        String content = result.getResponse().getContentAsString();
-
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         CartMemberDTO cartMemberDTO = new CartMemberDTO(member.getUserId(), null);
 
@@ -507,23 +477,13 @@ public class CartControllerIT {
 
         String addCartRequestBody = om.writeValueAsString(requestDTO);
 
-        MvcResult result = mockMvc.perform(post(URL_PREFIX)
+        mockMvc.perform(post(URL_PREFIX)
                         .cookie(new Cookie(cartCookieHeader, ANONYMOUS_CART_COOKIE))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(addCartRequestBody)
                 )
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-
-        String content = result.getResponse().getContentAsString();
-
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         List<CartDetailDTO> patchDataList = cartDetailRepository.findAllByCartId(anonymousCart.getId());
 
@@ -555,23 +515,13 @@ public class CartControllerIT {
         int fixtureDetailCount = anonymousCart.getCartDetailList().size() + optionFixtureList.size();
         String addCartRequestBody = om.writeValueAsString(requestDTO);
 
-        MvcResult result = mockMvc.perform(post(URL_PREFIX)
+        mockMvc.perform(post(URL_PREFIX)
                         .cookie(new Cookie(cartCookieHeader, ANONYMOUS_CART_COOKIE))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(addCartRequestBody)
                 )
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-
-        String content = result.getResponse().getContentAsString();
-
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         List<CartDetailDTO> patchDataList = cartDetailRepository.findAllByCartId(anonymousCart.getId());
 
@@ -607,18 +557,8 @@ public class CartControllerIT {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(addCartRequestBody)
                 )
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-
-        String content = result.getResponse().getContentAsString();
-
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         String cartCookie = result.getResponse().getHeaders("Set-Cookie")
                 .stream()
@@ -657,23 +597,13 @@ public class CartControllerIT {
         CartDetail fixture = memberCart.getCartDetailList().get(0);
         int originCount = fixture.getCartCount();
 
-        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "count-up/" + fixture.getId())
+        mockMvc.perform(patch(URL_PREFIX + "count-up/" + fixture.getId())
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue))
                 )
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-
-        String content = result.getResponse().getContentAsString();
-
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         CartDetail patchData = cartDetailRepository.findById(fixture.getId()).orElse(null);
 
@@ -712,21 +642,11 @@ public class CartControllerIT {
         CartDetail fixture = anonymousCart.getCartDetailList().get(0);
         int originCount = fixture.getCartCount();
 
-        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "count-up/" + fixture.getId())
+        mockMvc.perform(patch(URL_PREFIX + "count-up/" + fixture.getId())
                         .cookie(new Cookie(cartCookieHeader, ANONYMOUS_CART_COOKIE))
                 )
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-
-        String content = result.getResponse().getContentAsString();
-
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         CartDetail patchData = cartDetailRepository.findById(fixture.getId()).orElse(null);
 
@@ -752,23 +672,13 @@ public class CartControllerIT {
                 .get();
         int originCount = fixture.getCartCount();
 
-        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "count-down/" + fixture.getId())
+        mockMvc.perform(patch(URL_PREFIX + "count-down/" + fixture.getId())
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue))
                 )
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-
-        String content = result.getResponse().getContentAsString();
-
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         CartDetail patchData = cartDetailRepository.findById(fixture.getId()).orElse(null);
 
@@ -784,23 +694,13 @@ public class CartControllerIT {
                 .findFirst()
                 .get();
 
-        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "count-down/" + fixture.getId())
+        mockMvc.perform(patch(URL_PREFIX + "count-down/" + fixture.getId())
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue))
                 )
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-
-        String content = result.getResponse().getContentAsString();
-
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         CartDetail patchData = cartDetailRepository.findById(fixture.getId()).orElse(null);
 
@@ -839,21 +739,11 @@ public class CartControllerIT {
         CartDetail fixture = anonymousCart.getCartDetailList().get(0);
         int originCount = fixture.getCartCount();
 
-        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "count-down/" + fixture.getId())
+        mockMvc.perform(patch(URL_PREFIX + "count-down/" + fixture.getId())
                         .cookie(new Cookie(cartCookieHeader, ANONYMOUS_CART_COOKIE))
                 )
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-
-        String content = result.getResponse().getContentAsString();
-
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         CartDetail patchData = cartDetailRepository.findById(fixture.getId()).orElse(null);
 
@@ -880,25 +770,15 @@ public class CartControllerIT {
 
         String deleteSelectId = om.writeValueAsString(deleteIds);
 
-        MvcResult result = mockMvc.perform(delete(URL_PREFIX + "select")
+        mockMvc.perform(delete(URL_PREFIX + "select")
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(deleteSelectId)
                 )
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-
-        String content = result.getResponse().getContentAsString();
-
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         List<CartDetailDTO> existData = cartDetailRepository.findAllByCartId(memberCart.getId());
 
@@ -947,25 +827,15 @@ public class CartControllerIT {
         long cartId = memberCart.getId();
         String deleteSelectId = om.writeValueAsString(deleteIds);
 
-        MvcResult result = mockMvc.perform(delete(URL_PREFIX + "select")
+        mockMvc.perform(delete(URL_PREFIX + "select")
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(deleteSelectId)
                 )
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-
-        String content = result.getResponse().getContentAsString();
-
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         Cart deleteData = cartRepository.findById(cartId).orElse(null);
 
@@ -1001,23 +871,13 @@ public class CartControllerIT {
         long cartId = anonymousCart.getId();
         String deleteSelectId = om.writeValueAsString(deleteIds);
 
-        MvcResult result = mockMvc.perform(delete(URL_PREFIX + "select")
+        mockMvc.perform(delete(URL_PREFIX + "select")
                         .cookie(new Cookie(cartCookieHeader, ANONYMOUS_CART_COOKIE))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(deleteSelectId)
                 )
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-
-        String content = result.getResponse().getContentAsString();
-
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         Cart deleteData = cartRepository.findById(cartId).orElse(null);
 
@@ -1029,24 +889,14 @@ public class CartControllerIT {
     void deleteCartByMember() throws Exception{
         long cartId = memberCart.getId();
 
-        MvcResult result = mockMvc.perform(delete(URL_PREFIX + "all")
+        mockMvc.perform(delete(URL_PREFIX + "all")
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                 )
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-
-        String content = result.getResponse().getContentAsString();
-
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         Cart deleteData = cartRepository.findById(cartId).orElse(null);
 
@@ -1073,22 +923,12 @@ public class CartControllerIT {
     void deleteCartByAnonymous() throws Exception{
         long cartId = anonymousCart.getId();
 
-        MvcResult result = mockMvc.perform(delete(URL_PREFIX + "all")
+        mockMvc.perform(delete(URL_PREFIX + "all")
                         .cookie(new Cookie(cartCookieHeader, ANONYMOUS_CART_COOKIE))
                         .contentType(MediaType.APPLICATION_JSON)
                 )
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-
-        String content = result.getResponse().getContentAsString();
-
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         Cart deleteData = cartRepository.findById(cartId).orElse(null);
 

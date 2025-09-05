@@ -134,10 +134,7 @@ public class ReviewWriteUseCaseIT {
                 fixture.getId()
         );
 
-        String result = assertDoesNotThrow(() -> reviewWriteUseCase.postReview(postReviewDTO, userId));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> reviewWriteUseCase.postReview(postReviewDTO, userId));
 
         ProductReview postReview = productReviewRepository.findFirstByMember_UserIdOrderByIdDesc(userId);
 

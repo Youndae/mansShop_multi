@@ -3,7 +3,6 @@ package com.example.moduleproduct.usecase.admin.productReview;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.entity.ProductReview;
 import com.example.modulecommon.model.entity.ProductReviewReply;
-import com.example.modulecommon.model.enumuration.Result;
 import com.example.moduleproduct.model.dto.admin.review.in.AdminReviewReplyRequestDTO;
 import com.example.moduleproduct.service.productReview.ProductReviewDataService;
 import com.example.moduleproduct.service.productReview.ProductReviewDomainService;
@@ -28,7 +27,7 @@ public class AdminProductReviewWriteUseCase {
     private final ProductReviewExternalService productReviewExternalService;
 
     @Transactional(rollbackFor = Exception.class)
-    public String postReviewReply(AdminReviewReplyRequestDTO postDTO, String userId) {
+    public void postReviewReply(AdminReviewReplyRequestDTO postDTO, String userId) {
         Member member = userDataService.getMemberByUserIdOrElseIllegal(userId);
         ProductReview productReview = productReviewDataService.findProductReviewByIdOrElseIllegal(postDTO.reviewId());
         ProductReviewReply productReviewReply = productReviewDataService.getProductReviewReplyByReviewId(postDTO.reviewId());
@@ -44,7 +43,5 @@ public class AdminProductReviewWriteUseCase {
         productReviewDataService.saveProductReviewReply(entity);
 
         productReviewExternalService.sendProductReviewNotification(productReview.getMember().getUserId());
-
-        return Result.OK.getResultKey();
     }
 }

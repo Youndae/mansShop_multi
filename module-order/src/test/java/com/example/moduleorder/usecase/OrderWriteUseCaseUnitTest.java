@@ -213,10 +213,7 @@ public class OrderWriteUseCaseUnitTest {
         when(orderDomainService.validateOrderData(any(PreOrderDataVO.class), any(OrderDataResponseDTO.class), any()))
                 .thenReturn(true);
 
-        String result = assertDoesNotThrow(() -> orderWriteUseCase.validateOrderData(validateDTO, "testUser", new Cookie("order", orderTokenValue), response));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> orderWriteUseCase.validateOrderData(validateDTO, "testUser", new Cookie("order", orderTokenValue), response));
     }
 
     @Test

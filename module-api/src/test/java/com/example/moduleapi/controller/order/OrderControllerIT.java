@@ -35,6 +35,7 @@ import com.example.moduleuser.repository.AuthRepository;
 import com.example.moduleuser.repository.MemberRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -216,17 +217,17 @@ public class OrderControllerIT {
         redisTemplate.delete(refreshKey);
         orderRedisTemplate.delete(ORDER_TOKEN);
 
-        productSalesSummaryRepository.deleteAll();
-        periodSalesSummaryRepository.deleteAll();
-        productOrderDetailRepository.deleteAll();
-        productOrderRepository.deleteAll();
-        cartDetailRepository.deleteAll();
-        cartRepository.deleteAll();
-        productOptionRepository.deleteAll();
-        productRepository.deleteAll();
-        classificationRepository.deleteAll();
-        memberRepository.deleteAll();
-        authRepository.deleteAll();
+        productSalesSummaryRepository.deleteAllInBatch();
+        periodSalesSummaryRepository.deleteAllInBatch();
+        productOrderDetailRepository.deleteAllInBatch();
+        productOrderRepository.deleteAllInBatch();
+        cartDetailRepository.deleteAllInBatch();
+        cartRepository.deleteAllInBatch();
+        productOptionRepository.deleteAllInBatch();
+        productRepository.deleteAllInBatch();
+        classificationRepository.deleteAllInBatch();
+        memberRepository.deleteAllInBatch();
+        authRepository.deleteAllInBatch();
     }
 
     private MemberPaymentMapDTO getPaymentDataByCart(Cart cart) {
@@ -388,23 +389,15 @@ public class OrderControllerIT {
                 "cart"
         );
         String requestDTO = om.writeValueAsString(paymentDTO);
-        MvcResult result = mockMvc.perform(post(URL_PREFIX)
+        mockMvc.perform(post(URL_PREFIX)
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue))
                         .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         verifyPaymentByCartResult(paymentFixtureDTO, cartId, paymentDTO, member);
     }
@@ -438,21 +431,13 @@ public class OrderControllerIT {
                 "cart"
         );
         String requestDTO = om.writeValueAsString(paymentDTO);
-        MvcResult result = mockMvc.perform(post(URL_PREFIX)
+        mockMvc.perform(post(URL_PREFIX)
                         .cookie(new Cookie(cartCookieHeader, ANONYMOUS_CART_COOKIE))
                         .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         verifyPaymentByCartResult(paymentFixtureDTO, cartId, paymentDTO, anonymous);
     }
@@ -620,7 +605,7 @@ public class OrderControllerIT {
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         Map<String, String> cookieMap = tokenFixture.getCookieMap(result);
@@ -630,7 +615,7 @@ public class OrderControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
 
         assertTrue(cookieMap.isEmpty());
     }
@@ -729,7 +714,7 @@ public class OrderControllerIT {
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         Map<String, String> cookieMap = tokenFixture.getCookieMap(result);
@@ -739,7 +724,7 @@ public class OrderControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
         assertTrue(cookieMap.isEmpty());
     }
 
@@ -759,7 +744,7 @@ public class OrderControllerIT {
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().is(403))
+                .andExpect(status().isForbidden())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         Map<String, String> cookieMap = tokenFixture.getCookieMap(result);
@@ -769,7 +754,7 @@ public class OrderControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.ACCESS_DENIED.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.FORBIDDEN.getMessage(), response.errorMessage());
         assertTrue(cookieMap.isEmpty());
     }
 
@@ -787,7 +772,7 @@ public class OrderControllerIT {
                         .cookie(new Cookie(cartCookieHeader, "noneAnonymousCookieValue"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().is(403))
+                .andExpect(status().isForbidden())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         Map<String, String> cookieMap = tokenFixture.getCookieMap(result);
@@ -797,7 +782,7 @@ public class OrderControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.ACCESS_DENIED.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.FORBIDDEN.getMessage(), response.errorMessage());
         assertTrue(cookieMap.isEmpty());
     }
 
@@ -894,7 +879,7 @@ public class OrderControllerIT {
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "cart")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().is(403))
+                .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         Map<String, String> cookieMap = tokenFixture.getCookieMap(result);
@@ -904,7 +889,7 @@ public class OrderControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.ACCESS_DENIED.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
         assertTrue(cookieMap.isEmpty());
     }
 
@@ -949,24 +934,15 @@ public class OrderControllerIT {
 
         String requestDTO = om.writeValueAsString(requestOrderDataDTO);
 
-        MvcResult result = mockMvc.perform(post(URL_PREFIX + "validate")
+        mockMvc.perform(post(URL_PREFIX + "validate")
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue))
                         .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>(){}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
     }
 
     @Test
@@ -1010,22 +986,13 @@ public class OrderControllerIT {
 
         String requestDTO = om.writeValueAsString(requestOrderDataDTO);
 
-        MvcResult result = mockMvc.perform(post(URL_PREFIX + "validate")
+        mockMvc.perform(post(URL_PREFIX + "validate")
                         .cookie(new Cookie(cartCookieHeader, ANONYMOUS_CART_COOKIE))
                         .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>(){}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
     }
 
     @Test
@@ -1060,7 +1027,7 @@ public class OrderControllerIT {
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().is(440))
+                .andExpect(status().isUnauthorized())
                 .andReturn();
 
         String content = result.getResponse().getContentAsString();
@@ -1107,7 +1074,7 @@ public class OrderControllerIT {
                         .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().is(440))
+                .andExpect(status().isUnauthorized())
                 .andReturn();
 
         String content = result.getResponse().getContentAsString();
@@ -1168,7 +1135,7 @@ public class OrderControllerIT {
                         .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().is(440))
+                .andExpect(status().isUnauthorized())
                 .andReturn();
 
         String content = result.getResponse().getContentAsString();

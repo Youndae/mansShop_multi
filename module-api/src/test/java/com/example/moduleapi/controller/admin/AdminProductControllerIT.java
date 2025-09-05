@@ -9,10 +9,8 @@ import com.example.modulecommon.fixture.ClassificationFixture;
 import com.example.modulecommon.fixture.MemberAndAuthFixture;
 import com.example.modulecommon.fixture.ProductFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
-import com.example.modulecommon.model.dto.response.ResponseMessageDTO;
 import com.example.modulecommon.model.entity.*;
 import com.example.modulecommon.model.enumuration.ErrorCode;
-import com.example.modulecommon.model.enumuration.Result;
 import com.example.modulecommon.utils.PaginationUtils;
 import com.example.modulefile.service.FileService;
 import com.example.moduleproduct.model.dto.admin.product.in.AdminDiscountPatchDTO;
@@ -408,7 +406,7 @@ public class AdminProductControllerIT {
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue)))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -417,7 +415,7 @@ public class AdminProductControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     private MockMultipartFile createMockMultipartFile(String fieldName, String fileName) {
@@ -536,7 +534,7 @@ public class AdminProductControllerIT {
                                 .cookie(new Cookie(refreshHeader, refreshTokenValue))
                                 .cookie(new Cookie(inoHeader, inoValue))
                 )
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ResponseIdDTO<String> response = om.readValue(
@@ -699,7 +697,7 @@ public class AdminProductControllerIT {
                                 .cookie(new Cookie(refreshHeader, refreshTokenValue))
                                 .cookie(new Cookie(inoHeader, inoValue))
                 )
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -712,7 +710,7 @@ public class AdminProductControllerIT {
         em.clear();
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
 
         Product saveProduct = productRepository.findById(fixture.getId()).orElse(null);
         assertNotNull(saveProduct);
@@ -771,7 +769,7 @@ public class AdminProductControllerIT {
                                 .cookie(new Cookie(refreshHeader, refreshTokenValue))
                                 .cookie(new Cookie(inoHeader, inoValue))
                 )
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -780,7 +778,7 @@ public class AdminProductControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -1008,25 +1006,17 @@ public class AdminProductControllerIT {
 
         String requestDTO = om.writeValueAsString(discountDTO);
 
-        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "product/discount")
+        mockMvc.perform(patch(URL_PREFIX + "product/discount")
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
 
         em.flush();
         em.clear();
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         Product patchProduct = productRepository.findById(fixture.getId()).orElse(null);
         assertNotNull(patchProduct);
@@ -1046,25 +1036,17 @@ public class AdminProductControllerIT {
 
         String requestDTO = om.writeValueAsString(discountDTO);
 
-        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "product/discount")
+        mockMvc.perform(patch(URL_PREFIX + "product/discount")
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
 
         em.flush();
         em.clear();
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         List<Product> patchProductList = productRepository.findAllById(patchProductIds);
 
@@ -1087,7 +1069,7 @@ public class AdminProductControllerIT {
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -1096,6 +1078,6 @@ public class AdminProductControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 }

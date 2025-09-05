@@ -237,16 +237,6 @@ public class MemberControllerIT {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String content = result.getResponse().getContentAsString();
-
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
-
         String redisAccessKey = tokenMap.get("accessKey");
         String redisRefreshKey = tokenMap.get("refreshKey");
 
@@ -290,24 +280,14 @@ public class MemberControllerIT {
 
         String joinRequestBody = om.writeValueAsString(joinDTO);
 
-        MvcResult result = mockMvc.perform(post(URL_PREFIX + "join")
+        mockMvc.perform(post(URL_PREFIX + "join")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(joinRequestBody))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-
-        String content = result.getResponse().getContentAsString();
-
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
 
         em.flush();
         em.clear();
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         Member saveMember = memberRepository.findByUserId(joinDTO.userId());
 
@@ -331,14 +311,6 @@ public class MemberControllerIT {
                         .cookie(new Cookie(temporaryHeader, temporaryToken)))
                 .andExpect(status().isOk())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         String accessToken = tokenFixture.getResponseAuthorization(result);
         Map<String, String> tokenMap = tokenFixture.getCookieMap(result);
@@ -372,7 +344,7 @@ public class MemberControllerIT {
     @DisplayName(value = "oAuth 사용자의 정식 토큰 발급 요청. 임시 토큰이 없는 경우")
     void oAuthIssueTokenNotExistTemporaryToken() throws Exception {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "oAuth/token"))
-                .andExpect(status().is(403))
+                .andExpect(status().isUnauthorized())
                 .andReturn();
 
         String content = result.getResponse().getContentAsString();
@@ -382,7 +354,7 @@ public class MemberControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.BAD_CREDENTIALS.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.UNAUTHORIZED.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -390,7 +362,7 @@ public class MemberControllerIT {
     void oAuthIssueTokenWrongTemporaryToken() throws Exception {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "oAuth/token")
                         .cookie(new Cookie(temporaryHeader, "wrongTokenValue")))
-                .andExpect(status().is(403))
+                .andExpect(status().isUnauthorized())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
 
@@ -400,7 +372,7 @@ public class MemberControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.ACCESS_DENIED.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.UNAUTHORIZED.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -410,7 +382,7 @@ public class MemberControllerIT {
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "oAuth/token")
                         .cookie(new Cookie(temporaryHeader, temporaryToken)))
-                .andExpect(status().is(403))
+                .andExpect(status().isUnauthorized())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
 
@@ -420,7 +392,7 @@ public class MemberControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.ACCESS_DENIED.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.UNAUTHORIZED.getMessage(), response.errorMessage());
 
         redisTemplate.delete(oAuthMember.getUserId());
     }
@@ -435,7 +407,7 @@ public class MemberControllerIT {
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "oAuth/token")
                         .cookie(new Cookie(temporaryHeader, notSaveTemporaryToken)))
-                .andExpect(status().is(800))
+                .andExpect(status().isUnauthorized())
                 .andReturn();
 
         String content = result.getResponse().getContentAsString();
@@ -453,19 +425,10 @@ public class MemberControllerIT {
     @Test
     @DisplayName(value = "회원 가입 시 아이디 중복 체크")
     void checkJoinId() throws Exception {
-        MvcResult result = mockMvc.perform(get(URL_PREFIX + "check-id")
+        mockMvc.perform(get(URL_PREFIX + "check-id")
                         .param("userId", "newUserId"))
                 .andExpect(status().isOk())
                 .andReturn();
-
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.NO_DUPLICATE.getResultKey(), response.message());
     }
 
     @Test
@@ -473,35 +436,26 @@ public class MemberControllerIT {
     void checkJoinIdExists() throws Exception {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "check-id")
                         .param("userId", member.getUserId()))
-                .andExpect(status().isOk())
+                .andExpect(status().isConflict())
                 .andReturn();
 
         String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
+        ExceptionEntity response = om.readValue(
                 content,
                 new TypeReference<>() {}
         );
 
         assertNotNull(response);
-        assertEquals(Result.DUPLICATE.getResultKey(), response.message());
+        assertEquals(ErrorCode.CONFLICT.getMessage(), response.errorMessage());
     }
 
     @Test
     @DisplayName(value = "닉네임 중복 체크")
     void checkNickname() throws Exception {
-        MvcResult result = mockMvc.perform(get(URL_PREFIX + "check-nickname")
+        mockMvc.perform(get(URL_PREFIX + "check-nickname")
                         .param("nickname", "newNickname"))
                 .andExpect(status().isOk())
                 .andReturn();
-
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.NO_DUPLICATE.getResultKey(), response.message());
     }
 
     @Test
@@ -509,39 +463,30 @@ public class MemberControllerIT {
     void checkNicknameExists() throws Exception {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "check-nickname")
                         .param("nickname", member.getNickname()))
-                .andExpect(status().isOk())
+                .andExpect(status().isConflict())
                 .andReturn();
 
         String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
+        ExceptionEntity response = om.readValue(
                 content,
                 new TypeReference<>() {}
         );
 
         assertNotNull(response);
-        assertEquals(Result.DUPLICATE.getResultKey(), response.message());
+        assertEquals(ErrorCode.CONFLICT.getMessage(), response.errorMessage());
     }
 
     @Test
     @DisplayName(value = "닉네임 중복 체크. 중복이지만 자신의 닉네임과 동일한 경우 ( 회원 정보 수정 )")
     void checkNicknameExistsThenOriginNickname() throws Exception {
         setJWT();
-        MvcResult result = mockMvc.perform(get(URL_PREFIX + "check-nickname")
+        mockMvc.perform(get(URL_PREFIX + "check-nickname")
                         .param("nickname", member.getNickname())
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
-
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.NO_DUPLICATE.getResultKey(), response.message());
     }
 
     @Test
@@ -582,14 +527,9 @@ public class MemberControllerIT {
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
-        UserSearchIdResponseDTO response = om.readValue(
-                content,
-                new TypeReference<>(){}
-        );
 
-        assertNotNull(response);
-        assertEquals(member.getUserId(), response.userId());
-        assertEquals(Result.OK.getResultKey(), response.message());
+        assertNotNull(content);
+        assertEquals(member.getUserId(), content);
     }
 
     @Test
@@ -601,14 +541,9 @@ public class MemberControllerIT {
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
-        UserSearchIdResponseDTO response = om.readValue(
-                content,
-                new TypeReference<>(){}
-        );
 
-        assertNotNull(response);
-        assertEquals(member.getUserId(), response.userId());
-        assertEquals(Result.OK.getResultKey(), response.message());
+        assertNotNull(content);
+        assertEquals(member.getUserId(), content);
     }
 
     @Test
@@ -617,36 +552,27 @@ public class MemberControllerIT {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "search-id")
                         .param("userName", "noneUserName")
                         .param("userEmail", "none@none.com"))
-                .andExpect(status().isOk())
+                .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
-        UserSearchIdResponseDTO response = om.readValue(
+        ExceptionEntity response = om.readValue(
                 content,
                 new TypeReference<>(){}
         );
 
         assertNotNull(response);
-        assertNull(response.userId());
-        assertEquals(Result.NOTFOUND.getResultKey(), response.message());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
     @DisplayName(value = "비밀번호 찾기")
     void searchPw() throws Exception {
-        MvcResult result = mockMvc.perform(get(URL_PREFIX + "search-pw")
+        mockMvc.perform(get(URL_PREFIX + "search-pw")
                         .param("id", member.getUserId())
                         .param("name", member.getUserName())
                         .param("email", member.getUserEmail()))
                 .andExpect(status().isOk())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>(){}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         String redisCertificationValue = redisTemplate.opsForValue().get(member.getUserId());
         assertNotNull(redisCertificationValue);
@@ -667,16 +593,16 @@ public class MemberControllerIT {
                         .param("id", "noneUserId")
                         .param("name", "noneUsername")
                         .param("email", "none@none.com"))
-                .andExpect(status().isOk())
+                .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
+        ExceptionEntity response = om.readValue(
                 content,
                 new TypeReference<>(){}
         );
 
         assertNotNull(response);
-        assertEquals(Result.NOTFOUND.getResultKey(), response.message());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -686,19 +612,11 @@ public class MemberControllerIT {
         UserCertificationDTO certificationDTO = new UserCertificationDTO(member.getUserId(), CERTIFICATION_FIXTURE);
         String requestDTO = om.writeValueAsString(certificationDTO);
 
-        MvcResult result = mockMvc.perform(post(URL_PREFIX + "certification")
+        mockMvc.perform(post(URL_PREFIX + "certification")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>(){}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         redisTemplate.delete(member.getUserId());
     }
@@ -713,16 +631,16 @@ public class MemberControllerIT {
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "certification")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().isOk())
+                .andExpect(status().isUnauthorized())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
+        ExceptionEntity response = om.readValue(
                 content,
                 new TypeReference<>(){}
         );
 
         assertNotNull(response);
-        assertEquals(Result.FAIL.getResultKey(), response.message());
+        assertEquals(ErrorCode.UNAUTHORIZED.getMessage(), response.errorMessage());
 
         redisTemplate.delete(member.getUserId());
     }
@@ -734,19 +652,11 @@ public class MemberControllerIT {
         UserResetPwDTO resetDTO = new UserResetPwDTO(member.getUserId(), CERTIFICATION_FIXTURE, "5678!@");
         String requestDTO = om.writeValueAsString(resetDTO);
 
-        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "reset-pw")
+        mockMvc.perform(patch(URL_PREFIX + "reset-pw")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>(){}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         String redisCertification = redisTemplate.opsForValue().get(member.getUserId());
         assertNull(redisCertification);
@@ -764,17 +674,17 @@ public class MemberControllerIT {
         MvcResult result = mockMvc.perform(patch(URL_PREFIX + "reset-pw")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().isOk())
+                .andExpect(status().isUnauthorized())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
 
-        ResponseMessageDTO response = om.readValue(
+        ExceptionEntity response = om.readValue(
                 content,
                 new TypeReference<>() {}
         );
 
         assertNotNull(response);
-        assertEquals(Result.FAIL.getResultKey(), response.message());
+        assertEquals(ErrorCode.UNAUTHORIZED.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -787,16 +697,16 @@ public class MemberControllerIT {
         MvcResult result = mockMvc.perform(patch(URL_PREFIX + "reset-pw")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().isOk())
+                .andExpect(status().isUnauthorized())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
 
-        ResponseMessageDTO response = om.readValue(
+        ExceptionEntity response = om.readValue(
                 content,
                 new TypeReference<>() {}
         );
 
         assertNotNull(response);
-        assertEquals(Result.FAIL.getResultKey(), response.message());
+        assertEquals(ErrorCode.UNAUTHORIZED.getMessage(), response.errorMessage());
     }
 }

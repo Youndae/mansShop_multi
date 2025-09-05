@@ -82,7 +82,7 @@ public class CartWriteUseCase {
         Cart userCart = cartDataService.getCartData(cartMemberDTO);
         if(userCart == null){
             log.info("CartWriteUseCase.patchProductCountFromCart :: userCart is null");
-            throw new CustomNotFoundException(ErrorCode.NOT_FOUND, ErrorCode.NOT_FOUND.getMessage());
+            throw new CustomNotFoundException(ErrorCode.BAD_REQUEST, ErrorCode.BAD_REQUEST.getMessage());
         }
 
         CartDetail cartDetail = cartDataService.getCartDetail(cartDetailId);
@@ -103,7 +103,7 @@ public class CartWriteUseCase {
 
         if(cartId == null){
             log.info("CartWriteUseCase.deleteSelectProductFromCart :: cartId is null");
-            throw new CustomNotFoundException(ErrorCode.NOT_FOUND, ErrorCode.NOT_FOUND.getMessage());
+            throw new CustomNotFoundException(ErrorCode.BAD_REQUEST, ErrorCode.BAD_REQUEST.getMessage());
         }
 
         List<Long> userCartDetailIds = cartDataService.getAllUserCartDetailId(cartId);
@@ -120,17 +120,15 @@ public class CartWriteUseCase {
     }
 
 
-    public String deleteAllProductFromCart(Cookie cartCookie, String userId) {
+    public void deleteAllProductFromCart(Cookie cartCookie, String userId) {
         CartMemberDTO cartMemberDTO = cartDomainService.setCartMemberDTO(cartCookie, userId);
         Long cartId = cartDataService.getUserCartId(cartMemberDTO);
 
         if(cartId == null) {
             log.info("CartWriteUseCase.deleteAllProductFromCart :: cartId is null");
-            throw new CustomNotFoundException(ErrorCode.NOT_FOUND, ErrorCode.NOT_FOUND.getMessage());
+            throw new CustomNotFoundException(ErrorCode.BAD_REQUEST, ErrorCode.BAD_REQUEST.getMessage());
         }
 
         cartDataService.deleteUserCart(cartId);
-
-        return Result.OK.getResultKey();
     }
 }

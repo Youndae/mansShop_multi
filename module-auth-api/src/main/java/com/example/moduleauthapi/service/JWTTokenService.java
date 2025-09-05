@@ -57,7 +57,7 @@ public class JWTTokenService {
      * 토큰 탈취 응답 설정
      */
     public void tokenStealingExceptionResponse(HttpServletResponse response) {
-        response.setStatus(ErrorCode.TOKEN_STEALING.getHttpStatus());
+        response.setStatus(ErrorCode.TOKEN_STEALING.getHttpStatus().value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("utf-8");
     }
@@ -84,7 +84,7 @@ public class JWTTokenService {
      * RefreshToken을 검증한 뒤 동일하게 Claim에 저장된 아이디를 반환받아 두 Claim이 일치하는 경우에 재발급을 처리.
      * ino가 존재하지 않는다면 탈취로 판단.
      */
-    public String reIssueToken(TokenDTO tokenDTO, HttpServletResponse response) {
+    public void reIssueToken(TokenDTO tokenDTO, HttpServletResponse response) {
         // ino가 존재하지 않는다면 무조건 탈취로 판단.
         if(tokenDTO.inoValue() == null) {
             deleteCookieAndThrowException(response);
@@ -109,7 +109,7 @@ public class JWTTokenService {
 
                 if(accessTokenClaim.equals(claimByRefreshToken)) {
                     jwtTokenProvider.issueTokens(accessTokenClaim, tokenDTO.inoValue(), response);
-                    return Result.OK.getResultKey();
+                    return;
                 }else {
                     deleteTokenAndCookieAndThrowException(accessTokenClaim, tokenDTO.inoValue(), response);
                 }

@@ -118,10 +118,7 @@ public class AdminOrderWriteUseCaseIT {
 
         doNothing().when(orderExternalService).sendOrderNotification(any());
 
-        String result = assertDoesNotThrow(() -> adminOrderWriteUseCase.orderPreparation(order.getId()));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> adminOrderWriteUseCase.orderPreparation(order.getId()));
 
         ProductOrder patchOrder = productOrderRepository.findById(order.getId()).orElse(null);
         assertNotNull(patchOrder);

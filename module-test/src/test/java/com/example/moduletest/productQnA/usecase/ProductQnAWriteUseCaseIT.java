@@ -98,10 +98,7 @@ public class ProductQnAWriteUseCaseIT {
     void postProductQnA() {
         ProductQnAPostDTO postDTO = new ProductQnAPostDTO(product.getId(), "test post product QnA content");
 
-        String result = assertDoesNotThrow(() -> productQnAWriteUseCase.postProductQnA(postDTO, member.getUserId()));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> productQnAWriteUseCase.postProductQnA(postDTO, member.getUserId()));
 
         ProductQnA saveList = productQnARepository.findAllByMember_UserIdOrderByIdDesc(member.getUserId()).get(0);
 
@@ -123,10 +120,7 @@ public class ProductQnAWriteUseCaseIT {
     @Test
     @DisplayName(value = "상품 문의 제거")
     void deleteProductQnA() {
-        String result = assertDoesNotThrow(() -> productQnAWriteUseCase.deleteProductQnA(productQnA.getId(), productQnA.getMember().getUserId()));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> productQnAWriteUseCase.deleteProductQnA(productQnA.getId(), productQnA.getMember().getUserId()));
 
         ProductQnA checkDeleteEntity = productQnARepository.findById(productQnA.getId()).orElse(null);
 

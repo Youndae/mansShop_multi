@@ -63,9 +63,8 @@ public class TokenController {
                 .inoValue(ino == null ? null : ino.getValue())
                 .build();
 
-        String responseMessage = tokenService.reIssueToken(tokenDTO, response);
+        tokenService.reIssueToken(tokenDTO, response);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.ok().build();
     }
 }

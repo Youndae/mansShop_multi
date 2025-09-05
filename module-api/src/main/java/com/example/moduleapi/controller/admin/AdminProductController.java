@@ -6,7 +6,6 @@ import com.example.moduleapi.mapper.PagingResponseMapper;
 import com.example.moduleapi.model.response.PagingResponseDTO;
 import com.example.moduleapi.model.response.ResponseIdDTO;
 import com.example.modulecommon.model.dto.response.PagingListDTO;
-import com.example.modulecommon.model.dto.response.ResponseMessageDTO;
 import com.example.moduleproduct.model.dto.admin.product.in.AdminDiscountPatchDTO;
 import com.example.moduleproduct.model.dto.admin.product.in.AdminProductImageDTO;
 import com.example.moduleproduct.model.dto.admin.product.in.AdminProductPatchDTO;
@@ -84,8 +83,7 @@ public class AdminProductController {
     public ResponseEntity<List<String>> getProductClassification() {
         List<String> responseDTO = adminProductReadUseCase.getProductClassificationIdList();
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(responseDTO);
+        return ResponseEntity.ok(responseDTO);
     }
 
     /**
@@ -107,8 +105,7 @@ public class AdminProductController {
     public ResponseEntity<AdminProductDetailDTO> getProductDetail(@PathVariable(name = "productId") String productId){
         AdminProductDetailDTO responseDTO = adminProductReadUseCase.getProductDetailData(productId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(responseDTO);
+        return ResponseEntity.ok(responseDTO);
     }
 
     /**
@@ -130,7 +127,7 @@ public class AdminProductController {
                                                              @ModelAttribute AdminProductImageDTO imageDTO) {
         ResponseIdDTO<String> responseDTO = new ResponseIdDTO<>(adminProductWriteUseCase.postProduct(postDTO, imageDTO));
 
-        return ResponseEntity.status(HttpStatus.OK)
+        return ResponseEntity.status(HttpStatus.CREATED)
                 .body(responseDTO);
     }
 
@@ -299,13 +296,9 @@ public class AdminProductController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PatchMapping(value = "/product/discount", consumes = {MediaType.APPLICATION_JSON_VALUE})
-    public ResponseEntity<ResponseMessageDTO> patchDiscountProduct(@RequestBody AdminDiscountPatchDTO patchDTO) {
+    public ResponseEntity<Void> patchDiscountProduct(@RequestBody AdminDiscountPatchDTO patchDTO) {
+        adminProductWriteUseCase.patchDiscountProduct(patchDTO);
 
-        String responseMessage = adminProductWriteUseCase.patchDiscountProduct(patchDTO);
-
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(
-                        new ResponseMessageDTO(responseMessage)
-                );
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

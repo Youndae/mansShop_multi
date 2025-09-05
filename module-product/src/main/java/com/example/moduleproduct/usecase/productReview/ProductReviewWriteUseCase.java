@@ -18,30 +18,26 @@ public class ProductReviewWriteUseCase {
     private final ProductReviewDataService productReviewDataService;
 
 
-    public String patchReview(MyPagePatchReviewDTO reviewDTO, String userId) {
+    public void patchReview(MyPagePatchReviewDTO reviewDTO, String userId) {
         ProductReview productReview = productReviewDataService.findProductReviewByIdOrElseIllegal(reviewDTO.reviewId());
 
         if(!productReview.getMember().getUserId().equals(userId)) {
             log.info("PatchProductReview writer not match. userId: {}, writer: {}", userId, productReview.getMember().getUserId());
-            throw new CustomAccessDeniedException(ErrorCode.ACCESS_DENIED, ErrorCode.ACCESS_DENIED.getMessage());
+            throw new CustomAccessDeniedException(ErrorCode.FORBIDDEN, ErrorCode.FORBIDDEN.getMessage());
         }
 
         productReview.setReviewContent(reviewDTO.content());
         productReviewDataService.saveProductReview(productReview);
-
-        return Result.OK.getResultKey();
     }
 
-    public String deleteReview(long reviewId, String userId) {
+    public void deleteReview(long reviewId, String userId) {
         ProductReview productReview = productReviewDataService.findProductReviewByIdOrElseIllegal(reviewId);
 
         if(!productReview.getMember().getUserId().equals(userId)) {
             log.info("DeleteProductReview writer not match. userId: {}, writer: {}", userId, productReview.getMember().getUserId());
-            throw new CustomAccessDeniedException(ErrorCode.ACCESS_DENIED, ErrorCode.ACCESS_DENIED.getMessage());
+            throw new CustomAccessDeniedException(ErrorCode.FORBIDDEN, ErrorCode.FORBIDDEN.getMessage());
         }
 
         productReviewDataService.deleteProductReview(reviewId);
-
-        return Result.OK.getResultKey();
     }
 }

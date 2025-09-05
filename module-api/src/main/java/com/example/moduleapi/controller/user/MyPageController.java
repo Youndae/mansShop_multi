@@ -11,7 +11,6 @@ import com.example.modulecommon.model.dto.page.MyPagePageDTO;
 import com.example.modulecommon.model.dto.qna.in.QnAReplyInsertDTO;
 import com.example.modulecommon.model.dto.qna.in.QnAReplyPatchDTO;
 import com.example.modulecommon.model.dto.response.PagingListDTO;
-import com.example.modulecommon.model.dto.response.ResponseMessageDTO;
 import com.example.modulemypage.model.dto.memberQnA.in.MemberQnAInsertDTO;
 import com.example.modulemypage.model.dto.memberQnA.in.MemberQnAModifyDTO;
 import com.example.modulemypage.model.dto.memberQnA.out.MemberQnADetailResponseDTO;
@@ -211,8 +210,7 @@ public class MyPageController {
         String nickname = principalService.getNicknameOrUsername(principal);
         ProductQnADetailResponseDTO responseDTO = productQnAReadUseCase.getProductQnADetail(qnaId, nickname);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(responseDTO);
+        return ResponseEntity.ok(responseDTO);
     }
 
     /**
@@ -232,13 +230,12 @@ public class MyPageController {
             in = ParameterIn.PATH
     )
     @DeleteMapping("/qna/product/{qnaId}")
-    public ResponseEntity<ResponseMessageDTO> deleteProductQnA(@PathVariable(name = "qnaId") long qnaId, Principal principal) {
+    public ResponseEntity<Void> deleteProductQnA(@PathVariable(name = "qnaId") long qnaId, Principal principal) {
 
         String userId = principalService.extractUserId(principal);
-        String responseMessage = productQnaWriteUseCase.deleteProductQnA(qnaId, userId);
+        productQnaWriteUseCase.deleteProductQnA(qnaId, userId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     /**
@@ -283,7 +280,7 @@ public class MyPageController {
 
         Long responseId = memberQnaWriteUseCase.postMemberQnA(insertDTO, userId);
 
-        return ResponseEntity.status(HttpStatus.OK)
+        return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new ResponseIdDTO<>(responseId));
     }
 
@@ -308,8 +305,7 @@ public class MyPageController {
         String userId = principalService.getNicknameOrUsername(principal);
         MemberQnADetailResponseDTO responseDTO = memberQnAReadUseCase.getMemberQnADetail(qnaId, userId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(responseDTO);
+        return ResponseEntity.ok(responseDTO);
     }
 
     /**
@@ -323,13 +319,12 @@ public class MyPageController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PostMapping("/qna/member/reply")
-    public ResponseEntity<ResponseMessageDTO> postMemberQnAReply(@RequestBody QnAReplyInsertDTO insertDTO, Principal principal) {
+    public ResponseEntity<Void> postMemberQnAReply(@RequestBody QnAReplyInsertDTO insertDTO, Principal principal) {
         String userId = principalService.extractUserId(principal);
 
-        String responseMessage = memberQnaWriteUseCase.postMemberQnAReply(insertDTO, userId);
+        memberQnaWriteUseCase.postMemberQnAReply(insertDTO, userId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.ok().build();
     }
 
     /**
@@ -343,13 +338,12 @@ public class MyPageController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PatchMapping("/qna/member/reply")
-    public ResponseEntity<ResponseMessageDTO> patchMemberQnAReply(@RequestBody QnAReplyPatchDTO replyDTO, Principal principal) {
+    public ResponseEntity<Void> patchMemberQnAReply(@RequestBody QnAReplyPatchDTO replyDTO, Principal principal) {
         String userId = principalService.extractUserId(principal);
 
-        String responseMessage = memberQnaWriteUseCase.patchMemberQnAReply(replyDTO, userId);
+        memberQnaWriteUseCase.patchMemberQnAReply(replyDTO, userId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     /**
@@ -374,8 +368,7 @@ public class MyPageController {
 
         MemberQnAModifyDataDTO responseDTO = memberQnAReadUseCase.getModifyData(qnaId, userId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(responseDTO);
+        return ResponseEntity.ok(responseDTO);
     }
 
 
@@ -390,13 +383,12 @@ public class MyPageController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PatchMapping("/qna/member")
-    public ResponseEntity<ResponseMessageDTO> patchMemberQnA(@RequestBody MemberQnAModifyDTO modifyDTO, Principal principal) {
+    public ResponseEntity<Void> patchMemberQnA(@RequestBody MemberQnAModifyDTO modifyDTO, Principal principal) {
         String userId = principalService.extractUserId(principal);
 
-        String responseMessage = memberQnaWriteUseCase.patchMemberQnA(modifyDTO, userId);
+        memberQnaWriteUseCase.patchMemberQnA(modifyDTO, userId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     /**
@@ -416,12 +408,11 @@ public class MyPageController {
             in = ParameterIn.PATH
     )
     @DeleteMapping("/qna/member/{qnaId}")
-    public ResponseEntity<ResponseMessageDTO> deleteMemberQnA(@PathVariable(name = "qnaId") long qnaId, Principal principal) {
+    public ResponseEntity<Void> deleteMemberQnA(@PathVariable(name = "qnaId") long qnaId, Principal principal) {
         String userId = principalService.extractUserId(principal);
-        String responseMessage = memberQnaWriteUseCase.deleteMemberQnA(qnaId, userId);
+        memberQnaWriteUseCase.deleteMemberQnA(qnaId, userId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     /**
@@ -440,8 +431,7 @@ public class MyPageController {
 
         responseDTO.forEach(v -> System.out.println("responseDTO : " + v));
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(responseDTO);
+        return ResponseEntity.ok(responseDTO);
     }
 
     /**
@@ -492,8 +482,7 @@ public class MyPageController {
 
         MyPagePatchReviewDataDTO responseDTO = productReviewReadUseCase.getPatchReview(reviewId, userId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(responseDTO);
+        return ResponseEntity.ok(responseDTO);
     }
 
     /**
@@ -507,12 +496,11 @@ public class MyPageController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PostMapping("/review")
-    public ResponseEntity<ResponseMessageDTO> postReview(@RequestBody MyPagePostReviewDTO reviewDTO, Principal principal) {
+    public ResponseEntity<Void> postReview(@RequestBody MyPagePostReviewDTO reviewDTO, Principal principal) {
         String userId = principalService.extractUserId(principal);
-        String responseMessage = reviewWriteUseCase.postReview(reviewDTO, userId);
+        reviewWriteUseCase.postReview(reviewDTO, userId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     /**
@@ -526,13 +514,12 @@ public class MyPageController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PatchMapping("/review")
-    public ResponseEntity<ResponseMessageDTO> patchReview(@RequestBody MyPagePatchReviewDTO reviewDTO, Principal principal) {
+    public ResponseEntity<Void> patchReview(@RequestBody MyPagePatchReviewDTO reviewDTO, Principal principal) {
 
         String userId = principalService.extractUserId(principal);
-        String responseMessage = productReviewWriteUseCase.patchReview(reviewDTO, userId);
+        productReviewWriteUseCase.patchReview(reviewDTO, userId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     /**
@@ -552,12 +539,11 @@ public class MyPageController {
             in = ParameterIn.PATH
     )
     @DeleteMapping("/review/{reviewId}")
-    public ResponseEntity<ResponseMessageDTO> deleteReview(@PathVariable(name = "reviewId") long reviewId, Principal principal) {
+    public ResponseEntity<Void> deleteReview(@PathVariable(name = "reviewId") long reviewId, Principal principal) {
         String userId = principalService.extractUserId(principal);
-        String responseMessage = productReviewWriteUseCase.deleteReview(reviewId, userId);
+        productReviewWriteUseCase.deleteReview(reviewId, userId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     /**
@@ -574,8 +560,7 @@ public class MyPageController {
         String userId = principalService.extractUserId(principal);
         MyPageInfoDTO responseDTO = userReadUseCase.getMyPageUserInfo(userId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(responseDTO);
+        return ResponseEntity.ok(responseDTO);
     }
 
     /**
@@ -589,13 +574,12 @@ public class MyPageController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PatchMapping("/info")
-    public ResponseEntity<ResponseMessageDTO> patchInfo(@RequestBody MyPageInfoPatchDTO infoDTO, Principal principal) {
+    public ResponseEntity<Void> patchInfo(@RequestBody MyPageInfoPatchDTO infoDTO, Principal principal) {
 
         String userId = principalService.extractUserId(principal);
-        String responseMessage = userWriteUseCase.patchMyPageUserInfo(infoDTO, userId);
+        userWriteUseCase.patchMyPageUserInfo(infoDTO, userId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
 

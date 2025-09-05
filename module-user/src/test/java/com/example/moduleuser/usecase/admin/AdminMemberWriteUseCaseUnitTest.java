@@ -34,9 +34,7 @@ public class AdminMemberWriteUseCaseUnitTest {
         when(userDataService.getMemberByUserIdOrElseIllegal(any())).thenReturn(member);
         doNothing().when(userDataService).saveMember(any(Member.class));
 
-        String result = assertDoesNotThrow(() -> adminMemberWriteUseCase.postPoint(new AdminPostPointDTO(member.getUserId(), 1000)));
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> adminMemberWriteUseCase.postPoint(new AdminPostPointDTO(member.getUserId(), 1000)));
     }
 
     @Test

@@ -127,10 +127,7 @@ public class AdminProductQnAWriteUseCaseIT {
     void patchProductQnAComplete() {
         ProductQnA newProductQnAFixture = newProductQnAList.get(0);
 
-        String result = assertDoesNotThrow(() -> adminProductQnAWriteUseCase.patchProductQnAComplete(newProductQnAFixture.getId()));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> adminProductQnAWriteUseCase.patchProductQnAComplete(newProductQnAFixture.getId()));
 
         ProductQnA patchFixture = productQnARepository.findById(newProductQnAFixture.getId()).orElse(null);
 
@@ -156,10 +153,7 @@ public class AdminProductQnAWriteUseCaseIT {
 
         doNothing().when(productQnAExternalService).sendProductQnANotification(any(ProductQnA.class));
 
-        String result = assertDoesNotThrow(() -> adminProductQnAWriteUseCase.postProductQnAReply(insertDTO, admin.getUserId()));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> adminProductQnAWriteUseCase.postProductQnAReply(insertDTO, admin.getUserId()));
 
         List<QnADetailReplyDTO> saveReplyList = productQnAReplyRepository.findAllByQnAId(newProductQnAFixture.getId());
 
@@ -195,10 +189,7 @@ public class AdminProductQnAWriteUseCaseIT {
         String content = "patch reply content";
         QnAReplyPatchDTO replyDTO = new QnAReplyPatchDTO(reply.getId(), content);
 
-        String result = assertDoesNotThrow(() -> adminProductQnAWriteUseCase.patchProductQnAReply(replyDTO, admin.getUserId()));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> adminProductQnAWriteUseCase.patchProductQnAReply(replyDTO, admin.getUserId()));
 
         ProductQnAReply patchReply = productQnAReplyRepository.findById(reply.getId()).orElse(null);
 

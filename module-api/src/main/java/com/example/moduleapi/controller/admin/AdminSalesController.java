@@ -61,8 +61,7 @@ public class AdminSalesController {
 
         AdminPeriodSalesResponseDTO<AdminPeriodSalesListDTO> responseDTO = salesReadeUseCase.getPeriodSales(term);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(responseDTO);
+        return ResponseEntity.ok(responseDTO);
     }
 
 
@@ -89,8 +88,7 @@ public class AdminSalesController {
 
         AdminPeriodMonthDetailResponseDTO responseDTO = salesReadeUseCase.getPeriodSalesDetailByYearMonth(term);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(responseDTO);
+        return ResponseEntity.ok(responseDTO);
     }
 
     /**
@@ -123,8 +121,7 @@ public class AdminSalesController {
                                                                                         @RequestParam(value = "classification") String classification) {
         AdminClassificationSalesResponseDTO responseDTO = salesReadeUseCase.getSalesByClassification(term, classification);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(responseDTO);
+        return ResponseEntity.ok(responseDTO);
     }
 
     /**
@@ -148,8 +145,7 @@ public class AdminSalesController {
 
         AdminPeriodSalesResponseDTO<AdminPeriodClassificationDTO> responseDTO = salesReadeUseCase.getSalesByDay(term);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(responseDTO);
+        return ResponseEntity.ok(responseDTO);
     }
 
     /**
@@ -244,8 +240,7 @@ public class AdminSalesController {
 
         AdminProductSalesDetailDTO responseDTO = salesReadeUseCase.getProductSalesDetail(productId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(responseDTO);
+        return ResponseEntity.ok(responseDTO);
 
     }
 }

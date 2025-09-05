@@ -20,7 +20,7 @@ public class PrincipalService {
     public String extractUserId(Principal principal) {
         if(principal == null) {
             log.info("PrincipalService::extractUserId: principal is null");
-            throw new CustomAccessDeniedException(ErrorCode.ACCESS_DENIED, ErrorCode.ACCESS_DENIED.getMessage());
+            throw new CustomAccessDeniedException(ErrorCode.FORBIDDEN, ErrorCode.FORBIDDEN.getMessage());
         }
 
         return principal.getName();
@@ -36,7 +36,7 @@ public class PrincipalService {
     public String getNicknameOrUsername(Principal principal) {
         if(principal == null) {
             log.info("PrincipalService::getNicknameOrUsername: principal is null");
-            throw new CustomAccessDeniedException(ErrorCode.ACCESS_DENIED, ErrorCode.ACCESS_DENIED.getMessage());
+            throw new CustomAccessDeniedException(ErrorCode.FORBIDDEN, ErrorCode.FORBIDDEN.getMessage());
         }
 
         Member member = userDataService.getMemberByUserIdOrElseAccessDenied(principal.getName());

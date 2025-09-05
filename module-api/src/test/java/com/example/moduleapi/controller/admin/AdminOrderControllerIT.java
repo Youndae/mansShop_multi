@@ -9,7 +9,6 @@ import com.example.modulecommon.fixture.MemberAndAuthFixture;
 import com.example.modulecommon.fixture.ProductFixture;
 import com.example.modulecommon.fixture.ProductOrderFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
-import com.example.modulecommon.model.dto.response.ResponseMessageDTO;
 import com.example.modulecommon.model.entity.*;
 import com.example.modulecommon.model.enumuration.*;
 import com.example.modulecommon.utils.PaginationUtils;
@@ -432,20 +431,12 @@ public class AdminOrderControllerIT {
     void patchOrderStatus() throws Exception {
         ProductOrder fixture = newProductOrderList.get(0);
 
-        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "order/" + fixture.getId())
+        mockMvc.perform(patch(URL_PREFIX + "order/" + fixture.getId())
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue)))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         ProductOrder patchData = productOrderRepository.findById(fixture.getId()).orElse(null);
         assertNotNull(patchData);
@@ -474,7 +465,7 @@ public class AdminOrderControllerIT {
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue)))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -483,6 +474,6 @@ public class AdminOrderControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 }

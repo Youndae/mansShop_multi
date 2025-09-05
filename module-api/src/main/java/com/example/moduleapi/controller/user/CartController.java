@@ -9,7 +9,6 @@ import com.example.modulecart.model.dto.out.CartCookieResponseDTO;
 import com.example.modulecart.model.dto.out.CartDetailDTO;
 import com.example.modulecart.usecase.CartReadUseCase;
 import com.example.modulecart.usecase.CartWriteUseCase;
-import com.example.modulecommon.model.dto.response.ResponseMessageDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -68,8 +67,7 @@ public class CartController {
         else
             responseDTO = cartReadUseCase.getCartList(cartCookie, userId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(responseDTO);
+        return ResponseEntity.ok(responseDTO);
     }
 
     /**
@@ -90,7 +88,7 @@ public class CartController {
             in = ParameterIn.COOKIE
     )
     @PostMapping("/")
-    public ResponseEntity<ResponseMessageDTO> addCart(@RequestBody List<AddCartDTO> addList,
+    public ResponseEntity<Void> addCart(@RequestBody List<AddCartDTO> addList,
                                                       HttpServletRequest request,
                                                       HttpServletResponse response,
                                                       Principal principal) {
@@ -100,8 +98,7 @@ public class CartController {
         if(responseDTO.cookieValue() != null)
             cartUtils.setCartResponseCookie(responseDTO.cookieValue(), response);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseDTO.responseMessage()));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     /**
@@ -127,7 +124,7 @@ public class CartController {
             in = ParameterIn.PATH
     )
     @PatchMapping("/count-up/{cartDetailId}")
-    public ResponseEntity<ResponseMessageDTO> cartCountUp(@PathVariable(name = "cartDetailId") long cartDetailId,
+    public ResponseEntity<Void> cartCountUp(@PathVariable(name = "cartDetailId") long cartDetailId,
                                                           HttpServletRequest request,
                                                           HttpServletResponse response,
                                                           Principal principal) {
@@ -138,8 +135,7 @@ public class CartController {
         if(cartCookie != null)
             cartUtils.setCartResponseCookie(responseDTO.cookieValue(), response);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseDTO.responseMessage()));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     /**
@@ -165,7 +161,7 @@ public class CartController {
             in = ParameterIn.PATH
     )
     @PatchMapping("/count-down/{cartDetailId}")
-    public ResponseEntity<ResponseMessageDTO> cartCountDown(@PathVariable(name = "cartDetailId") long cartDetailId,
+    public ResponseEntity<Void> cartCountDown(@PathVariable(name = "cartDetailId") long cartDetailId,
                                                             HttpServletRequest request,
                                                             HttpServletResponse response,
                                                             Principal principal) {
@@ -176,8 +172,7 @@ public class CartController {
         if(cartCookie != null)
             cartUtils.setCartResponseCookie(responseDTO.cookieValue(), response);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseDTO.responseMessage()));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     /**
@@ -197,7 +192,7 @@ public class CartController {
             in = ParameterIn.COOKIE
     )
     @DeleteMapping("/select")
-    public ResponseEntity<ResponseMessageDTO> deleteSelectCart(@RequestBody List<Long> deleteSelectId,
+    public ResponseEntity<Void> deleteSelectCart(@RequestBody List<Long> deleteSelectId,
                                                                HttpServletRequest request,
                                                                HttpServletResponse response,
                                                                Principal principal) {
@@ -210,8 +205,7 @@ public class CartController {
         else if(cartCookie != null)
             cartUtils.setCartResponseCookie(responseDTO.cookieValue(), response);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseDTO.responseMessage()));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     /**
@@ -231,17 +225,16 @@ public class CartController {
             in = ParameterIn.COOKIE
     )
     @DeleteMapping("/all")
-    public ResponseEntity<ResponseMessageDTO> deleteCart(Principal principal,
+    public ResponseEntity<Void> deleteCart(Principal principal,
                                                          HttpServletRequest request,
                                                          HttpServletResponse response) {
         Cookie cartCookie = cartUtils.getCartCookie(request);
         String userId = principalService.extractUserIdIfExist(principal);
         cartUtils.exceptionAfterValidateCartMemberDTO(cartCookie, userId);
-        String responseMessage = cartWriteUseCase.deleteAllProductFromCart(cartCookie, userId);
+        cartWriteUseCase.deleteAllProductFromCart(cartCookie, userId);
         if(cartCookie != null)
             cartUtils.deleteCartCookie(response);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

@@ -479,13 +479,10 @@ public class AdminProductWriteUseCaseIT {
 
         AdminDiscountPatchDTO patchDTO = new AdminDiscountPatchDTO(productIdList, discount);
 
-        String result = assertDoesNotThrow(() -> adminProductWriteUseCase.patchDiscountProduct(patchDTO));
+        assertDoesNotThrow(() -> adminProductWriteUseCase.patchDiscountProduct(patchDTO));
 
         em.flush();
         em.clear();
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
 
         Product resultEntity = productRepository.findById(fixture.getId()).orElseThrow(IllegalArgumentException::new);
 
@@ -500,10 +497,7 @@ public class AdminProductWriteUseCaseIT {
         int discount = 60;
         AdminDiscountPatchDTO patchDTO = new AdminDiscountPatchDTO(productIdList, discount);
 
-        String result = assertDoesNotThrow(() -> adminProductWriteUseCase.patchDiscountProduct(patchDTO));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> adminProductWriteUseCase.patchDiscountProduct(patchDTO));
 
         em.flush();
         em.clear();

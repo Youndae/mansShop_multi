@@ -5,7 +5,6 @@ import com.example.moduleapi.annotation.swagger.SwaggerAuthentication;
 import com.example.moduleapi.config.exception.ExceptionEntity;
 import com.example.moduleauth.service.AuthenticationService;
 import com.example.modulecommon.customException.CustomAccessDeniedException;
-import com.example.modulecommon.model.dto.response.ResponseMessageDTO;
 import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.moduleuser.model.dto.member.in.*;
 import com.example.moduleuser.model.dto.member.out.UserSearchIdResponseDTO;
@@ -83,8 +82,7 @@ public class MemberController {
 
         userWriteUseCase.loginProc(responseDTO.getUserId(), request, response);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(responseDTO);
+        return ResponseEntity.ok(responseDTO);
     }
 
     /**
@@ -99,7 +97,7 @@ public class MemberController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PostMapping("/logout")
-    public ResponseEntity<ResponseMessageDTO> logoutProc(HttpServletRequest request,
+    public ResponseEntity<Void> logoutProc(HttpServletRequest request,
                                                          HttpServletResponse response,
                                                          Principal principal) {
 
@@ -110,14 +108,13 @@ public class MemberController {
                     .userId(principal.getName())
                     .build();
 
-            String responseMessage = userWriteUseCase.logoutProc(dto, response);
+            userWriteUseCase.logoutProc(dto, response);
 
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseMessageDTO(responseMessage));
+            return ResponseEntity.ok().build();
         }catch (Exception e) {
             log.info("logout createDTO Exception");
             e.printStackTrace();
-            throw new CustomAccessDeniedException(ErrorCode.ACCESS_DENIED, ErrorCode.ACCESS_DENIED.getMessage());
+            throw new CustomAccessDeniedException(ErrorCode.FORBIDDEN, ErrorCode.FORBIDDEN.getMessage());
         }
     }
 
@@ -130,12 +127,11 @@ public class MemberController {
     @Operation(summary = "회원가입 요청")
     @ApiResponse(responseCode = "200", description = "성공")
     @PostMapping("/join")
-    public ResponseEntity<ResponseMessageDTO> joinProc(@RequestBody JoinDTO joinDTO) {
+    public ResponseEntity<Void> joinProc(@RequestBody JoinDTO joinDTO) {
 
-        String responseMessage = userWriteUseCase.joinProc(joinDTO);
+        userWriteUseCase.joinProc(joinDTO);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
 
@@ -155,11 +151,10 @@ public class MemberController {
     )
     @DefaultApiResponse
     @GetMapping("/oAuth/token")
-    public ResponseEntity<ResponseMessageDTO> oAuthIssueToken(HttpServletRequest request, HttpServletResponse response) {
-        String responseMessage = userWriteUseCase.issueOAuthUserToken(request, response);
+    public ResponseEntity<Void> oAuthIssueToken(HttpServletRequest request, HttpServletResponse response) {
+        userWriteUseCase.issueOAuthUserToken(request, response);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.ok().build();
     }
 
     /**
@@ -176,12 +171,11 @@ public class MemberController {
             in = ParameterIn.QUERY
     )
     @GetMapping("/check-id")
-    public ResponseEntity<ResponseMessageDTO> checkJoinId(@RequestParam("userId") String userId) {
+    public ResponseEntity<Void> checkJoinId(@RequestParam("userId") String userId) {
 
-        String responseMessage = userReadUseCase.checkJoinUserId(userId);
+        userReadUseCase.checkJoinUserId(userId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.ok().build();
     }
 
     /**
@@ -200,12 +194,11 @@ public class MemberController {
             in = ParameterIn.QUERY
     )
     @GetMapping("/check-nickname")
-    public ResponseEntity<ResponseMessageDTO> checkNickname(@RequestParam("nickname") String nickname, Principal principal) {
-        System.out.println("test");
-        String responseMessage = userReadUseCase.checkNickname(nickname, principal);
+    public ResponseEntity<Void> checkNickname(@RequestParam("nickname") String nickname, Principal principal) {
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        userReadUseCase.checkNickname(nickname, principal);
+
+        return ResponseEntity.ok().build();
     }
 
     /**
@@ -219,8 +212,7 @@ public class MemberController {
     @GetMapping("/status")
     public ResponseEntity<UserStatusResponseDTO> checkLoginStatus(Authentication authentication) {
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new UserStatusResponseDTO(authentication));
+        return ResponseEntity.ok(new UserStatusResponseDTO(authentication));
     }
 
     /**
@@ -254,16 +246,15 @@ public class MemberController {
             )
     })
     @GetMapping("/search-id")
-    public ResponseEntity<UserSearchIdResponseDTO> searchId(@RequestParam(name = "userName") String userName,
+    public ResponseEntity<String> searchId(@RequestParam(name = "userName") String userName,
                                                             @RequestParam(name = "userPhone", required = false) String userPhone,
                                                             @RequestParam(name = "userEmail", required = false) String userEmail) {
 
         UserSearchDTO searchDTO = new UserSearchDTO(userName, userPhone, userEmail);
 
-        UserSearchIdResponseDTO responseDTO = userReadUseCase.searchId(searchDTO);
+        String response = userReadUseCase.searchId(searchDTO);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(responseDTO);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -300,16 +291,15 @@ public class MemberController {
             )
     })
     @GetMapping("/search-pw")
-    public ResponseEntity<ResponseMessageDTO> searchPw(@RequestParam(name = "id") String userId,
+    public ResponseEntity<Void> searchPw(@RequestParam(name = "id") String userId,
                                                        @RequestParam(name = "name") String userName,
                                                        @RequestParam(name = "email") String userEmail) {
 
         UserSearchPwDTO searchDTO = new UserSearchPwDTO(userId, userName, userEmail);
 
-        String responseMessage = userWriteUseCase.searchPassword(searchDTO);
+        userWriteUseCase.searchPassword(searchDTO);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.ok().build();
     }
 
     /**
@@ -322,12 +312,11 @@ public class MemberController {
     @Operation(summary = "비밀번호 찾기 인증번호 확인 요청")
     @ApiResponse(responseCode = "200", description = "성공. 정상인 경우 OK, 일치하는 데이터가 없는 경우 FAIL, 오류 발생 시 ERROR 반환")
     @PostMapping("/certification")
-    public ResponseEntity<ResponseMessageDTO> checkCertification(@RequestBody UserCertificationDTO certificationDTO) {
+    public ResponseEntity<Void> checkCertification(@RequestBody UserCertificationDTO certificationDTO) {
 
-        String responseMessage = userWriteUseCase.checkCertificationNo(certificationDTO);
+        userWriteUseCase.checkCertificationNo(certificationDTO);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     /**
@@ -344,11 +333,10 @@ public class MemberController {
             )
     })
     @PatchMapping("/reset-pw")
-    public ResponseEntity<ResponseMessageDTO> resetPassword(@RequestBody UserResetPwDTO resetDTO) {
+    public ResponseEntity<Void> resetPassword(@RequestBody UserResetPwDTO resetDTO) {
 
-        String responseMessage = userWriteUseCase.resetPw(resetDTO);
+        userWriteUseCase.resetPw(resetDTO);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

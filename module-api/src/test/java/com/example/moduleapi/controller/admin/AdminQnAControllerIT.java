@@ -11,7 +11,6 @@ import com.example.modulecommon.model.dto.page.AdminQnAPageDTO;
 import com.example.modulecommon.model.dto.qna.in.QnAReplyInsertDTO;
 import com.example.modulecommon.model.dto.qna.in.QnAReplyPatchDTO;
 import com.example.modulecommon.model.dto.qna.out.QnADetailReplyDTO;
-import com.example.modulecommon.model.dto.response.ResponseMessageDTO;
 import com.example.modulecommon.model.entity.*;
 import com.example.modulecommon.model.enumuration.*;
 import com.example.modulecommon.utils.PaginationUtils;
@@ -477,7 +476,7 @@ public class AdminQnAControllerIT {
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue)))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -486,7 +485,7 @@ public class AdminQnAControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -494,20 +493,12 @@ public class AdminQnAControllerIT {
     void patchProductQnAComplete() throws Exception {
         ProductQnA fixture = newProductQnAList.get(0);
 
-        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "qna/product/" + fixture.getId())
+        mockMvc.perform(patch(URL_PREFIX + "qna/product/" + fixture.getId())
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue)))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         ProductQnA patchData = productQnARepository.findById(fixture.getId()).orElse(null);
         assertNotNull(patchData);
@@ -521,7 +512,7 @@ public class AdminQnAControllerIT {
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue)))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -530,7 +521,7 @@ public class AdminQnAControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -540,22 +531,14 @@ public class AdminQnAControllerIT {
         QnAReplyInsertDTO insertDTO = new QnAReplyInsertDTO(fixture.getId(), "test insert productQnA Reply content");
         String requestDTO = om.writeValueAsString(insertDTO);
 
-        MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna/product/reply")
+        mockMvc.perform(post(URL_PREFIX + "qna/product/reply")
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(requestDTO))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         List<QnADetailReplyDTO> saveReplyList = productQnAReplyRepository.findAllByQnAId(fixture.getId());
         assertFalse(saveReplyList.isEmpty());
@@ -593,7 +576,7 @@ public class AdminQnAControllerIT {
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(requestDTO))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -602,7 +585,7 @@ public class AdminQnAControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -612,22 +595,14 @@ public class AdminQnAControllerIT {
         QnAReplyPatchDTO replyDTO = new QnAReplyPatchDTO(fixture.getId(), "test patch productQnA Reply content");
         String requestDTO = om.writeValueAsString(replyDTO);
 
-        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "qna/product/reply")
+        mockMvc.perform(patch(URL_PREFIX + "qna/product/reply")
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(requestDTO))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         ProductQnAReply patchData = productQnAReplyRepository.findById(fixture.getId()).orElse(null);
         assertNotNull(patchData);
@@ -646,7 +621,7 @@ public class AdminQnAControllerIT {
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(requestDTO))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -655,7 +630,7 @@ public class AdminQnAControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -894,7 +869,7 @@ public class AdminQnAControllerIT {
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue)))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -903,7 +878,7 @@ public class AdminQnAControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -911,20 +886,12 @@ public class AdminQnAControllerIT {
     void patchMemberQnAStatusComplete() throws Exception {
         MemberQnA fixture = newMemberQnAList.get(0);
 
-        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "qna/member/" + fixture.getId())
+        mockMvc.perform(patch(URL_PREFIX + "qna/member/" + fixture.getId())
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue)))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         MemberQnA patchData = memberQnARepository.findById(fixture.getId()).orElse(null);
         assertNotNull(patchData);
@@ -938,7 +905,7 @@ public class AdminQnAControllerIT {
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue)))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -947,7 +914,7 @@ public class AdminQnAControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -957,22 +924,14 @@ public class AdminQnAControllerIT {
         QnAReplyInsertDTO insertDTO = new QnAReplyInsertDTO(fixture.getId(), "test insert MemberQnA reply content");
         String requestDTO = om.writeValueAsString(insertDTO);
 
-        MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna/member/reply")
+        mockMvc.perform(post(URL_PREFIX + "qna/member/reply")
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         MemberQnA patchData = memberQnARepository.findById(fixture.getId()).orElse(null);
         assertNotNull(patchData);
@@ -1015,7 +974,7 @@ public class AdminQnAControllerIT {
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -1024,7 +983,7 @@ public class AdminQnAControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -1034,22 +993,14 @@ public class AdminQnAControllerIT {
         QnAReplyPatchDTO replyDTO = new QnAReplyPatchDTO(fixture.getId(), "test patch MemberQnA reply content");
         String requestDTO = om.writeValueAsString(replyDTO);
 
-        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "qna/member/reply")
+        mockMvc.perform(patch(URL_PREFIX + "qna/member/reply")
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         MemberQnAReply patchData = memberQnAReplyRepository.findById(fixture.getId()).orElse(null);
         assertNotNull(patchData);
@@ -1068,7 +1019,7 @@ public class AdminQnAControllerIT {
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -1077,7 +1028,7 @@ public class AdminQnAControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -1133,22 +1084,14 @@ public class AdminQnAControllerIT {
     void postQnAClassification() throws Exception {
         String classification = "testClassificationName";
         int classificationSize = qnAClassificationList.size() + 1;
-        MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna/classification")
+        mockMvc.perform(post(URL_PREFIX + "qna/classification")
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(classification))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         List<QnAClassification> qnAClassifications = qnAClassificationRepository.findAll();
         assertNotNull(qnAClassifications);
@@ -1164,20 +1107,12 @@ public class AdminQnAControllerIT {
     void deleteQnAClassification() throws Exception {
         Long deleteId = qnAClassificationList.get(0).getId();
         int classificationSize = qnAClassificationList.size() - 1;
-        MvcResult result = mockMvc.perform(delete(URL_PREFIX + "qna/classification/" + deleteId)
+        mockMvc.perform(delete(URL_PREFIX + "qna/classification/" + deleteId)
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue)))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         List<QnAClassification> qnAClassifications = qnAClassificationRepository.findAll();
         assertNotNull(qnAClassifications);
@@ -1195,7 +1130,7 @@ public class AdminQnAControllerIT {
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue)))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -1204,6 +1139,6 @@ public class AdminQnAControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 }

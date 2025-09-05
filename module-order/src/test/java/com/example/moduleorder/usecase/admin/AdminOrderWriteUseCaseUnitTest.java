@@ -52,10 +52,7 @@ public class AdminOrderWriteUseCaseUnitTest {
         doNothing().when(orderDataService).saveProductOrder(any(ProductOrder.class));
         doNothing().when(orderExternalService).sendOrderNotification(any());
 
-        String result = assertDoesNotThrow(() -> adminOrderWriteUseCase.orderPreparation(1L));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> adminOrderWriteUseCase.orderPreparation(1L));
     }
 
     @Test

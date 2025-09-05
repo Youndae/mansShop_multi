@@ -4,7 +4,6 @@ import com.example.moduleapi.annotation.swagger.DefaultApiResponse;
 import com.example.moduleapi.annotation.swagger.SwaggerAuthentication;
 import com.example.moduleapi.mapper.PagingResponseMapper;
 import com.example.moduleapi.model.response.PagingResponseDTO;
-import com.example.modulecommon.model.dto.response.ResponseMessageDTO;
 import com.example.moduleuser.model.dto.admin.in.AdminPostPointDTO;
 import com.example.moduleuser.model.dto.admin.out.AdminMemberDTO;
 import com.example.moduleuser.model.dto.admin.page.AdminMemberPageDTO;
@@ -18,7 +17,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -86,11 +84,10 @@ public class AdminMemberController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PatchMapping("/member/point")
-    public ResponseEntity<ResponseMessageDTO> postPoint(@RequestBody AdminPostPointDTO pointDTO){
+    public ResponseEntity<Void> postPoint(@RequestBody AdminPostPointDTO pointDTO){
 
-        String responseMessage = adminMemberWriteUseCase.postPoint(pointDTO);
+        adminMemberWriteUseCase.postPoint(pointDTO);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.ok().build();
     }
 }

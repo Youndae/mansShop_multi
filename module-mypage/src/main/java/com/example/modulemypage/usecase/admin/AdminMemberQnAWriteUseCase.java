@@ -22,10 +22,9 @@ public class AdminMemberQnAWriteUseCase {
 
     private final MemberQnAExternalService memberQnAExternalService;
 
-    public String patchMemberQnAComplete(long qnaId) {
+    public void patchMemberQnAComplete(long qnaId) {
         MemberQnA memberQnA = memberQnADataService.findMemberQnAByIdOrElseIllegal(qnaId);
         patchMemberQnAStatusAndSave(memberQnA);
-        return Result.OK.getResultKey();
     }
 
     private void patchMemberQnAStatusAndSave(MemberQnA memberQnA) {
@@ -33,35 +32,25 @@ public class AdminMemberQnAWriteUseCase {
         memberQnADataService.saveMemberQnA(memberQnA);
     }
 
-    public String postMemberQnAReply(QnAReplyInsertDTO insertDTO, String userId) {
-        String postReplyResult = memberQnAWriteUseCase.postMemberQnAReply(insertDTO, userId);
+    public void postMemberQnAReply(QnAReplyInsertDTO insertDTO, String userId) {
+        memberQnAWriteUseCase.postMemberQnAReply(insertDTO, userId);
 
-        if(postReplyResult.equals(Result.OK.getResultKey())) {
-            MemberQnA memberQnA = memberQnADataService.findMemberQnAByIdOrElseIllegal(insertDTO.qnaId());
-            patchMemberQnAStatusAndSave(memberQnA);
+        MemberQnA memberQnA = memberQnADataService.findMemberQnAByIdOrElseIllegal(insertDTO.qnaId());
+        patchMemberQnAStatusAndSave(memberQnA);
 
-            memberQnAExternalService.sendMemberQnANotification(insertDTO.qnaId(), memberQnA);
-
-            return Result.OK.getResultKey();
-        }else {
-            throw new IllegalArgumentException("PostMemberQnAReply Result is not OK.");
-        }
+        memberQnAExternalService.sendMemberQnANotification(insertDTO.qnaId(), memberQnA);
     }
 
-    public String postQnAClassification(String classification) {
+    public void postQnAClassification(String classification) {
         QnAClassification entity = QnAClassification.builder()
                                     .qnaClassificationName(classification)
                                     .build();
 
         memberQnADataService.saveQnAClassification(entity);
-
-        return Result.OK.getResultKey();
     }
 
-    public String deleteQnAClassification(Long classificationId) {
+    public void deleteQnAClassification(Long classificationId) {
         memberQnADataService.getQnAClassificationByIdOrElseIllegal(classificationId);
         memberQnADataService.deleteQnAClassificationById(classificationId);
-
-        return Result.OK.getResultKey();
     }
 }

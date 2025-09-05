@@ -1812,3 +1812,12 @@ catch에서 이미지 파일을 삭제한 후 강제로 예외를 발생시켜 �
     - PreAuthorize만을 사용했던 이전과 달리 이번에는 requestMatchers를 사용했는데 이 경우 exceptionHandling 설정을 하지 않는 경우 무조건 권한 문제가 발생했을 때 /login 경로로 이동하게 됨.
       특히나 CustomLogin 페이지가 아닌 OAuth 로그인 페이지로 이동시켜주는게 문제. 그래서 exceptionHandling을 통해 단일 모듈 버전처럼 403(FORBIDDEN)을 반환하도록 설정.
     - 이후 빌드 테스트, 브라우저 테스트 모두 통과.
+
+<br/>
+
+- 25/09/06
+  - 전체 프로젝트 응답 구조 수정.
+    - 클라이언트 응답 REST 규칙에 맞게 수정.   
+    - UseCase, Service 등에서 굳이 반환 필요없는 부분들 제거하고 void로 수정   
+    - Result Enum은 꼭 필요한 부분에서만 사용하는 방향으로 수정
+    - 전체 테스트에 대해 개별 테스트, build 테스트 수행

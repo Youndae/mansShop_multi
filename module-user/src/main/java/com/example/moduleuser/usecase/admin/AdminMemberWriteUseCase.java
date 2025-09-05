@@ -1,7 +1,6 @@
 package com.example.moduleuser.usecase.admin;
 
 import com.example.modulecommon.model.entity.Member;
-import com.example.modulecommon.model.enumuration.Result;
 import com.example.moduleuser.model.dto.admin.in.AdminPostPointDTO;
 import com.example.moduleuser.service.UserDataService;
 import lombok.RequiredArgsConstructor;
@@ -15,13 +14,9 @@ public class AdminMemberWriteUseCase {
 
     private final UserDataService userDataService;
 
-    public String postPoint(AdminPostPointDTO pointDTO) {
+    public void postPoint(AdminPostPointDTO pointDTO) {
         Member member = userDataService.getMemberByUserIdOrElseIllegal(pointDTO.userId());
-
         member.setMemberPoint(pointDTO.point());
-
         userDataService.saveMember(member);
-
-        return Result.OK.getResultKey();
     }
 }

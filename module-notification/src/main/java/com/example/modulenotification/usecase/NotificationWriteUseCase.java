@@ -29,7 +29,7 @@ public class NotificationWriteUseCase {
 
         if(member == null) {
             log.info("SendNotification Member not found. userId: {}", userId);
-            throw new CustomAccessDeniedException(ErrorCode.ACCESS_DENIED, ErrorCode.ACCESS_DENIED.getMessage());
+            throw new CustomAccessDeniedException(ErrorCode.FORBIDDEN, ErrorCode.FORBIDDEN.getMessage());
         }
 
         Notification notification = notificationDomainService.buildNotificationEntity(member, sendDTO);

@@ -126,7 +126,7 @@ public class SalesReadeUseCase {
         AdminProductSalesDTO totalSalesDTO = productSalesDataService.getProductSales(productId);
 
         if(totalSalesDTO.productName() == null)
-            throw new CustomNotFoundException(ErrorCode.NOT_FOUND, ErrorCode.NOT_FOUND.getMessage());
+            throw new CustomNotFoundException(ErrorCode.BAD_REQUEST, ErrorCode.BAD_REQUEST.getMessage());
 
         AdminSalesDTO yearSalesDTO = productSalesDataService.getProductPeriodSales(year, productId);
         AdminSalesDTO lastYearSalesDTO = productSalesDataService.getProductPeriodSales(year - 1, productId);

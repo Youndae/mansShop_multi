@@ -514,7 +514,7 @@ public class MyPageControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.ACCESS_DENIED.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.FORBIDDEN.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -533,7 +533,7 @@ public class MyPageControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -541,20 +541,12 @@ public class MyPageControllerIT {
     void deleteProductQnA() throws Exception {
         Long fixtureId = allProductQnAList.get(0).getId();
 
-        MvcResult result = mockMvc.perform(delete(URL_PREFIX + "qna/product/" + fixtureId)
+        mockMvc.perform(delete(URL_PREFIX + "qna/product/" + fixtureId)
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue)))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>(){}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         ProductQnA deleteData = productQnARepository.findById(fixtureId).orElse(null);
         assertNull(deleteData);
@@ -577,7 +569,7 @@ public class MyPageControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.ACCESS_DENIED.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.FORBIDDEN.getMessage(), response.errorMessage());
 
         ProductQnA deleteData = productQnARepository.findById(fixtureId).orElse(null);
         assertNotNull(deleteData);
@@ -599,7 +591,7 @@ public class MyPageControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -665,7 +657,7 @@ public class MyPageControllerIT {
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ResponseIdDTO<Long> response = om.readValue(
@@ -710,7 +702,7 @@ public class MyPageControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -799,7 +791,7 @@ public class MyPageControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.ACCESS_DENIED.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.FORBIDDEN.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -818,7 +810,7 @@ public class MyPageControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -837,7 +829,7 @@ public class MyPageControllerIT {
         QnAReplyInsertDTO insertDTO = new QnAReplyInsertDTO(fixture.getId(), "test reply content");
         String requestDTO = om.writeValueAsString(insertDTO);
 
-        MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna/member/reply")
+        mockMvc.perform(post(URL_PREFIX + "qna/member/reply")
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue))
@@ -845,14 +837,6 @@ public class MyPageControllerIT {
                         .content(requestDTO))
                 .andExpect(status().isOk())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>(){}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         MemberQnA patchMemberQnA = memberQnARepository.findById(fixture.getId()).orElse(null);
         assertNotNull(patchMemberQnA);
@@ -889,7 +873,7 @@ public class MyPageControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -913,7 +897,7 @@ public class MyPageControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.ACCESS_DENIED.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.FORBIDDEN.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -928,22 +912,14 @@ public class MyPageControllerIT {
         QnAReplyPatchDTO replyDTO = new QnAReplyPatchDTO(fixture.getId(), "modify memberQnA Reply content");
         String requestDTO = om.writeValueAsString(replyDTO);
 
-        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "qna/member/reply")
+        mockMvc.perform(patch(URL_PREFIX + "qna/member/reply")
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>(){}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         MemberQnAReply patchData = memberQnAReplyRepository.findById(fixture.getId()).orElse(null);
         assertNotNull(patchData);
@@ -971,7 +947,7 @@ public class MyPageControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -1001,7 +977,7 @@ public class MyPageControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.ACCESS_DENIED.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.FORBIDDEN.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -1045,7 +1021,7 @@ public class MyPageControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -1064,7 +1040,7 @@ public class MyPageControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -1084,22 +1060,14 @@ public class MyPageControllerIT {
         );
         String requestDTO = om.writeValueAsString(modifyDTO);
 
-        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "qna/member")
+        mockMvc.perform(patch(URL_PREFIX + "qna/member")
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>(){}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         MemberQnA patchData = memberQnARepository.findById(fixture.getId()).orElse(null);
         assertNotNull(patchData);
@@ -1134,7 +1102,7 @@ public class MyPageControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -1163,7 +1131,7 @@ public class MyPageControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.ACCESS_DENIED.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.FORBIDDEN.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -1198,7 +1166,7 @@ public class MyPageControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -1211,20 +1179,12 @@ public class MyPageControllerIT {
                 .findFirst()
                 .get()
                 .getId();
-        MvcResult result = mockMvc.perform(delete(URL_PREFIX + "qna/member/" + deleteId)
+        mockMvc.perform(delete(URL_PREFIX + "qna/member/" + deleteId)
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue)))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>(){}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         MemberQnA deleteData = memberQnARepository.findById(deleteId).orElse(null);
         assertNull(deleteData);
@@ -1246,7 +1206,7 @@ public class MyPageControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -1265,7 +1225,7 @@ public class MyPageControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.ACCESS_DENIED.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.FORBIDDEN.getMessage(), response.errorMessage());
 
         MemberQnA checkData = memberQnARepository.findById(noneMemberQnA.getId()).orElse(null);
         assertNotNull(checkData);
@@ -1409,7 +1369,7 @@ public class MyPageControllerIT {
         );
 
         assertNotNull(response);
-        assertNotNull(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertNotNull(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -1428,7 +1388,7 @@ public class MyPageControllerIT {
         );
 
         assertNotNull(response);
-        assertNotNull(ErrorCode.ACCESS_DENIED.getMessage(), response.errorMessage());
+        assertNotNull(ErrorCode.FORBIDDEN.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -1458,22 +1418,14 @@ public class MyPageControllerIT {
         );
         String requestDTO = om.writeValueAsString(reviewDTO);
 
-        MvcResult result = mockMvc.perform(post(URL_PREFIX + "review")
+        mockMvc.perform(post(URL_PREFIX + "review")
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>(){}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         List<ProductReview> reviewList = productReviewRepository.findAll();
         assertFalse(reviewList.isEmpty());
@@ -1527,7 +1479,7 @@ public class MyPageControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -1569,7 +1521,7 @@ public class MyPageControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -1613,7 +1565,7 @@ public class MyPageControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -1657,7 +1609,7 @@ public class MyPageControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -1704,7 +1656,7 @@ public class MyPageControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -1718,22 +1670,14 @@ public class MyPageControllerIT {
                 .get();
         MyPagePatchReviewDTO patchDTO = new MyPagePatchReviewDTO(fixture.getId(), "test modify review content");
         String requestDTO = om.writeValueAsString(patchDTO);
-        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "review")
+        mockMvc.perform(patch(URL_PREFIX + "review")
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>(){}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         ProductReview patchData = productReviewRepository.findById(fixture.getId()).orElse(null);
         assertNotNull(patchData);
@@ -1760,7 +1704,7 @@ public class MyPageControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -1783,7 +1727,7 @@ public class MyPageControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.ACCESS_DENIED.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.FORBIDDEN.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -1796,20 +1740,12 @@ public class MyPageControllerIT {
                 .findFirst()
                 .get()
                 .getId();
-        MvcResult result = mockMvc.perform(delete(URL_PREFIX + "review/" + deleteId)
+        mockMvc.perform(delete(URL_PREFIX + "review/" + deleteId)
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue)))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>(){}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         ProductReview deleteReview = productReviewRepository.findById(deleteId).orElse(null);
         assertNull(deleteReview);
@@ -1831,7 +1767,7 @@ public class MyPageControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -1850,7 +1786,7 @@ public class MyPageControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.ACCESS_DENIED.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.FORBIDDEN.getMessage(), response.errorMessage());
 
         ProductReview checkData = productReviewRepository.findById(noneMemberReview.getId()).orElse(null);
         assertNotNull(checkData);
@@ -1892,22 +1828,14 @@ public class MyPageControllerIT {
         );
         String requestDTO = om.writeValueAsString(patchDTO);
 
-        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "info")
+        mockMvc.perform(patch(URL_PREFIX + "info")
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>(){}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         Member patchMember = memberRepository.findByUserId(member.getUserId());
         assertNotNull(patchMember);

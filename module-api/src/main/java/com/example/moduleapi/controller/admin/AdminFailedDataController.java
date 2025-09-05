@@ -6,7 +6,7 @@ import com.example.moduleadmin.usecase.failedData.AdminFailedDataWriteUseCase;
 import com.example.moduleapi.annotation.swagger.DefaultApiResponse;
 import com.example.moduleapi.annotation.swagger.SwaggerAuthentication;
 import com.example.moduleapi.model.response.ResponseIdDTO;
-import com.example.modulecommon.model.dto.response.ResponseMessageDTO;
+import com.example.modulecommon.model.enumuration.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -39,8 +39,7 @@ public class AdminFailedDataController {
     public ResponseEntity<List<FailedQueueDTO>> getFailedQueueCount() {
         List<FailedQueueDTO> responseDTO = adminFailedDataReadUseCase.getFailedMessageList();
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(responseDTO);
+        return ResponseEntity.ok(responseDTO);
     }
 
     /**
@@ -54,11 +53,10 @@ public class AdminFailedDataController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PostMapping("/message")
-    public ResponseEntity<ResponseMessageDTO> retryDLQMessages(@RequestBody List<FailedQueueDTO> failedQueueDTO) {
-        String responseMessage = adminFailedDataWriteUseCase.retryDLQMessages(failedQueueDTO);
+    public ResponseEntity<Void> retryDLQMessages(@RequestBody List<FailedQueueDTO> failedQueueDTO) {
+        adminFailedDataWriteUseCase.retryDLQMessages(failedQueueDTO);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.ok().build();
     }
 
     /**
@@ -69,8 +67,7 @@ public class AdminFailedDataController {
     public ResponseEntity<ResponseIdDTO<Long>> getFailedOrderDataByRedis() {
         long response = adminFailedDataReadUseCase.getFailedOrderDataByRedis();
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseIdDTO<>(response));
+        return ResponseEntity.ok(new ResponseIdDTO<>(response));
     }
 
     /**
@@ -78,10 +75,14 @@ public class AdminFailedDataController {
      * redis에 저장된 실패한 주문 데이터 재처리
      */
     @PostMapping("/message/order")
-    public ResponseEntity<ResponseMessageDTO> retryRedisOrderMessage() {
+    public ResponseEntity<Void> retryRedisOrderMessage() {
         String responseMessage = adminFailedDataWriteUseCase.retryFailedOrderByRedis();
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        HttpStatus status = HttpStatus.OK;
+
+        if(responseMessage.equals(Result.EMPTY.getResultKey()))
+            status = HttpStatus.NO_CONTENT;
+
+        return ResponseEntity.status(status).build();
     }
 }

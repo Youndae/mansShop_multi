@@ -130,10 +130,7 @@ public class AdminProductReviewWriteUseCaseIT {
 
         doNothing().when(productReviewExternalService).sendProductReviewNotification(any());
 
-        String result = assertDoesNotThrow(() -> adminProductReviewWriteUseCase.postReviewReply(postDTO, admin.getUserId()));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> adminProductReviewWriteUseCase.postReviewReply(postDTO, admin.getUserId()));
 
         ProductReview reviewEntity = productReviewRepository.findById(reviewFixture.getId()).orElse(null);
 

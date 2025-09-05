@@ -7,11 +7,9 @@ import com.example.moduleapi.fixture.TokenFixture;
 import com.example.moduleapi.model.response.PagingResponseDTO;
 import com.example.modulecommon.fixture.MemberAndAuthFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
-import com.example.modulecommon.model.dto.response.ResponseMessageDTO;
 import com.example.modulecommon.model.entity.Auth;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.ErrorCode;
-import com.example.modulecommon.model.enumuration.Result;
 import com.example.modulecommon.utils.PaginationUtils;
 import com.example.moduleuser.model.dto.admin.in.AdminPostPointDTO;
 import com.example.moduleuser.model.dto.admin.out.AdminMemberDTO;
@@ -265,7 +263,7 @@ public class AdminMemberControllerIT {
         AdminPostPointDTO pointDTO = new AdminPostPointDTO(member.getUserId(), 1000);
         long pointFixture = member.getMemberPoint() + pointDTO.point();
         String requestDTO = om.writeValueAsString(pointDTO);
-        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "member/point")
+        mockMvc.perform(patch(URL_PREFIX + "member/point")
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue))
@@ -273,14 +271,6 @@ public class AdminMemberControllerIT {
                         .content(requestDTO))
                 .andExpect(status().isOk())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         Member patchData = memberRepository.findByUserId(member.getUserId());
         assertNotNull(patchData);
@@ -298,7 +288,7 @@ public class AdminMemberControllerIT {
                         .cookie(new Cookie(inoHeader, inoValue))
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(requestDTO))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -307,6 +297,6 @@ public class AdminMemberControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.NOT_FOUND.getMessage(), response.errorMessage());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 }

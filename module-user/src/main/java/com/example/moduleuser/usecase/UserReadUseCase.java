@@ -1,6 +1,9 @@
 package com.example.moduleuser.usecase;
 
+import com.example.modulecommon.customException.CustomDuplicateException;
+import com.example.modulecommon.customException.CustomNotFoundException;
 import com.example.modulecommon.model.entity.Member;
+import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.modulecommon.model.enumuration.Result;
 import com.example.moduleuser.model.dto.member.in.UserSearchDTO;
 import com.example.moduleuser.model.dto.member.out.MyPageInfoDTO;
@@ -21,31 +24,36 @@ public class UserReadUseCase {
     private final UserDataService userDataService;
     private final UserDomainService userDomainService;
 
-    public String checkJoinUserId(String userId) {
+    public void checkJoinUserId(String userId) {
         Member member = userDataService.getMemberByUserIdOrElseNull(userId);
 
-        if(member == null)
-            return Result.NO_DUPLICATE.getResultKey();
-
-        return Result.DUPLICATE.getResultKey();
+        if(member != null)
+            throw new CustomDuplicateException(ErrorCode.CONFLICT, ErrorCode.CONFLICT.getMessage());
     }
 
-    public String checkNickname(String nickname, Principal principal) {
+    public void checkNickname(String nickname, Principal principal) {
         Member member = userDataService.getMemberByNickname(nickname);
 
-        if(member == null || (principal != null && member.getUserId().equals(principal.getName())))
-            return Result.NO_DUPLICATE.getResultKey();
-
-        return Result.DUPLICATE.getResultKey();
+        if(isConflict(member, principal))
+            throw new CustomDuplicateException(ErrorCode.CONFLICT, ErrorCode.CONFLICT.getMessage());
     }
 
-    public UserSearchIdResponseDTO searchId(UserSearchDTO searchDTO) {
-        String userId = userDataService.getSearchUserId(searchDTO);
-        String message = Result.OK.getResultKey();
-        if(userId == null)
-            message = Result.NOTFOUND.getResultKey();
+    private boolean isConflict(Member member, Principal principal) {
+        if(member == null)
+            return false;
+        if (principal == null)
+            return true;
 
-        return new UserSearchIdResponseDTO(userId, message);
+        return !member.getUserId().equals(principal.getName());
+    }
+
+    public String searchId(UserSearchDTO searchDTO) {
+        String userId = userDataService.getSearchUserId(searchDTO);
+
+        if(userId == null)
+            throw new CustomNotFoundException(ErrorCode.BAD_REQUEST, ErrorCode.BAD_REQUEST.getMessage());
+
+        return userId;
     }
 
     public MyPageInfoDTO getMyPageUserInfo(String userId) {

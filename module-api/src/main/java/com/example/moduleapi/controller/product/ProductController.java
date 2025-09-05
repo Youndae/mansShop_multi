@@ -5,7 +5,6 @@ import com.example.moduleapi.annotation.swagger.SwaggerAuthentication;
 import com.example.moduleapi.mapper.PagingResponseMapper;
 import com.example.moduleapi.model.response.PagingElementsResponseDTO;
 import com.example.moduleapi.service.PrincipalService;
-import com.example.modulecommon.model.dto.response.ResponseMessageDTO;
 import com.example.moduleproduct.model.dto.page.ProductDetailPageDTO;
 import com.example.moduleproduct.model.dto.product.business.ProductQnAResponseDTO;
 import com.example.moduleproduct.model.dto.product.in.ProductQnAPostDTO;
@@ -25,7 +24,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -77,8 +75,7 @@ public class ProductController {
 
         ProductDetailDTO responseDTO = productReadUseCase.getProductDetail(productId, userId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(responseDTO);
+        return ResponseEntity.ok(responseDTO);
     }
 
     /**
@@ -170,13 +167,12 @@ public class ProductController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PostMapping("/qna")
-    public ResponseEntity<ResponseMessageDTO> postProductQnA(@RequestBody ProductQnAPostDTO postDTO, Principal principal) {
+    public ResponseEntity<Void> postProductQnA(@RequestBody ProductQnAPostDTO postDTO, Principal principal) {
 
         String userId = principalService.extractUserId(principal);
-        String responseMessage = productQnAWriteUseCase.postProductQnA(postDTO, userId);
+        productQnAWriteUseCase.postProductQnA(postDTO, userId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     /**
@@ -191,7 +187,7 @@ public class ProductController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PostMapping("/like")
-    public ResponseEntity<ResponseMessageDTO> likeProduct(@Schema(name = "productId", description = "상품 아이디")
+    public ResponseEntity<Void> likeProduct(@Schema(name = "productId", description = "상품 아이디")
                                                           @RequestBody Map<String, String> productIdMap,
                                                           Principal principal) {
 
@@ -203,10 +199,9 @@ public class ProductController {
         }
 
         String userId = principalService.extractUserId(principal);
-        String responseMessage = productLikeWriteUseCase.likeProduct(productId, userId);
+        productLikeWriteUseCase.likeProduct(productId, userId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     /**
@@ -227,13 +222,12 @@ public class ProductController {
             in = ParameterIn.PATH
     )
     @DeleteMapping("/like/{productId}")
-    public ResponseEntity<ResponseMessageDTO> deLikeProduct(@PathVariable(name = "productId") String productId,
+    public ResponseEntity<Void> deLikeProduct(@PathVariable(name = "productId") String productId,
                                                             Principal principal) {
 
         String userId = principalService.extractUserId(principal);
-        String responseMessage = productLikeWriteUseCase.deleteProductLike(productId, userId);
+        productLikeWriteUseCase.deleteProductLike(productId, userId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

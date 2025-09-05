@@ -37,14 +37,14 @@ public class MemberQnAWriteUseCase {
         return memberQnADataService.saveMemberQnA(saveEntity);
     }
 
-    public String postMemberQnAReply(QnAReplyInsertDTO insertDTO, String userId) {
+    public void postMemberQnAReply(QnAReplyInsertDTO insertDTO, String userId) {
         Member member = userDataService.getMemberByUserIdFetchAuthsOrElseIllegal(userId);
         MemberQnA memberQnA = memberQnADataService.findMemberQnAByIdOrElseIllegal(insertDTO.qnaId());
         boolean isAdmin = member.getAuths().size() > 1;
 
         if(!isAdmin && !member.getUserId().equals(memberQnA.getMember().getUserId())) {
             log.info("PostMemberQnAReply writer not match or not admin. userId: {}, writer: {} ", userId, memberQnA.getMember().getUserId());
-            throw new CustomAccessDeniedException(ErrorCode.ACCESS_DENIED, ErrorCode.ACCESS_DENIED.getMessage());
+            throw new CustomAccessDeniedException(ErrorCode.FORBIDDEN, ErrorCode.FORBIDDEN.getMessage());
         }
 
         memberQnA.setMemberQnAStat(isAdmin);
@@ -53,31 +53,27 @@ public class MemberQnAWriteUseCase {
         MemberQnAReply memberQnAReply = memberQnADomainService.buildInsertMemberQnaReply(member, memberQnA, insertDTO.content());
 
         memberQnADataService.saveMemberQnAReply(memberQnAReply);
-
-        return Result.OK.getResultKey();
     }
 
-    public String patchMemberQnAReply(QnAReplyPatchDTO replyDTO, String userId) {
+    public void patchMemberQnAReply(QnAReplyPatchDTO replyDTO, String userId) {
         MemberQnAReply memberQnAReply = memberQnADataService.findMemberQnAReplyByIdOrElseIllegal(replyDTO.replyId());
 
         if(!memberQnAReply.getMember().getUserId().equals(userId)){
             log.info("PatchMemberQnAReply writer not match. userId: {}, writer: {} ", userId, memberQnAReply.getMember().getUserId());
-            throw new CustomAccessDeniedException(ErrorCode.ACCESS_DENIED, ErrorCode.ACCESS_DENIED.getMessage());
+            throw new CustomAccessDeniedException(ErrorCode.FORBIDDEN, ErrorCode.FORBIDDEN.getMessage());
         }
 
         memberQnAReply.setReplyContent(replyDTO.content());
 
         memberQnADataService.saveMemberQnAReply(memberQnAReply);
-
-        return Result.OK.getResultKey();
     }
 
-    public String patchMemberQnA(MemberQnAModifyDTO modifyDTO, String userId) {
+    public void patchMemberQnA(MemberQnAModifyDTO modifyDTO, String userId) {
         MemberQnA memberQnA = memberQnADataService.findMemberQnAByIdOrElseIllegal(modifyDTO.qnaId());
 
         if(!memberQnA.getMember().getUserId().equals(userId)){
             log.info("PatchMemberQnA writer not match. userId: {}, writer: {}", userId, memberQnA.getMember().getUserId());
-            throw new CustomAccessDeniedException(ErrorCode.ACCESS_DENIED, ErrorCode.ACCESS_DENIED.getMessage());
+            throw new CustomAccessDeniedException(ErrorCode.FORBIDDEN, ErrorCode.FORBIDDEN.getMessage());
         }
 
         QnAClassification qnAClassification = memberQnADataService.findQnAClassificationByIdOrElseIllegal(modifyDTO.classificationId());
@@ -85,20 +81,16 @@ public class MemberQnAWriteUseCase {
         memberQnA.setModifyData(modifyDTO.title(), modifyDTO.content(), qnAClassification);
 
         memberQnADataService.saveMemberQnA(memberQnA);
-
-        return Result.OK.getResultKey();
     }
 
-    public String deleteMemberQnA(long qnaId, String userId) {
+    public void deleteMemberQnA(long qnaId, String userId) {
         MemberQnA memberQnA = memberQnADataService.findMemberQnAByIdOrElseIllegal(qnaId);
 
         if(!memberQnA.getMember().getUserId().equals(userId)){
             log.info("DeleteMemberQnA writer not match. userId: {}, writer: {}", userId, memberQnA.getMember().getUserId());
-            throw new CustomAccessDeniedException(ErrorCode.ACCESS_DENIED, ErrorCode.ACCESS_DENIED.getMessage());
+            throw new CustomAccessDeniedException(ErrorCode.FORBIDDEN, ErrorCode.FORBIDDEN.getMessage());
         }
 
         memberQnADataService.deleteMemberQnAById(qnaId);
-
-        return Result.OK.getResultKey();
     }
 }

@@ -14,7 +14,7 @@ public class ProductLikeDomainService {
 
     public ProductLike buildLikeProduct(Member member, Product product) {
         if(member == null || product == null)
-            throw new CustomNotFoundException(ErrorCode.NOT_FOUND, ErrorCode.NOT_FOUND.getMessage());
+            throw new CustomNotFoundException(ErrorCode.BAD_REQUEST, ErrorCode.BAD_REQUEST.getMessage());
 
         return ProductLike.builder()
                 .member(member)

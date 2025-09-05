@@ -25,7 +25,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         Member member = userDataService.getMemberByLocalUserId(username);
 
         if(member == null)
-            throw new CustomBadCredentialsException(ErrorCode.BAD_CREDENTIALS, ErrorCode.BAD_CREDENTIALS.getMessage());
+            throw new CustomBadCredentialsException(ErrorCode.UNAUTHORIZED, ErrorCode.UNAUTHORIZED.getMessage());
 
         return new CustomUser(member);
     }

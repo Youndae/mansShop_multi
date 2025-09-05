@@ -118,10 +118,7 @@ public class AdminMemberQnAWriteUseCaseIT {
     void patchMemberQnAComplete() {
         MemberQnA memberQnA = newMemberQnAList.get(0);
 
-        String result = assertDoesNotThrow(() -> adminMemberQnAWriteUseCase.patchMemberQnAComplete(memberQnA.getId()));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> adminMemberQnAWriteUseCase.patchMemberQnAComplete(memberQnA.getId()));
 
         MemberQnA patchMemberQnA = memberQnARepository.findById(memberQnA.getId()).orElse(null);
 
@@ -156,10 +153,7 @@ public class AdminMemberQnAWriteUseCaseIT {
 
         doNothing().when(memberQnAExternalService).sendMemberQnANotification(anyLong(), any(MemberQnA.class));
 
-        String result = assertDoesNotThrow(() -> adminMemberQnAWriteUseCase.postMemberQnAReply(insertDTO, admin.getUserId()));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> adminMemberQnAWriteUseCase.postMemberQnAReply(insertDTO, admin.getUserId()));
 
         List<QnADetailReplyDTO> replyList = memberQnAReplyRepository.findAllByQnAId(memberQnA.getId());
         assertFalse(replyList.isEmpty());
@@ -191,10 +185,7 @@ public class AdminMemberQnAWriteUseCaseIT {
     void postQnAClassification() {
         String classificationName = "테스트 분류";
 
-        String result = assertDoesNotThrow(() -> adminMemberQnAWriteUseCase.postQnAClassification(classificationName));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> adminMemberQnAWriteUseCase.postQnAClassification(classificationName));
 
         List<QnAClassification> allQnAClassificationList = qnAClassificationRepository.findAll();
 
@@ -208,10 +199,7 @@ public class AdminMemberQnAWriteUseCaseIT {
     void deleteQnAClassification() {
         Long deleteId = qnAClassificationList.get(0).getId();
 
-        String result = assertDoesNotThrow(() -> adminMemberQnAWriteUseCase.deleteQnAClassification(deleteId));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> adminMemberQnAWriteUseCase.deleteQnAClassification(deleteId));
 
         QnAClassification checkDeleteClassification = qnAClassificationRepository.findById(deleteId).orElse(null);
 

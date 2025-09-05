@@ -367,10 +367,7 @@ public class CartWriteUseCaseIT {
     void deleteAllCart() {
         Member member = memberList.get(0);
 
-        String result = assertDoesNotThrow(() -> cartWriteUseCase.deleteAllProductFromCart(null, member.getUserId()));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> cartWriteUseCase.deleteAllProductFromCart(null, member.getUserId()));
 
         CartMemberDTO cartMemberDTO = new CartMemberDTO(member.getUserId(), null);
         Long cartId = cartRepository.findIdByUserId(cartMemberDTO);

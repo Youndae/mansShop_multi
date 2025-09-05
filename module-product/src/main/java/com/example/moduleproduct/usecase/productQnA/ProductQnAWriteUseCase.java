@@ -25,26 +25,22 @@ public class ProductQnAWriteUseCase {
 
     private final ProductDataService productDataService;
 
-    public String postProductQnA(ProductQnAPostDTO postDTO, String userId) {
+    public void postProductQnA(ProductQnAPostDTO postDTO, String userId) {
         Member member = userDataService.getMemberByUserIdOrElseAccessDenied(userId);
         Product product = productDataService.getProductByIdOrElseIllegal(postDTO.productId());
         ProductQnA productQnA = postDTO.toProductQnAEntity(member, product);
 
         productQnADataService.saveProductQnA(productQnA);
-
-        return Result.OK.getResultKey();
     }
 
-    public String deleteProductQnA(long qnaId, String userId) {
+    public void deleteProductQnA(long qnaId, String userId) {
         ProductQnA productQnA = productQnADataService.findProductQnAByIdOrElseIllegal(qnaId);
 
         if(!productQnA.getMember().getUserId().equals(userId)) {
             log.info("ProductQnAWriteUseCase deleteProductQnA writer not match. requestId = {}, QnAWriter = {}", userId, productQnA.getMember().getUserId());
-            throw new CustomAccessDeniedException(ErrorCode.ACCESS_DENIED, ErrorCode.ACCESS_DENIED.getMessage());
+            throw new CustomAccessDeniedException(ErrorCode.FORBIDDEN, ErrorCode.FORBIDDEN.getMessage());
         }
 
         productQnADataService.deleteProductQnAById(qnaId);
-
-        return Result.OK.getResultKey();
     }
 }

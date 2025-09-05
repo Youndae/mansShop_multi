@@ -1,5 +1,8 @@
 package com.example.moduletest.user.usecase;
 
+import com.example.modulecommon.customException.CustomConflictException;
+import com.example.modulecommon.customException.CustomDuplicateException;
+import com.example.modulecommon.customException.CustomNotFoundException;
 import com.example.moduleuser.model.dto.member.in.UserSearchDTO;
 import com.example.modulecommon.fixture.MemberAndAuthFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
@@ -56,29 +59,20 @@ public class UserReadUseCaseIT {
     @Test
     @DisplayName(value = "아이디 중복 체크")
     void checkJoinUserId() {
-        String result = assertDoesNotThrow(() -> userReadUseCase.checkJoinUserId("newUserId"));
-
-        assertNotNull(result);
-        assertEquals(Result.NO_DUPLICATE.getResultKey(), result);
+        assertDoesNotThrow(() -> userReadUseCase.checkJoinUserId("newUserId"));
     }
 
     @Test
     @DisplayName(value = "아이디 중복 체크. 중복인 경우")
     void checkJoinUserIdDuplicated() {
         Member member = memberList.get(0);
-        String result = assertDoesNotThrow(() -> userReadUseCase.checkJoinUserId(member.getUserId()));
-
-        assertNotNull(result);
-        assertEquals(Result.DUPLICATE.getResultKey(), result);
+        assertThrows(CustomDuplicateException.class, () -> userReadUseCase.checkJoinUserId(member.getUserId()));
     }
 
     @Test
     @DisplayName(value = "닉네임 중복 체크")
     void checkNickname() {
-        String result = assertDoesNotThrow(() -> userReadUseCase.checkNickname("newUserNickname", null));
-
-        assertNotNull(result);
-        assertEquals(Result.NO_DUPLICATE.getResultKey(), result);
+        assertDoesNotThrow(() -> userReadUseCase.checkNickname("newUserNickname", null));
     }
 
     @Test
@@ -86,20 +80,14 @@ public class UserReadUseCaseIT {
     void checkNicknameOriginNicknameCheck() {
         Member member = memberList.get(0);
         Principal principal = member::getUserId;
-        String result = assertDoesNotThrow(() -> userReadUseCase.checkNickname(member.getNickname(), principal));
-
-        assertNotNull(result);
-        assertEquals(Result.NO_DUPLICATE.getResultKey(), result);
+        assertDoesNotThrow(() -> userReadUseCase.checkNickname(member.getNickname(), principal));
     }
 
     @Test
     @DisplayName(value = "닉네임 중복 체크. 중복인 경우")
     void checkNicknameDuplicated() {
         Member member = memberList.get(0);
-        String result = assertDoesNotThrow(() -> userReadUseCase.checkNickname(member.getNickname(), null));
-
-        assertNotNull(result);
-        assertEquals(Result.DUPLICATE.getResultKey(), result);
+        assertThrows(CustomDuplicateException.class, () -> userReadUseCase.checkNickname(member.getNickname(), null));
     }
 
     @Test
@@ -109,11 +97,10 @@ public class UserReadUseCaseIT {
         String memberPhone = member.getPhone().replaceAll("-", "");
         UserSearchDTO searchDTO = new UserSearchDTO(member.getUserName(), memberPhone, null);
 
-        UserSearchIdResponseDTO result = assertDoesNotThrow(() -> userReadUseCase.searchId(searchDTO));
+        String result = assertDoesNotThrow(() -> userReadUseCase.searchId(searchDTO));
 
         assertNotNull(result);
-        assertEquals(member.getUserId(), result.userId());
-        assertEquals(Result.OK.getResultKey(), result.message());
+        assertEquals(member.getUserId(), result);
     }
 
     @Test
@@ -122,11 +109,10 @@ public class UserReadUseCaseIT {
         Member member = memberList.get(0);
         UserSearchDTO searchDTO = new UserSearchDTO(member.getUserName(), null, member.getUserEmail());
 
-        UserSearchIdResponseDTO result = assertDoesNotThrow(() -> userReadUseCase.searchId(searchDTO));
+        String result = assertDoesNotThrow(() -> userReadUseCase.searchId(searchDTO));
 
         assertNotNull(result);
-        assertEquals(member.getUserId(), result.userId());
-        assertEquals(Result.OK.getResultKey(), result.message());
+        assertEquals(member.getUserId(), result);
     }
 
     @Test
@@ -134,11 +120,7 @@ public class UserReadUseCaseIT {
     void searchIdByPhoneNotFound() {
         UserSearchDTO searchDTO = new UserSearchDTO("noneUser", "01011119999", null);
 
-        UserSearchIdResponseDTO result = assertDoesNotThrow(() -> userReadUseCase.searchId(searchDTO));
-
-        assertNotNull(result);
-        assertNull(result.userId());
-        assertEquals(Result.NOTFOUND.getResultKey(), result.message());
+        assertThrows(CustomNotFoundException.class, () -> userReadUseCase.searchId(searchDTO));
     }
 
     @Test
@@ -146,10 +128,6 @@ public class UserReadUseCaseIT {
     void searchIdByEmailNotFound() {
         UserSearchDTO searchDTO = new UserSearchDTO("noneUser", null, "noneUser@none.com");
 
-        UserSearchIdResponseDTO result = assertDoesNotThrow(() -> userReadUseCase.searchId(searchDTO));
-
-        assertNotNull(result);
-        assertNull(result.userId());
-        assertEquals(Result.NOTFOUND.getResultKey(), result.message());
+        assertThrows(CustomNotFoundException.class, () -> userReadUseCase.searchId(searchDTO));
     }
 }

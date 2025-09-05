@@ -1,7 +1,7 @@
 package com.example.moduleapi.config.exception;
 
 public record ExceptionEntity(
-        String errorCode,
+        int errorCode,
         String errorMessage
 ) {
 }

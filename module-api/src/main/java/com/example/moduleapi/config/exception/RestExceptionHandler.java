@@ -3,6 +3,7 @@ package com.example.moduleapi.config.exception;
 import com.example.modulecommon.customException.*;
 import com.example.modulecommon.model.enumuration.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.security.access.AccessDeniedException;
@@ -27,59 +28,77 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler({CustomAccessDeniedException.class, AccessDeniedException.class})
-    public ResponseEntity<?> accessDeniedException(Exception e) {
+    public ResponseEntity<ExceptionEntity> accessDeniedException(Exception e) {
         log.warn("AccessDeniedException : {}", e.getMessage());
 
-        return toResponseEntity(ErrorCode.ACCESS_DENIED);
+        return toResponseEntity(ErrorCode.FORBIDDEN);
     }
 
     @ExceptionHandler(CustomTokenStealingException.class)
-    public ResponseEntity<?> tokenStealingException(Exception e) {
+    public ResponseEntity<ExceptionEntity> tokenStealingException(Exception e) {
         log.warn("TokenStealing : {}", e.getMessage());
 
         return toResponseEntity(ErrorCode.TOKEN_STEALING);
     }
 
-    @ExceptionHandler({CustomBadCredentialsException.class, BadCredentialsException.class, InternalAuthenticationServiceException.class})
-    public ResponseEntity<?> badCredentialsException(Exception e) {
+    @ExceptionHandler({
+            CustomBadCredentialsException.class,
+            BadCredentialsException.class,
+            InternalAuthenticationServiceException.class
+    })
+    public ResponseEntity<ExceptionEntity> badCredentialsException(Exception e) {
         log.warn("BadCredentials Exception : {}", e.getMessage());
 
-        return toResponseEntity(ErrorCode.BAD_CREDENTIALS);
+        return toResponseEntity(ErrorCode.UNAUTHORIZED);
     }
 
     @ExceptionHandler({CustomNotFoundException.class, IllegalArgumentException.class})
-    public ResponseEntity<?> notFoundException(Exception e) {
+    public ResponseEntity<ExceptionEntity> notFoundException(Exception e) {
         log.warn("NotFoundException : {}", e.getMessage());
 
-        return toResponseEntity(ErrorCode.NOT_FOUND);
+        return toResponseEntity(ErrorCode.BAD_REQUEST);
     }
 
     @ExceptionHandler(NullPointerException.class)
-    public ResponseEntity<?> nullPointerException(Exception e) {
+    public ResponseEntity<ExceptionEntity> nullPointerException(Exception e) {
         log.warn("nullPointerException : {}", e.getMessage());
 
-        return toResponseEntity(ErrorCode.NOT_FOUND);
+        return toResponseEntity(ErrorCode.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(CustomOrderSessionExpiredException.class)
-    public ResponseEntity<?> orderSessionExpiredException(Exception e) {
+    public ResponseEntity<ExceptionEntity> orderSessionExpiredException(Exception e) {
         log.warn("orderSessionExpiredException : {}", e.getMessage());
 
         return toResponseEntity(ErrorCode.ORDER_SESSION_EXPIRED);
     }
 
     @ExceptionHandler(CustomOrderDataFailedException.class)
-    public ResponseEntity<?> orderDataFailedException(Exception e) {
+    public ResponseEntity<ExceptionEntity> orderDataFailedException(Exception e) {
         log.warn("orderDataFailedException : {}", e.getMessage());
 
         return toResponseEntity(ErrorCode.ORDER_DATA_FAILED);
     }
 
     @ExceptionHandler({CannotCreateTransactionException.class, JpaSystemException.class, SQLException.class})
-    public ResponseEntity<?> cannotCreateTransactionException(Exception e) {
+    public ResponseEntity<ExceptionEntity> cannotCreateTransactionException(Exception e) {
         log.warn("DB Connection Exception : {}", e.getMessage());
 
-        return toResponseEntity(ErrorCode.DB_CONNECTION_ERROR);
+        return toResponseEntity(ErrorCode.DB_CONNECTION_FAILED);
+    }
+
+    @ExceptionHandler({CustomDuplicateException.class, CustomConflictException.class})
+    public ResponseEntity<ExceptionEntity> duplicateException(Exception e) {
+        loggingConflict(e);
+
+        return toResponseEntity(ErrorCode.CONFLICT);
+    }
+
+    private void loggingConflict(Exception e) {
+        if(e instanceof CustomConflictException)
+            log.error("conflictException : {}", e.getMessage());
+        else
+            log.info("data Duplicate Exception: {}", e.getMessage());
     }
 
     private ResponseEntity<ExceptionEntity> toResponseEntity(ErrorCode errorCode) {
@@ -87,7 +106,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(errorCode.getHttpStatus())
                 .body(
                         new ExceptionEntity(
-                                String.valueOf(errorCode.getHttpStatus()),
+                                errorCode.getHttpStatus().value(),
                                 errorCode.getMessage()
                         )
                 );

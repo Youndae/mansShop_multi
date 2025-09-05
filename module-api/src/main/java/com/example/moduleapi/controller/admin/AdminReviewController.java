@@ -8,7 +8,6 @@ import com.example.moduleapi.service.PrincipalService;
 import com.example.modulecache.model.cache.CacheRequest;
 import com.example.modulecache.service.FullCountScanCachingService;
 import com.example.modulecommon.model.dto.response.PagingListDTO;
-import com.example.modulecommon.model.dto.response.ResponseMessageDTO;
 import com.example.modulecommon.model.enumuration.AdminListType;
 import com.example.modulecommon.model.enumuration.RedisCaching;
 import com.example.moduleproduct.model.dto.admin.review.in.AdminReviewReplyRequestDTO;
@@ -153,8 +152,7 @@ public class AdminReviewController {
     public ResponseEntity<AdminReviewDetailDTO> getReviewDetail(@PathVariable("reviewId") long reviewId) {
         AdminReviewDetailDTO responseDTO = adminProductReviewReadUseCase.getReviewDetail(reviewId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(responseDTO);
+        return ResponseEntity.ok(responseDTO);
     }
 
     /**
@@ -168,12 +166,11 @@ public class AdminReviewController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PostMapping("/review/reply")
-    public ResponseEntity<ResponseMessageDTO> postReviewReply(@RequestBody AdminReviewReplyRequestDTO postDTO,
+    public ResponseEntity<Void> postReviewReply(@RequestBody AdminReviewReplyRequestDTO postDTO,
                                                               Principal principal) {
         String userId = principalService.extractUserId(principal);
-        String responseMessage = adminProductReviewWriteUseCase.postReviewReply(postDTO, userId);
+        adminProductReviewWriteUseCase.postReviewReply(postDTO, userId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

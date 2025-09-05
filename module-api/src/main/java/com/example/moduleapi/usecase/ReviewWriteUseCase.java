@@ -2,7 +2,6 @@ package com.example.moduleapi.usecase;
 
 import com.example.modulecommon.model.entity.*;
 import com.example.modulecommon.model.enumuration.OrderStatus;
-import com.example.modulecommon.model.enumuration.Result;
 import com.example.moduleorder.service.OrderDataService;
 import com.example.moduleproduct.model.dto.productReview.in.MyPagePostReviewDTO;
 import com.example.moduleproduct.service.product.ProductDataService;
@@ -39,7 +38,7 @@ public class ReviewWriteUseCase {
      * 불가피하게 api 모듈에서 UseCase를 작성
      */
     @Transactional(rollbackFor = Exception.class)
-    public String postReview(MyPagePostReviewDTO reviewDTO, String userId) {
+    public void postReview(MyPagePostReviewDTO reviewDTO, String userId) {
         Member member = userDataService.getMemberByUserIdOrElseIllegal(userId);
         Product product = productDataService.getProductByIdOrElseIllegal(reviewDTO.productId());
         ProductOption productOption = productDataService.getProductOptionByIdOrElseIllegal(reviewDTO.optionId());
@@ -53,7 +52,5 @@ public class ReviewWriteUseCase {
         productReviewDataService.saveProductReview(productReview);
         productOrderDetail.setOrderReviewStatus(true);
         orderDataService.saveProductOrderDetail(productOrderDetail);
-
-        return Result.OK.getResultKey();
     }
 }

@@ -2,7 +2,6 @@ package com.example.moduleproduct.usecase.admin.product;
 
 import com.example.modulecommon.model.entity.Classification;
 import com.example.modulecommon.model.entity.Product;
-import com.example.modulecommon.model.enumuration.Result;
 import com.example.moduleproduct.model.dto.admin.product.in.AdminDiscountPatchDTO;
 import com.example.moduleproduct.model.dto.admin.product.in.AdminProductImageDTO;
 import com.example.moduleproduct.model.dto.admin.product.in.AdminProductPatchDTO;
@@ -125,15 +124,12 @@ public class AdminProductWriteUseCase {
         return productId;
     }
 
-    public String patchDiscountProduct(AdminDiscountPatchDTO patchDTO) {
+    public void patchDiscountProduct(AdminDiscountPatchDTO patchDTO) {
         List<Product> patchProductList = productDataService.getProductListByIds(patchDTO.productIdList());
 
         if(patchProductList.isEmpty() || patchProductList.size() != patchDTO.productIdList().size())
             throw new IllegalArgumentException("patchDiscountProduct IllegalArgumentException");
 
         productDataService.patchProductDiscount(patchDTO);
-
-
-        return Result.OK.getResultKey();
     }
 }

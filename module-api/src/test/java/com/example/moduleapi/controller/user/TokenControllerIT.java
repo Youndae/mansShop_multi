@@ -122,14 +122,6 @@ public class TokenControllerIT {
                         .cookie(new Cookie(inoHeader, inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
-        String content = result.getResponse().getContentAsString();
-        ResponseMessageDTO response = om.readValue(
-                content,
-                new TypeReference<>() {}
-        );
-
-        assertNotNull(response);
-        assertEquals(Result.OK.getResultKey(), response.message());
 
         String accessToken = tokenFixture.getResponseAuthorization(result);
         Map<String, String> cookieMap = tokenFixture.getCookieMap(result);
@@ -159,7 +151,7 @@ public class TokenControllerIT {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "reissue")
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, refreshTokenValue)))
-                .andExpect(status().is(800))
+                .andExpect(status().isUnauthorized())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -195,7 +187,7 @@ public class TokenControllerIT {
                         .header(accessHeader, "WrongAccessTokenValue")
                         .cookie(new Cookie(refreshHeader, refreshTokenValue))
                         .cookie(new Cookie(inoHeader, inoValue)))
-                .andExpect(status().is(800))
+                .andExpect(status().isUnauthorized())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -240,7 +232,7 @@ public class TokenControllerIT {
                         .header(accessHeader, "WrongAccessTokenValue")
                         .cookie(new Cookie(refreshHeader, "WrongRefreshTokenValue"))
                         .cookie(new Cookie(inoHeader, inoValue)))
-                .andExpect(status().is(800))
+                .andExpect(status().isUnauthorized())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -285,7 +277,7 @@ public class TokenControllerIT {
                         .header(accessHeader, accessTokenValue)
                         .cookie(new Cookie(refreshHeader, "WrongRefreshTokenValue"))
                         .cookie(new Cookie(inoHeader, inoValue)))
-                .andExpect(status().is(800))
+                .andExpect(status().isUnauthorized())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(

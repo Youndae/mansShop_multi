@@ -23,10 +23,8 @@ public class AdminFailedDataWriteUseCase {
 
     private final OrderWriteUseCase orderWriteUseCase;
 
-    public String retryDLQMessages(List<FailedQueueDTO> failedQueueDTO) {
+    public void retryDLQMessages(List<FailedQueueDTO> failedQueueDTO) {
         adminFailedDataExternalService.retryMessage(failedQueueDTO);
-
-        return Result.OK.getResultKey();
     }
 
 

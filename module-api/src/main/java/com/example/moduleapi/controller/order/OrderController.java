@@ -5,8 +5,7 @@ import com.example.moduleapi.annotation.swagger.SwaggerAuthentication;
 import com.example.moduleapi.service.PrincipalService;
 import com.example.moduleapi.utils.CartUtils;
 import com.example.moduleapi.utils.OrderTokenUtils;
-import com.example.modulecommon.customException.CustomAccessDeniedException;
-import com.example.modulecommon.model.dto.response.ResponseMessageDTO;
+import com.example.modulecommon.customException.CustomNotFoundException;
 import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.modulecommon.model.enumuration.Role;
 import com.example.moduleorder.model.dto.in.OrderProductRequestDTO;
@@ -65,7 +64,7 @@ public class OrderController {
             in = ParameterIn.COOKIE
     )
     @PostMapping("/")
-    public ResponseEntity<ResponseMessageDTO> payment(@RequestBody PaymentDTO paymentDTO,
+    public ResponseEntity<Void> payment(@RequestBody PaymentDTO paymentDTO,
                                                       HttpServletRequest request,
                                                       HttpServletResponse response,
                                                       Principal principal) {
@@ -73,10 +72,9 @@ public class OrderController {
         Cookie orderTokenCookie = orderTokenUtils.getOrderTokenCookie(request);
         String userId = principalService.extractUserIdIfExist(principal);
 
-        String responseMessage = orderWriteUseCase.orderDataProcessAfterPayment(paymentDTO, cartCookie, userId, orderTokenCookie, response);
+        orderWriteUseCase.orderDataProcessAfterPayment(paymentDTO, cartCookie, userId, orderTokenCookie, response);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     /**
@@ -98,8 +96,7 @@ public class OrderController {
 
         OrderDataResponseDTO responseDTO = orderWriteUseCase.getProductOrderData(requestDTO, orderTokenCookie, response, userId);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(responseDTO);
+        return ResponseEntity.ok(responseDTO);
     }
 
     @Operation(summary = "장바구니 페이지에서 결제 요청 시 상품 결제 정보 반환")
@@ -120,18 +117,19 @@ public class OrderController {
         Cookie cartCookie = cartUtils.getCartCookie(request);
         String userId = principalService.extractUserIdIfExist(principal);
 
-        if(cartCookie == null && userId == null)
-            throw new CustomAccessDeniedException(ErrorCode.NOT_FOUND, ErrorCode.NOT_FOUND.getMessage());
+        if(cartCookie == null && userId == null) {
+            log.error("OrderController.orderCart :: cartCookie and UserId is null");
+            throw new CustomNotFoundException(ErrorCode.BAD_REQUEST, ErrorCode.BAD_REQUEST.getMessage());
+        }
 
         OrderDataResponseDTO responseDTO = orderWriteUseCase.getCartOrderData(cartDetailIds, orderTokenCookie, cartCookie, userId, response);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(responseDTO);
+        return ResponseEntity.ok(responseDTO);
     }
 
     @Operation(summary = "결제 API 호출 이전 주문 데이터 검증", hidden = true)
     @PostMapping("/validate")
-    public ResponseEntity<ResponseMessageDTO> validateOrder(@RequestBody OrderDataResponseDTO requestDTO,
+    public ResponseEntity<Void> validateOrder(@RequestBody OrderDataResponseDTO requestDTO,
                                                             Principal principal,
                                                             HttpServletRequest request,
                                                             HttpServletResponse response) {
@@ -141,9 +139,8 @@ public class OrderController {
         if(userId == null)
             userId = Role.ANONYMOUS.getRole();
 
-        String responseMessage = orderWriteUseCase.validateOrderData(requestDTO, userId, orderTokenCookie, response);
+        orderWriteUseCase.validateOrderData(requestDTO, userId, orderTokenCookie, response);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseMessageDTO(responseMessage));
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }
