@@ -1,0 +1,60 @@
+{
+  "id": null,
+  "uid": "mysql-overview",
+  "title": "MySQL Overview",
+  "timezone": "browser",
+  "schemaVersion": 36,
+  "version": 1,
+  "panels": [
+    {
+      "type": "graph",
+      "title": "MySQL Connections",
+      "targets": [
+        {
+          "expr": "mysql_global_status_threads_connected",
+          "legendFormat": "Connections"
+        }
+      ]
+    },
+    {
+      "type": "graph",
+      "title": "MySQL Queries",
+      "targets": [
+        {
+          "expr": "rate(mysql_global_status_questions[5m])",
+          "legendFormat": "Queries/sec"
+        }
+      ]
+    },
+    {
+      "type": "graph",
+      "title": "InnoDB Buffer Pool Usage",
+      "targets": [
+        {
+          "expr": "mysql_global_status_buffer_pool_pages_data / mysql_global_status_buffer_pool_pages_total * 100",
+          "legendFormat": "Buffer Pool Usage (%)"
+        }
+      ]
+    },
+    {
+      "type": "graph",
+      "title": "Slow Queries Rate",
+      "targets": [
+        {
+          "expr": "rate(mysql_global_status_slow_queries[3m])",
+          "legendFormat": "Slow Queries/sec"
+        }
+      ]
+    },
+    {
+      "type": "graph",
+      "title": "Query Errors",
+      "targets": [
+        {
+          "expr": "rate(mysql_global_status_error_total[5m)",
+          "legendFormat": "Errors/sec"
+        }
+      ]
+    }
+  ]
+}

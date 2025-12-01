@@ -1,0 +1,71 @@
+{
+  "id": null,
+  "title": "RabbitMQ Monitoring",
+  "schemaVersion": 36,
+  "version": 1,
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Connections",
+      "targets": [
+        {
+          "expr": "rabbitmq_connections"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Channels",
+      "targets": [
+        {
+          "expr": "rabbitmq_channels"
+        }
+      ]
+    },
+    {
+      "type": "graph",
+      "title": "Messages Published/sec",
+      "targets": [
+        {
+          "expr": "rate(rabbitmq_messages_published_total[1m])"
+        }
+      ]
+    },
+    {
+      "type": "graph",
+      "title": "Messages Delivered/sec",
+      "targets": [
+        {
+          "expr": "rate(rabbitmq_messages_delivered_total[1m])"
+        }
+      ]
+    },
+    {
+      "type": "graph",
+      "title": "Queue Depth",
+      "targets": [
+        {
+          "expr": "rabbitmq_queue_messages_ready",
+          "legendFormat": "Ready"
+        },
+        {
+          "expr": "rabbitmq_queue_messages_unacked",
+          "legendFormat": "Unacked"
+        },
+        {
+          "expr": "rabbitmq_queue_messages",
+          "legendFormat": "Total"
+        }
+      ]
+    },
+    {
+      "type": "gauge",
+      "title": "Memory Usage (MB)",
+      "targets": [
+        {
+          "expr": "rabbitmq_node_mem_used / (1024*1024)"
+        }
+      ]
+    }
+  ]
+}

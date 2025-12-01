@@ -2,66 +2,73 @@
 # Local Docker
 version: "3.8"
 
-networks:
-  monitoring:
-    driver: bridge
-
 services:
   app:
     build:
-      context: .
+      context: ..
       dockerfile: Dockerfile
     container_name: springboot-app
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/testdb
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/mansShop?characterEncoding=UTF-8&serverTimezone=Asia/Seoul
       SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: admin
+      SPRING_DATASOURCE_PASSWORD: dm1234
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: admin
+      SPRING_RABBITMQ_PASSWORD: admin123
     depends_on:
       - db
       - redis
       - rabbitmq
     networks:
+      - backend
       - monitoring
 
   db:
     image: mysql:8.3.0
-    container_name: mysql
+    container_name: mysql-test
     environment:
-      MYSQL_ROOT_PASSWORD: admin
-      MYSQL_DATABASE: testdb
+      MYSQL_ROOT_PASSWORD: dm1234
+      MYSQL_DATABASE: mansShop
     ports:
       - "3306:3306"
     volumes:
-      - ./db/ddl/tableDDL.sql:/docker-entrypoint-initdb.d/tableDDL.sql
+      - ../db/ddl/tableDDL.sql:/docker-entrypoint-initdb.d/tableDDL.sql
     networks:
+      - backend
       - monitoring
 
   redis:
     image: redis:latest
-    container_name: redis
+    container_name: redis-test
     ports:
       - "6379:6379"
     networks:
+      - backend
       - monitoring
 
   rabbitmq:
     image: rabbitmq:3.12-management
-    container_name: rabbitmq
+    container_name: rabbitmq2
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
     ports:
       - "5672:5672"
       - "15672:15672"
     networks:
+      - backend
       - monitoring
 
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
     networks:
@@ -70,18 +77,22 @@ services:
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=adming
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
     ports:
       - "3000:3000"
     networks:
       - monitoring
 
-  mysqld-exporter:
+  mysql-exporter:
     image: prom/mysqld-exporter:latest
-    container_name: mysqld-exporter
-    environment:
-      DATA_SOURCE_NAME: "root:admin@(db:3306)/"
+    container_name: mysql-exporter
+    volumes:
+      - ./exporters/.my.cnf:/.my.cnf
+    depends_on:
+      - db
     ports:
       - "9104:9104"
     networks:
@@ -90,8 +101,8 @@ services:
   redis-exporter:
     image: oliver006/redis_exporter:latest
     container_name: redis-exporter
-    environment:
-      - REDIS_ADDR=redis:6379
+    env_file:
+      - ./exporters/redis-exporter.env
     ports:
       - "9121:9121"
     networks:
@@ -100,9 +111,13 @@ services:
   rabbitmq-exporter:
     image: kbudde/rabbitmq-exporter:latest
     container_name: rabbitmq-exporter
-    environment:
-      - RABBIT_URL=http://guest:guest@rabbitmq:15672
+    env_file:
+      - ./exporters/rabbitmq-exporter.env
     ports:
       - "9419:9419"
     networks:
       - monitoring
+
+networks:
+  backend:
+  monitoring:

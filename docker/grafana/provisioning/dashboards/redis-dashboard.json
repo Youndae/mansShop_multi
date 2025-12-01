@@ -1,0 +1,59 @@
+{
+  "id": null,
+  "title": "Redis Monitoring",
+  "schemaVersion": 36,
+  "version": 1,
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Uptime (hours)",
+      "targets": [
+        {
+          "expr": "redis_uptime_in_seconds / 3600",
+          "legendFormat": "uptime"
+        }
+      ]
+    },
+    {
+      "type": "gauge",
+      "title": "Memory Usage (MB)",
+      "targets": [
+        {
+          "expr": "redis_memory_used_bytes / (1024*1024)"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Connected Clients",
+      "targets": [
+        {
+          "expr": "redis_connected_clients"
+        }
+      ]
+    },
+    {
+      "type": "graph",
+      "title": "Ops per second",
+      "targets": [
+        {
+          "expr": "rate(redis_commands_processed_total[1m])"
+        }
+      ]
+    },
+    {
+      "type": "graph",
+      "title": "Network Traffic",
+      "targets": [
+        {
+          "expr": "rate(redis_net_input_bytes_total[1m])",
+          "legendFormat": "Input"
+        },
+        {
+          "expr": "rate(redis_net_output_bytes_total[1m])",
+          "legendFormat": "Output"
+        }
+      ]
+    }
+  ]
+}
