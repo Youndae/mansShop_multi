@@ -105,10 +105,7 @@ public class UserDataServiceIT {
         LogoutDTO dto = new LogoutDTO(accessToken, inoValue, member.getUserId());
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        String result = assertDoesNotThrow(() -> userDataService.deleteTokenAndCookieByLogout(dto, response));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> userDataService.deleteTokenAndCookieByLogout(dto, response));
 
         List<String> cookies = response.getHeaders("Set-Cookie");
         boolean refreshCookie = cookies.stream()

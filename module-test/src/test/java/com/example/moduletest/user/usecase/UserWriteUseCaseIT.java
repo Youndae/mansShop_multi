@@ -155,10 +155,7 @@ public class UserWriteUseCaseIT {
         LogoutDTO logoutDTO = new LogoutDTO(accessToken, ino, userId);
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        String result = assertDoesNotThrow(() -> userWriteUseCase.logoutProc(logoutDTO, response));
-
-        assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertDoesNotThrow(() -> userWriteUseCase.logoutProc(logoutDTO, response));
 
         List<String> cookies = response.getHeaders("Set-Cookie");
 

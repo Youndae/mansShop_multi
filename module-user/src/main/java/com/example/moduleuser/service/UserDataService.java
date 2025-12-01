@@ -5,7 +5,6 @@ import com.example.modulecommon.customException.CustomAccessDeniedException;
 import com.example.modulecommon.model.entity.Auth;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.ErrorCode;
-import com.example.modulecommon.model.enumuration.Result;
 import com.example.modulecommon.model.enumuration.Role;
 import com.example.moduleuser.model.dto.admin.out.AdminMemberDTO;
 import com.example.moduleuser.model.dto.admin.page.AdminMemberPageDTO;
@@ -100,15 +99,12 @@ public class UserDataService {
         jwtTokenProvider.deleteTemporaryTokenAndCookie(temporaryClaim, response);
     }
 
-    public String deleteTokenAndCookieByLogout(LogoutDTO dto, HttpServletResponse response) {
+    public void deleteTokenAndCookieByLogout(LogoutDTO dto, HttpServletResponse response) {
         try{
             jwtTokenProvider.deleteRedisDataAndCookie(dto.userId(), dto.inoValue(), response);
-
-            return Result.OK.getResultKey();
         }catch (Exception e) {
-            log.warn("logout delete Data Exception");
-            e.printStackTrace();
-            return Result.FAIL.getResultKey();
+            log.warn("logout delete Data Exception. {}", e.getMessage());
+            throw new RuntimeException("logout delete Data Exception.", e);
         }
     }
 

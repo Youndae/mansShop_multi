@@ -7,7 +7,6 @@ import com.example.moduleauth.service.AuthenticationService;
 import com.example.modulecommon.customException.CustomAccessDeniedException;
 import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.moduleuser.model.dto.member.in.*;
-import com.example.moduleuser.model.dto.member.out.UserSearchIdResponseDTO;
 import com.example.moduleuser.model.dto.member.out.UserStatusResponseDTO;
 import com.example.moduleuser.usecase.UserReadUseCase;
 import com.example.moduleuser.usecase.UserWriteUseCase;

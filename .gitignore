@@ -28,6 +28,11 @@ out/
 **/logback-spring/
 .env.dev
 .env.test
+docker/exporters/.my.cnf
+docker/exporters/rabbitmq-exporter.env
+docker/exporters/redis-exporter.env
+!docker/
+!docker/**/
 
 ### NetBeans ###
 /nbproject/private/

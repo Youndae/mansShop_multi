@@ -2,7 +2,6 @@ package com.example.moduleorder.usecase.admin;
 
 import com.example.modulecommon.model.entity.ProductOrder;
 import com.example.modulecommon.model.enumuration.OrderStatus;
-import com.example.modulecommon.model.enumuration.Result;
 import com.example.moduleorder.service.OrderDataService;
 import com.example.moduleorder.service.OrderExternalService;
 import lombok.RequiredArgsConstructor;

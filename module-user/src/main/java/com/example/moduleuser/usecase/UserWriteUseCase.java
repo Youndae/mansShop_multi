@@ -72,8 +72,8 @@ public class UserWriteUseCase {
             throw new CustomBadCredentialsException(ErrorCode.UNAUTHORIZED, ErrorCode.UNAUTHORIZED.getMessage());
     }
 
-    public String logoutProc(LogoutDTO dto, HttpServletResponse response) {
-        return userDataService.deleteTokenAndCookieByLogout(dto, response);
+    public void logoutProc(LogoutDTO dto, HttpServletResponse response) {
+        userDataService.deleteTokenAndCookieByLogout(dto, response);
     }
 
     public void searchPassword(UserSearchPwDTO searchDTO) {

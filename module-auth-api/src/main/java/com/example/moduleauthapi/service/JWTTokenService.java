@@ -4,12 +4,16 @@ import com.example.moduleauthapi.model.dto.TokenDTO;
 import com.example.modulecommon.customException.CustomTokenStealingException;
 import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.modulecommon.model.enumuration.Result;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.util.Map;
 
 @Service
 @Slf4j
@@ -60,6 +64,17 @@ public class JWTTokenService {
         response.setStatus(ErrorCode.TOKEN_STEALING.getHttpStatus().value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("utf-8");
+
+        Map<String, Object> body = Map.of(
+                "code", ErrorCode.TOKEN_STEALING.getHttpStatus().value(),
+                "message", ErrorCode.TOKEN_STEALING.getMessage()
+        );
+
+        try {
+            new ObjectMapper().writeValue(response.getWriter(), body);
+        }catch(IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -72,6 +87,17 @@ public class JWTTokenService {
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("utf-8");
+
+        Map<String, Object> body = Map.of(
+                "code", HttpStatus.UNAUTHORIZED.value(),
+                "message", ErrorCode.UNAUTHORIZED.getMessage()
+        );
+
+        try {
+            new ObjectMapper().writeValue(response.getWriter(), body);
+        }catch(IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
