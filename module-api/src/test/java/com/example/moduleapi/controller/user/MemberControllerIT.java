@@ -6,17 +6,16 @@ import com.example.moduleapi.fixture.TokenFixture;
 import com.example.moduleapi.utils.MailHogUtils;
 import com.example.modulecommon.fixture.MemberAndAuthFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
-import com.example.modulecommon.model.dto.response.ResponseMessageDTO;
 import com.example.modulecommon.model.entity.Auth;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.ErrorCode;
-import com.example.modulecommon.model.enumuration.Result;
 import com.example.modulecommon.model.enumuration.Role;
+import com.example.moduleconfig.properties.CookieProperties;
+import com.example.moduleconfig.properties.TokenProperties;
 import com.example.moduleuser.model.dto.member.in.JoinDTO;
 import com.example.moduleuser.model.dto.member.in.LoginDTO;
 import com.example.moduleuser.model.dto.member.in.UserCertificationDTO;
 import com.example.moduleuser.model.dto.member.in.UserResetPwDTO;
-import com.example.moduleuser.model.dto.member.out.UserSearchIdResponseDTO;
 import com.example.moduleuser.model.dto.member.out.UserStatusResponseDTO;
 import com.example.moduleuser.repository.AuthRepository;
 import com.example.moduleuser.repository.MemberRepository;
@@ -29,7 +28,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -88,20 +86,11 @@ public class MemberControllerIT {
     @Autowired
     private MailHogUtils mailHogUtils;
 
-    @Value("#{jwt['token.access.header']}")
-    private String accessHeader;
+    @Autowired
+    private TokenProperties tokenProperties;
 
-    @Value("#{jwt['token.refresh.header']}")
-    private String refreshHeader;
-
-    @Value("#{jwt['cookie.ino.header']}")
-    private String inoHeader;
-
-    @Value("#{jwt['token.all.prefix']}")
-    private String allTokenPrefix;
-
-    @Value("#{jwt['token.temporary.header']}")
-    private String temporaryHeader;
+    @Autowired
+    private CookieProperties cookieProperties;
 
     private Map<String, String> tokenMap;
 
@@ -157,9 +146,9 @@ public class MemberControllerIT {
 
     private void setJWT() {
         tokenMap = tokenFixture.createAndSaveAllToken(member);
-        accessTokenValue = tokenMap.get(accessHeader);
-        refreshTokenValue = tokenMap.get(refreshHeader);
-        inoValue = tokenMap.get(inoHeader);
+        accessTokenValue = tokenMap.get(tokenProperties.getAccess().getHeader());
+        refreshTokenValue = tokenMap.get(tokenProperties.getRefresh().getHeader());
+        inoValue = tokenMap.get(cookieProperties.getIno().getHeader());
     }
 
     @Test
@@ -188,8 +177,8 @@ public class MemberControllerIT {
         String accessToken = tokenFixture.getResponseAuthorization(result);
         Map<String, String> cookieMap = tokenFixture.getCookieMap(result);
 
-        String refreshToken = cookieMap.get(refreshHeader).substring(6);
-        String ino = cookieMap.get(inoHeader);
+        String refreshToken = cookieMap.get(tokenProperties.getRefresh().getHeader()).substring(6);
+        String ino = cookieMap.get(cookieProperties.getIno().getHeader());
 
         assertNotNull(accessToken);
         assertNotNull(refreshToken);
@@ -206,8 +195,8 @@ public class MemberControllerIT {
         assertNotNull(redisAccessValue);
         assertNotNull(redisRefreshValue);
 
-        assertEquals(accessToken.replace(allTokenPrefix, ""), redisAccessValue);
-        assertEquals(refreshToken.replace(allTokenPrefix, ""), redisRefreshValue);
+        assertEquals(accessToken.replace(tokenProperties.getPrefix(), ""), redisAccessValue);
+        assertEquals(refreshToken.replace(tokenProperties.getPrefix(), ""), redisRefreshValue);
 
         redisTemplate.delete(accessKey);
         redisTemplate.delete(refreshKey);
@@ -231,9 +220,9 @@ public class MemberControllerIT {
     void logoutProc() throws Exception {
         setJWT();
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "logout")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
 
@@ -250,13 +239,13 @@ public class MemberControllerIT {
 
         boolean refreshCookie = cookies.stream()
                 .anyMatch(v ->
-                        v.startsWith(refreshHeader + "=")
+                        v.startsWith(tokenProperties.getRefresh().getHeader() + "=")
                                 && v.contains("Max-Age=0")
                 );
 
         boolean inoCookie = cookies.stream()
                 .anyMatch(v ->
-                        v.startsWith(inoHeader + "=")
+                        v.startsWith(cookieProperties.getIno().getHeader() + "=")
                                 && v.contains("Max-Age=0")
                 );
 
@@ -308,15 +297,15 @@ public class MemberControllerIT {
         String temporaryToken = tokenFixture.createAndRedisSaveTemporaryToken(oAuthMember);
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "oAuth/token")
-                        .cookie(new Cookie(temporaryHeader, temporaryToken)))
+                        .cookie(new Cookie(tokenProperties.getTemporary().getHeader(), temporaryToken)))
                 .andExpect(status().isOk())
                 .andReturn();
 
         String accessToken = tokenFixture.getResponseAuthorization(result);
         Map<String, String> tokenMap = tokenFixture.getCookieMap(result);
 
-        String refreshToken = tokenMap.get(refreshHeader).substring(6);
-        String ino = tokenMap.get(inoHeader);
+        String refreshToken = tokenMap.get(tokenProperties.getRefresh().getHeader()).substring(6);
+        String ino = tokenMap.get(cookieProperties.getIno().getHeader());
 
         assertNotNull(accessToken);
         assertNotNull(refreshToken);
@@ -333,8 +322,8 @@ public class MemberControllerIT {
         assertNotNull(redisAccessValue);
         assertNotNull(redisRefreshValue);
 
-        assertEquals(accessToken.replace(allTokenPrefix, ""), redisAccessValue);
-        assertEquals(refreshToken.replace(allTokenPrefix, ""), redisRefreshValue);
+        assertEquals(accessToken.replace(tokenProperties.getPrefix(), ""), redisAccessValue);
+        assertEquals(refreshToken.replace(tokenProperties.getPrefix(), ""), redisRefreshValue);
 
         redisTemplate.delete(accessKey);
         redisTemplate.delete(refreshKey);
@@ -361,7 +350,7 @@ public class MemberControllerIT {
     @DisplayName(value = "oAuth 사용자의 정식 토큰 발급 요청. 잘못된 임시 토큰인 경우")
     void oAuthIssueTokenWrongTemporaryToken() throws Exception {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "oAuth/token")
-                        .cookie(new Cookie(temporaryHeader, "wrongTokenValue")))
+                        .cookie(new Cookie(tokenProperties.getTemporary().getHeader(), "wrongTokenValue")))
                 .andExpect(status().isUnauthorized())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -381,7 +370,7 @@ public class MemberControllerIT {
         String temporaryToken = tokenFixture.createAndRedisSaveExpirationTemporaryToken(oAuthMember);
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "oAuth/token")
-                        .cookie(new Cookie(temporaryHeader, temporaryToken)))
+                        .cookie(new Cookie(tokenProperties.getTemporary().getHeader(), temporaryToken)))
                 .andExpect(status().isUnauthorized())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -406,7 +395,7 @@ public class MemberControllerIT {
         String notSaveTemporaryToken = tokenFixture.createTemporaryToken(oAuthMember);
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "oAuth/token")
-                        .cookie(new Cookie(temporaryHeader, notSaveTemporaryToken)))
+                        .cookie(new Cookie(tokenProperties.getTemporary().getHeader(), notSaveTemporaryToken)))
                 .andExpect(status().isUnauthorized())
                 .andReturn();
 
@@ -482,9 +471,9 @@ public class MemberControllerIT {
         setJWT();
         mockMvc.perform(get(URL_PREFIX + "check-nickname")
                         .param("nickname", member.getNickname())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
     }
@@ -494,9 +483,9 @@ public class MemberControllerIT {
     void checkLoginStatus() throws Exception {
         setJWT();
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "status")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();

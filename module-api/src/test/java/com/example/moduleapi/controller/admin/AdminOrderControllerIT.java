@@ -12,6 +12,8 @@ import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.entity.*;
 import com.example.modulecommon.model.enumuration.*;
 import com.example.modulecommon.utils.PaginationUtils;
+import com.example.moduleconfig.properties.CookieProperties;
+import com.example.moduleconfig.properties.TokenProperties;
 import com.example.modulenotification.repository.NotificationRepository;
 import com.example.moduleorder.model.dto.admin.out.AdminOrderResponseDTO;
 import com.example.moduleorder.model.dto.admin.page.AdminOrderPageDTO;
@@ -30,7 +32,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -104,14 +105,11 @@ public class AdminOrderControllerIT {
     @Autowired
     private RedisTemplate<String, Long> cacheRedisTemplate;
 
-    @Value("#{jwt['token.access.header']}")
-    private String accessHeader;
+    @Autowired
+    private TokenProperties tokenProperties;
 
-    @Value("#{jwt['token.refresh.header']}")
-    private String refreshHeader;
-
-    @Value("#{jwt['cookie.ino.header']}")
-    private String inoHeader;
+    @Autowired
+    private CookieProperties cookieProperties;
 
     private Map<String, String> tokenMap;
 
@@ -150,9 +148,9 @@ public class AdminOrderControllerIT {
         Member admin = adminFixture.memberList().get(0);
 
         tokenMap = tokenFixture.createAndSaveAllToken(admin);
-        accessTokenValue = tokenMap.get(accessHeader);
-        refreshTokenValue = tokenMap.get(refreshHeader);
-        inoValue = tokenMap.get(inoHeader);
+        accessTokenValue = tokenMap.get(tokenProperties.getAccess().getHeader());
+        refreshTokenValue = tokenMap.get(tokenProperties.getRefresh().getHeader());
+        inoValue = tokenMap.get(cookieProperties.getIno().getHeader());
 
         List<Classification> classificationList = ClassificationFixture.createClassifications();
         classificationRepository.saveAll(classificationList);
@@ -198,9 +196,9 @@ public class AdminOrderControllerIT {
         int totalPages = PaginationUtils.getTotalPages(allProductOrderList.size(), pageDTOFixture.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "order/all")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -226,9 +224,9 @@ public class AdminOrderControllerIT {
         ProductOrder fixture = allProductOrderList.get(0);
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "order/all")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .param("searchType", "recipient")
                         .param("keyword", fixture.getRecipient()))
                 .andExpect(status().isOk())
@@ -256,9 +254,9 @@ public class AdminOrderControllerIT {
         ProductOrder fixture = allProductOrderList.get(0);
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "order/all")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .param("searchType", "userId")
                         .param("keyword", fixture.getMember().getUserId()))
                 .andExpect(status().isOk())
@@ -286,9 +284,9 @@ public class AdminOrderControllerIT {
         productOrderRepository.deleteAll();
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "order/all")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -314,9 +312,9 @@ public class AdminOrderControllerIT {
         int totalPages = PaginationUtils.getTotalPages(newProductOrderList.size(), pageDTOFixture.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "order/new")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -343,9 +341,9 @@ public class AdminOrderControllerIT {
         ProductOrder fixture = newProductOrderList.get(0);
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "order/new")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .param("searchType", "recipient")
                         .param("keyword", fixture.getRecipient()))
                 .andExpect(status().isOk())
@@ -379,9 +377,9 @@ public class AdminOrderControllerIT {
         test.forEach(v -> System.out.println("order tes : " + v));
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "order/new")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .param("searchType", "userId")
                         .param("keyword", fixture.getMember().getUserId()))
                 .andExpect(status().isOk())
@@ -409,9 +407,9 @@ public class AdminOrderControllerIT {
         productOrderRepository.deleteAll();
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "order/new")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -432,9 +430,9 @@ public class AdminOrderControllerIT {
         ProductOrder fixture = newProductOrderList.get(0);
 
         mockMvc.perform(patch(URL_PREFIX + "order/" + fixture.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isNoContent())
                 .andReturn();
 
@@ -462,9 +460,9 @@ public class AdminOrderControllerIT {
     @DisplayName(value = "주문 확인 처리. 주문 아이디가 잘못된 경우")
     void patchOrderStatusWrongId() throws Exception {
         MvcResult result = mockMvc.perform(patch(URL_PREFIX + "order/0")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();

@@ -1,10 +1,11 @@
 package com.example.moduleapi.config.webSocket;
 
 import com.example.moduleauthapi.service.JWTTokenProvider;
+import com.example.moduleconfig.properties.CookieProperties;
+import com.example.moduleconfig.properties.TokenProperties;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
@@ -32,17 +33,16 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final JWTTokenProvider tokenProvider;
 
-    @Value("#{jwt['token.all.prefix']}")
-    private String tokenPrefix;
+    private final TokenProperties tokenProperties;
 
-    @Value("#{jwt['token.access.header']}")
-    private String accessHeader;
+    private final CookieProperties cookieProperties;
 
-    @Value("#{jwt['cookie.ino.header']}")
-    private String inoHeader;
-
-    public WebSocketConfig(JWTTokenProvider jwtTokenProvider) {
+    public WebSocketConfig(JWTTokenProvider jwtTokenProvider,
+                           TokenProperties tokenProperties,
+                           CookieProperties cookieProperties) {
         this.tokenProvider = jwtTokenProvider;
+        this.tokenProperties = tokenProperties;
+        this.cookieProperties = cookieProperties;
     }
 
     @Override
@@ -63,7 +63,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
                                     if(cookies != null) {
                                         for(Cookie cookie : cookies) {
-                                            if(cookie.getName().equals(inoHeader))
+                                            if(cookie.getName().equals(cookieProperties.getIno().getHeader()))
                                                 attributes.put("ino", cookie.getValue());
                                         }
                                     }else
@@ -74,7 +74,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                             }
 
                             @Override
-                            public void afterHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler, Exception exception) {}
+                            public void afterHandshake(ServerHttpRequest request,
+                                                       ServerHttpResponse response,
+                                                       WebSocketHandler wsHandler,
+                                                       Exception exception
+                            ) {}
                         }
                 )
                 .withSockJS()
@@ -99,11 +103,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
 
                         if(accessor != null && accessor.getCommand() == StompCommand.CONNECT) {
-                            String token = accessor.getFirstNativeHeader(accessHeader);
+                            String token = accessor.getFirstNativeHeader(tokenProperties.getAccess().getHeader());
                             String inoValue = (String) accessor.getSessionAttributes().get("ino");
 
                             if (token != null) {
-                                String tokenValue = token.replace(tokenPrefix, "");
+                                String tokenValue = token.replace(tokenProperties.getPrefix(), "");
                                 String userId = tokenProvider.verifyAccessToken(tokenValue, inoValue);
 
                                 if(userId != null && !userId.equals("WRONG_TOKEN") && !userId.equals("TOKEN_EXPIRATION") && !userId.equals("TOKEN_STEALING")) {

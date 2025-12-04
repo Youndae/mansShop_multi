@@ -1,0 +1,8 @@
+cookie:
+  ino:
+    header: Authorization_ino
+    age: 9999
+  cart:
+    header: cartCookie
+    age: 7
+    uid: Anonymous

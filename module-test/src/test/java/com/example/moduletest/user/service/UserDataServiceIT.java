@@ -4,6 +4,7 @@ import com.example.modulecommon.fixture.MemberAndAuthFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.Result;
+import com.example.moduleconfig.properties.TokenProperties;
 import com.example.moduletest.ModuleTestApplication;
 import com.example.moduleuser.model.dto.member.in.LogoutDTO;
 import com.example.moduleuser.model.dto.member.in.UserSearchPwDTO;
@@ -55,8 +56,8 @@ public class UserDataServiceIT {
 
     private Member member;
 
-    @Value("#{jwt['token.temporary.header']}")
-    private String temporaryHeader;
+    @Autowired
+    private TokenProperties tokenProperties;
 
     @BeforeEach
     void init() {
@@ -81,7 +82,7 @@ public class UserDataServiceIT {
 
         boolean temporaryCookie = cookies.stream()
                 .anyMatch(v ->
-                        v.startsWith(temporaryHeader + "=") && v.contains("Max-Age=0")
+                        v.startsWith(tokenProperties.getTemporary().getHeader() + "=") && v.contains("Max-Age=0")
                 );
 
         assertTrue(temporaryCookie);

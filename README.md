@@ -1821,3 +1821,12 @@ catch에서 이미지 파일을 삭제한 후 강제로 예외를 발생시켜 �
     - UseCase, Service 등에서 굳이 반환 필요없는 부분들 제거하고 void로 수정   
     - Result Enum은 꼭 필요한 부분에서만 사용하는 방향으로 수정
     - 전체 테스트에 대해 개별 테스트, build 테스트 수행
+
+<br/>
+
+- 25/12/04
+  - 배포 테스트 준비중
+    - AWS Secrets Manager 사용 예정
+    - yml 분리 및 모든 yml ConfugirationProperties 주입으로 수정 및 @Vaule로 사용하던 부분들 모두 수정.
+    - Secrets Manager에서 받아와 매핑할 SecretPropertySourceConfig 작성
+    - 파일 저장 메서드 S3 기반으로 전환

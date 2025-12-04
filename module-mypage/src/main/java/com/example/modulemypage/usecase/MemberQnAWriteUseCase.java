@@ -8,7 +8,6 @@ import com.example.modulecommon.model.entity.MemberQnA;
 import com.example.modulecommon.model.entity.MemberQnAReply;
 import com.example.modulecommon.model.entity.QnAClassification;
 import com.example.modulecommon.model.enumuration.ErrorCode;
-import com.example.modulecommon.model.enumuration.Result;
 import com.example.modulemypage.model.dto.memberQnA.in.MemberQnAInsertDTO;
 import com.example.modulemypage.model.dto.memberQnA.in.MemberQnAModifyDTO;
 import com.example.modulemypage.service.MemberQnADataService;

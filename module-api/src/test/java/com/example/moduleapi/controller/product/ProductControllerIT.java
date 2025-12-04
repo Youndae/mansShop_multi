@@ -6,12 +6,12 @@ import com.example.moduleapi.fixture.TokenFixture;
 import com.example.moduleapi.model.response.PagingElementsResponseDTO;
 import com.example.modulecommon.fixture.*;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
-import com.example.modulecommon.model.dto.response.ResponseMessageDTO;
 import com.example.modulecommon.model.entity.*;
 import com.example.modulecommon.model.enumuration.ErrorCode;
-import com.example.modulecommon.model.enumuration.Result;
 import com.example.modulecommon.utils.PaginationUtils;
 import com.example.modulecommon.utils.ProductDiscountUtils;
+import com.example.moduleconfig.properties.CookieProperties;
+import com.example.moduleconfig.properties.TokenProperties;
 import com.example.moduleproduct.model.dto.page.ProductDetailPageDTO;
 import com.example.moduleproduct.model.dto.product.business.ProductOptionDTO;
 import com.example.moduleproduct.model.dto.product.business.ProductQnAResponseDTO;
@@ -38,7 +38,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -112,14 +111,11 @@ public class ProductControllerIT {
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
 
-    @Value("#{jwt['token.access.header']}")
-    private String accessHeader;
+    @Autowired
+    private TokenProperties tokenProperties;
 
-    @Value("#{jwt['token.refresh.header']}")
-    private String refreshHeader;
-
-    @Value("#{jwt['cookie.ino.header']}")
-    private String inoHeader;
+    @Autowired
+    private CookieProperties cookieProperties;
 
     private Map<String, String> tokenMap;
 
@@ -153,9 +149,9 @@ public class ProductControllerIT {
         member = memberList.get(0);
 
         tokenMap = tokenFixture.createAndSaveAllToken(member);
-        accessTokenValue = tokenMap.get(accessHeader);
-        refreshTokenValue = tokenMap.get(refreshHeader);
-        inoValue = tokenMap.get(inoHeader);
+        accessTokenValue = tokenMap.get(tokenProperties.getAccess().getHeader());
+        refreshTokenValue = tokenMap.get(tokenProperties.getRefresh().getHeader());
+        inoValue = tokenMap.get(cookieProperties.getIno().getHeader());
 
         List<Classification> classificationList = ClassificationFixture.createClassifications();
         classificationRepository.saveAll(classificationList);
@@ -346,9 +342,9 @@ public class ProductControllerIT {
     void getProductDetail() throws Exception {
         ProductDetailDTO responseFixture = getProductDetailDTOFixture(true);
         MvcResult result = mockMvc.perform(get(URL_PREFIX + product.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -366,9 +362,9 @@ public class ProductControllerIT {
         productLikeRepository.deleteAll();
         ProductDetailDTO responseFixture = getProductDetailDTOFixture(false);
         MvcResult result = mockMvc.perform(get(URL_PREFIX + product.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -510,9 +506,9 @@ public class ProductControllerIT {
         String requestDTO = om.writeValueAsString(postDTO);
 
         mockMvc.perform(post(URL_PREFIX + "qna")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().isNoContent())
@@ -536,9 +532,9 @@ public class ProductControllerIT {
         String requestDTO = om.writeValueAsString(postDTO);
 
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().is(400))
@@ -562,9 +558,9 @@ public class ProductControllerIT {
         String requestMap = om.writeValueAsString(params);
 
         mockMvc.perform(post(URL_PREFIX + "like")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestMap))
                 .andExpect(status().isNoContent())
@@ -589,9 +585,9 @@ public class ProductControllerIT {
         String requestMap = om.writeValueAsString(params);
 
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "like")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestMap))
                 .andExpect(status().is(400))
@@ -616,9 +612,9 @@ public class ProductControllerIT {
         String requestMap = om.writeValueAsString(params);
 
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "like")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestMap))
                 .andExpect(status().is(400))
@@ -638,9 +634,9 @@ public class ProductControllerIT {
     @DisplayName(value = "관심상품 해제")
     void deLikeProduct() throws Exception{
         mockMvc.perform(delete(URL_PREFIX + "like/" + product.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isNoContent())
                 .andReturn();
         List<ProductLike> checkDataList = productLikeRepository.findByMember_UserId(member.getUserId());
@@ -663,9 +659,9 @@ public class ProductControllerIT {
     @DisplayName(value = "관심상품 해제. 잘못된 상품 아이디를 전달하는 경우")
     void deLikeProductWrongProductId() throws Exception{
         MvcResult result = mockMvc.perform(delete(URL_PREFIX + "like/noneProductId")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().is(400))
                 .andReturn();
         String content = result.getResponse().getContentAsString();

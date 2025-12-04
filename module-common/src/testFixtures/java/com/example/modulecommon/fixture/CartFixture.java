@@ -4,7 +4,6 @@ import com.example.modulecommon.model.entity.Cart;
 import com.example.modulecommon.model.entity.CartDetail;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.entity.ProductOption;
-import org.springframework.boot.web.server.Cookie;
 
 import java.util.ArrayList;
 import java.util.List;

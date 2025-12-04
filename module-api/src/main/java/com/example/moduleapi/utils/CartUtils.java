@@ -3,12 +3,12 @@ package com.example.moduleapi.utils;
 import com.example.moduleauthapi.service.JWTTokenProvider;
 import com.example.modulecommon.customException.CustomAccessDeniedException;
 import com.example.modulecommon.model.enumuration.ErrorCode;
+import com.example.moduleconfig.properties.CookieProperties;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.WebUtils;
 
@@ -21,14 +21,10 @@ public class CartUtils {
 
     private final JWTTokenProvider jwtTokenProvider;
 
-    @Value("#{jwt['cookie.cart.header']}")
-    private String cartCookieHeader;
-
-    @Value("#{jwt['cookie.cart.expirationDay']}")
-    private long cartCookieExpirationDay;
+    private final CookieProperties cookieProperties;
 
     public Cookie getCartCookie(HttpServletRequest request) {
-        return WebUtils.getCookie(request, cartCookieHeader);
+        return WebUtils.getCookie(request, cookieProperties.getCart().getHeader());
     }
 
     /**
@@ -59,15 +55,15 @@ public class CartUtils {
      */
     public void setCartResponseCookie(String cookieValue, HttpServletResponse response) {
         jwtTokenProvider.setTokenCookie(
-                cartCookieHeader,
+                cookieProperties.getCart().getHeader(),
                 cookieValue,
-                Duration.ofDays(cartCookieExpirationDay),
+                Duration.ofDays(cookieProperties.getCart().getAge()),
                 response
         );
     }
 
     public void deleteCartCookie(HttpServletResponse response) {
-        Cookie cookie = new Cookie(cartCookieHeader, null);
+        Cookie cookie = new Cookie(cookieProperties.getCart().getHeader(), null);
         cookie.setMaxAge(0);
         cookie.setPath("/");
         response.addCookie(cookie);

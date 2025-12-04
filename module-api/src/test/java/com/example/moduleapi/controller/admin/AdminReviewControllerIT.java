@@ -14,6 +14,8 @@ import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.modulecommon.model.enumuration.NotificationType;
 import com.example.modulecommon.model.enumuration.RedisCaching;
 import com.example.modulecommon.utils.PaginationUtils;
+import com.example.moduleconfig.properties.CookieProperties;
+import com.example.moduleconfig.properties.TokenProperties;
 import com.example.modulenotification.repository.NotificationRepository;
 import com.example.moduleproduct.model.dto.admin.review.in.AdminReviewReplyRequestDTO;
 import com.example.moduleproduct.model.dto.admin.review.out.AdminReviewDTO;
@@ -103,14 +105,11 @@ public class AdminReviewControllerIT {
     @Autowired
     private NotificationRepository notificationRepository;
 
-    @Value("#{jwt['token.access.header']}")
-    private String accessHeader;
+    @Autowired
+    private TokenProperties tokenProperties;
 
-    @Value("#{jwt['token.refresh.header']}")
-    private String refreshHeader;
-
-    @Value("#{jwt['cookie.ino.header']}")
-    private String inoHeader;
+    @Autowired
+    private CookieProperties cookieProperties;
 
     private Map<String, String> tokenMap;
 
@@ -154,9 +153,9 @@ public class AdminReviewControllerIT {
         admin = adminFixture.memberList().get(0);
 
         tokenMap = tokenFixture.createAndSaveAllToken(admin);
-        accessTokenValue = tokenMap.get(accessHeader);
-        refreshTokenValue = tokenMap.get(refreshHeader);
-        inoValue = tokenMap.get(inoHeader);
+        accessTokenValue = tokenMap.get(tokenProperties.getAccess().getHeader());
+        refreshTokenValue = tokenMap.get(tokenProperties.getRefresh().getHeader());
+        inoValue = tokenMap.get(cookieProperties.getIno().getHeader());
 
         List<Classification> classificationList = ClassificationFixture.createClassifications();
         classificationRepository.saveAll(classificationList);
@@ -211,9 +210,9 @@ public class AdminReviewControllerIT {
         int totalPages = PaginationUtils.getTotalPages(newReviewList.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "review")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -235,9 +234,9 @@ public class AdminReviewControllerIT {
         productReviewRepository.deleteAll();
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "review")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -268,9 +267,9 @@ public class AdminReviewControllerIT {
         int totalPages = PaginationUtils.getTotalPages(filterFixtureList.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "review")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .param("keyword", product.getProductName())
                         .param("searchType", "product"))
                 .andExpect(status().isOk())
@@ -305,9 +304,9 @@ public class AdminReviewControllerIT {
         int totalPages = PaginationUtils.getTotalPages(filterFixtureList.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "review")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .param("keyword", member.getNickname())
                         .param("searchType", "user"))
                 .andExpect(status().isOk())
@@ -336,9 +335,9 @@ public class AdminReviewControllerIT {
         int totalPages = PaginationUtils.getTotalPages(allReviewList.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "review/all")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -364,9 +363,9 @@ public class AdminReviewControllerIT {
         productReviewRepository.deleteAll();
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "review/all")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -400,9 +399,9 @@ public class AdminReviewControllerIT {
         int totalPages = PaginationUtils.getTotalPages(filterFixtureList.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "review/all")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .param("keyword", product.getProductName())
                         .param("searchType", "product"))
                 .andExpect(status().isOk())
@@ -440,9 +439,9 @@ public class AdminReviewControllerIT {
         int totalPages = PaginationUtils.getTotalPages(filterFixtureList.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "review/all")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .param("keyword", member.getNickname())
                         .param("searchType", "user"))
                 .andExpect(status().isOk())
@@ -475,9 +474,9 @@ public class AdminReviewControllerIT {
                 .get();
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "review/detail/" + fixture.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -502,9 +501,9 @@ public class AdminReviewControllerIT {
         ProductReview fixture = newReviewList.get(0);
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "review/detail/" + fixture.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -528,9 +527,9 @@ public class AdminReviewControllerIT {
     @DisplayName(value = "리뷰 상세 조회. 리뷰 아이디가 잘못된 경우")
     void getReviewDetailWrongId() throws Exception {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "review/detail/0")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -551,9 +550,9 @@ public class AdminReviewControllerIT {
         String requestDTO = om.writeValueAsString(insertDTO);
 
         mockMvc.perform(post(URL_PREFIX + "review/reply")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(requestDTO))
                 .andExpect(status().isNoContent())
@@ -589,9 +588,9 @@ public class AdminReviewControllerIT {
         String requestDTO = om.writeValueAsString(insertDTO);
 
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "review/reply")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(requestDTO))
                 .andExpect(status().isBadRequest())
@@ -614,9 +613,9 @@ public class AdminReviewControllerIT {
         String requestDTO = om.writeValueAsString(insertDTO);
 
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "review/reply")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(requestDTO))
                 .andExpect(status().isBadRequest())

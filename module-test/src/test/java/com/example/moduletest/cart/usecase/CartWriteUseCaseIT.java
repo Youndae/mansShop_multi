@@ -16,6 +16,7 @@ import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.entity.*;
 import com.example.modulecommon.model.enumuration.Result;
 import com.example.modulecommon.model.enumuration.Role;
+import com.example.moduleconfig.properties.CookieProperties;
 import com.example.moduleproduct.repository.classification.ClassificationRepository;
 import com.example.moduleproduct.repository.product.ProductRepository;
 import com.example.moduleproduct.repository.productOption.ProductOptionRepository;
@@ -86,8 +87,8 @@ public class CartWriteUseCaseIT {
 
     private Cart anonymousCart;
 
-    @Value("#{jwt['cookie.cart.header']}")
-    private String cartCookieHeader;
+    @Autowired
+    private CookieProperties cookieProperties;
 
     private Cookie anonymousCartCookie;
 
@@ -115,7 +116,7 @@ public class CartWriteUseCaseIT {
         productRepository.saveAll(productList);
         productOptionRepository.saveAll(optionList);
 
-        anonymousCartCookie = new Cookie(cartCookieHeader, "testAnonymousCookieValue");
+        anonymousCartCookie = new Cookie(cookieProperties.getCart().getHeader(), "testAnonymousCookieValue");
 
         cartList = CartFixture.createDefaultMemberCart(memberList, optionList);
         anonymousCart = CartFixture.createSaveAnonymousCart(optionList.get(0), anonymous, anonymousCartCookie.getValue());

@@ -1,11 +1,11 @@
 package com.example.moduleadmin.service.failedData;
 
 import com.example.moduleadmin.model.dto.failedData.out.FailedQueueDTO;
+import com.example.moduleconfig.properties.RabbitMQConnectionProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -16,11 +16,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AdminFailedDataExternalService {
 
-    @Value("${spring.rabbitmq.username}")
-    private String rabbitMQUser;
-
-    @Value("${spring.rabbitmq.password}")
-    private String rabbitMQPw;
+    private final RabbitMQConnectionProperties rabbitMQConnProperties;
 
     private final RabbitTemplate rabbitTemplate;
 
@@ -29,7 +25,12 @@ public class AdminFailedDataExternalService {
     public int getDLQMessageCount(String queueName) {
         WebClient webClient = WebClient.builder()
                 .baseUrl("http://localhost:15672")
-                .defaultHeaders(headers -> headers.setBasicAuth(rabbitMQUser, rabbitMQPw))
+                .defaultHeaders(headers ->
+                        headers.setBasicAuth(
+                                rabbitMQConnProperties.getUsername(),
+                                rabbitMQConnProperties.getPassword()
+                        )
+                )
                 .build();
 
         return (int) webClient.get()

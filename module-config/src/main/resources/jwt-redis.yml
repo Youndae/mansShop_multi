@@ -1,0 +1,9 @@
+token-redis:
+  access:
+    expiration: 1
+    prefix: at
+  refresh:
+    expiration: 14
+    prefix: rt
+  temporary:
+    expiration: 1

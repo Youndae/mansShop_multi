@@ -1,0 +1,17 @@
+spring:
+  rabbitmq:
+    ssl:
+      enabled: false
+
+  mail:
+    properties:
+      mail:
+        smtp:
+          starttls:
+            enable: true
+            required: true
+          auth: ture
+    transport:
+      protocol: smtp
+    debug: true
+    default-encoding: UTF-8

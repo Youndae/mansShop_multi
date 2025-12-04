@@ -14,6 +14,8 @@ import com.example.modulecommon.model.dto.qna.out.QnADetailReplyDTO;
 import com.example.modulecommon.model.entity.*;
 import com.example.modulecommon.model.enumuration.*;
 import com.example.modulecommon.utils.PaginationUtils;
+import com.example.moduleconfig.properties.CookieProperties;
+import com.example.moduleconfig.properties.TokenProperties;
 import com.example.modulemypage.model.dto.memberQnA.out.MemberQnADetailResponseDTO;
 import com.example.modulemypage.model.dto.memberQnA.out.QnAClassificationDTO;
 import com.example.modulemypage.repository.MemberQnAReplyRepository;
@@ -36,7 +38,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -120,14 +121,11 @@ public class AdminQnAControllerIT {
     @Autowired
     private NotificationRepository notificationRepository;
 
-    @Value("#{jwt['token.access.header']}")
-    private String accessHeader;
+    @Autowired
+    private TokenProperties tokenProperties;
 
-    @Value("#{jwt['token.refresh.header']}")
-    private String refreshHeader;
-
-    @Value("#{jwt['cookie.ino.header']}")
-    private String inoHeader;
+    @Autowired
+    private CookieProperties cookieProperties;
 
     private Map<String, String> tokenMap;
 
@@ -188,9 +186,9 @@ public class AdminQnAControllerIT {
         admin = adminFixture.memberList().get(0);
 
         tokenMap = tokenFixture.createAndSaveAllToken(admin);
-        accessTokenValue = tokenMap.get(accessHeader);
-        refreshTokenValue = tokenMap.get(refreshHeader);
-        inoValue = tokenMap.get(inoHeader);
+        accessTokenValue = tokenMap.get(tokenProperties.getAccess().getHeader());
+        refreshTokenValue = tokenMap.get(tokenProperties.getRefresh().getHeader());
+        inoValue = tokenMap.get(cookieProperties.getIno().getHeader());
 
         List<Classification> classificationList = ClassificationFixture.createClassifications();
         classificationRepository.saveAll(classificationList);
@@ -257,9 +255,9 @@ public class AdminQnAControllerIT {
         int totalPages = PaginationUtils.getTotalPages(allProductQnAList.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/product")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .param("type", ALL_LIST_TYPE))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -291,9 +289,9 @@ public class AdminQnAControllerIT {
         int totalPages = PaginationUtils.getTotalPages(newProductQnAList.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/product")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .param("type", NEW_LIST_TYPE))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -329,9 +327,9 @@ public class AdminQnAControllerIT {
         int totalPages = PaginationUtils.getTotalPages(fixtureList.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/product")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .param("type", ALL_LIST_TYPE)
                         .param("keyword", fixture.getMember().getUserId()))
                 .andExpect(status().isOk())
@@ -358,9 +356,9 @@ public class AdminQnAControllerIT {
         productQnARepository.deleteAll();
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/product")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .param("type", ALL_LIST_TYPE))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -385,9 +383,9 @@ public class AdminQnAControllerIT {
         productQnARepository.deleteAll();
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/product")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .param("type", NEW_LIST_TYPE))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -418,9 +416,9 @@ public class AdminQnAControllerIT {
                 .get(0);
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/product/" + fixture.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -449,9 +447,9 @@ public class AdminQnAControllerIT {
         ProductQnA fixture = newProductQnAList.get(0);
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/product/" + fixture.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -473,9 +471,9 @@ public class AdminQnAControllerIT {
     @DisplayName(value = "상품 문의 상세 조회. 상품 문의 아이디가 잘못된 경우")
     void getProductQnADetailWrongId() throws Exception {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/product/0")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -494,9 +492,9 @@ public class AdminQnAControllerIT {
         ProductQnA fixture = newProductQnAList.get(0);
 
         mockMvc.perform(patch(URL_PREFIX + "qna/product/" + fixture.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isNoContent())
                 .andReturn();
 
@@ -509,9 +507,9 @@ public class AdminQnAControllerIT {
     @DisplayName(value = "상품 문의 답변 상태를 완료로 수정. 문의 아이디가 잘못된 경우")
     void patchProductQnACompleteWrongId() throws Exception {
         MvcResult result = mockMvc.perform(patch(URL_PREFIX + "qna/product/0")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -532,9 +530,9 @@ public class AdminQnAControllerIT {
         String requestDTO = om.writeValueAsString(insertDTO);
 
         mockMvc.perform(post(URL_PREFIX + "qna/product/reply")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(requestDTO))
                 .andExpect(status().isNoContent())
@@ -571,9 +569,9 @@ public class AdminQnAControllerIT {
         String requestDTO = om.writeValueAsString(insertDTO);
 
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna/product/reply")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(requestDTO))
                 .andExpect(status().isBadRequest())
@@ -596,9 +594,9 @@ public class AdminQnAControllerIT {
         String requestDTO = om.writeValueAsString(replyDTO);
 
         mockMvc.perform(patch(URL_PREFIX + "qna/product/reply")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(requestDTO))
                 .andExpect(status().isNoContent())
@@ -616,9 +614,9 @@ public class AdminQnAControllerIT {
         String requestDTO = om.writeValueAsString(replyDTO);
 
         MvcResult result = mockMvc.perform(patch(URL_PREFIX + "qna/product/reply")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(requestDTO))
                 .andExpect(status().isBadRequest())
@@ -644,9 +642,9 @@ public class AdminQnAControllerIT {
         int totalPages = PaginationUtils.getTotalPages(allMemberQnAList.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/member")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .param("type", ALL_LIST_TYPE))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -678,9 +676,9 @@ public class AdminQnAControllerIT {
         int totalPages = PaginationUtils.getTotalPages(newMemberQnAList.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/member")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .param("type", NEW_LIST_TYPE))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -716,9 +714,9 @@ public class AdminQnAControllerIT {
         int totalPages = PaginationUtils.getTotalPages(fixtureList.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/member")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .param("type", ALL_LIST_TYPE)
                         .param("keyword", fixture.getMember().getUserId()))
                 .andExpect(status().isOk())
@@ -745,9 +743,9 @@ public class AdminQnAControllerIT {
         memberQnARepository.deleteAll();
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/member")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .param("type", ALL_LIST_TYPE))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -772,9 +770,9 @@ public class AdminQnAControllerIT {
         memberQnARepository.deleteAll();
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/member")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .param("type", NEW_LIST_TYPE))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -812,9 +810,9 @@ public class AdminQnAControllerIT {
                 .toList();
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/member/" + fixture.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -841,9 +839,9 @@ public class AdminQnAControllerIT {
         MemberQnA fixture = newMemberQnAList.get(0);
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/member/" + fixture.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -866,9 +864,9 @@ public class AdminQnAControllerIT {
     @DisplayName(value = "회원 문의 상세 조회. 문의 아이디가 잘못된 경우")
     void getMemberQnADetailWrongId() throws Exception {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/member/0")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -887,9 +885,9 @@ public class AdminQnAControllerIT {
         MemberQnA fixture = newMemberQnAList.get(0);
 
         mockMvc.perform(patch(URL_PREFIX + "qna/member/" + fixture.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isNoContent())
                 .andReturn();
 
@@ -902,9 +900,9 @@ public class AdminQnAControllerIT {
     @DisplayName(value = "회원 문의 답변 완료 상태로 수정. 문의 아이디가 잘못된 경우")
     void patchMemberQnAStatusCompleteWrongId() throws Exception {
         MvcResult result = mockMvc.perform(patch(URL_PREFIX + "qna/member/0")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -925,9 +923,9 @@ public class AdminQnAControllerIT {
         String requestDTO = om.writeValueAsString(insertDTO);
 
         mockMvc.perform(post(URL_PREFIX + "qna/member/reply")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().isNoContent())
@@ -969,9 +967,9 @@ public class AdminQnAControllerIT {
         String requestDTO = om.writeValueAsString(insertDTO);
 
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna/member/reply")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().isBadRequest())
@@ -994,9 +992,9 @@ public class AdminQnAControllerIT {
         String requestDTO = om.writeValueAsString(replyDTO);
 
         mockMvc.perform(patch(URL_PREFIX + "qna/member/reply")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().isNoContent())
@@ -1014,9 +1012,9 @@ public class AdminQnAControllerIT {
         String requestDTO = om.writeValueAsString(replyDTO);
 
         MvcResult result = mockMvc.perform(patch(URL_PREFIX + "qna/member/reply")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().isBadRequest())
@@ -1041,9 +1039,9 @@ public class AdminQnAControllerIT {
                 .toList();
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/classification")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -1064,9 +1062,9 @@ public class AdminQnAControllerIT {
     void getQnAClassificationListEmpty() throws Exception {
         qnAClassificationRepository.deleteAll();
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/classification")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -1085,9 +1083,9 @@ public class AdminQnAControllerIT {
         String classification = "testClassificationName";
         int classificationSize = qnAClassificationList.size() + 1;
         mockMvc.perform(post(URL_PREFIX + "qna/classification")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(classification))
                 .andExpect(status().isNoContent())
@@ -1108,9 +1106,9 @@ public class AdminQnAControllerIT {
         Long deleteId = qnAClassificationList.get(0).getId();
         int classificationSize = qnAClassificationList.size() - 1;
         mockMvc.perform(delete(URL_PREFIX + "qna/classification/" + deleteId)
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isNoContent())
                 .andReturn();
 
@@ -1127,9 +1125,9 @@ public class AdminQnAControllerIT {
     @DisplayName(value = "회원 문의 분류 삭제. 분류 아이디가 잘못된 경우")
     void deleteQnAClassificationWrongId() throws Exception {
         MvcResult result = mockMvc.perform(delete(URL_PREFIX + "qna/classification/0")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();

@@ -5,6 +5,8 @@ import com.example.moduleapi.fixture.TokenFixture;
 import com.example.modulecommon.fixture.MemberAndAuthFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.entity.Member;
+import com.example.moduleconfig.properties.CookieProperties;
+import com.example.moduleconfig.properties.TokenProperties;
 import com.example.moduleuser.repository.AuthRepository;
 import com.example.moduleuser.repository.MemberRepository;
 import jakarta.persistence.EntityManager;
@@ -65,14 +67,11 @@ public class NotificationControllerIT {
     @Value("${notification.redis.status}")
     private String redisStatus;
 
-    @Value("#{jwt['token.access.header']}")
-    private String accessHeader;
+    @Autowired
+    private TokenProperties tokenProperties;
 
-    @Value("#{jwt['token.refresh.header']}")
-    private String refreshHeader;
-
-    @Value("#{jwt['cookie.ino.header']}")
-    private String inoHeader;
+    @Autowired
+    private CookieProperties cookieProperties;
 
     private Member member;
 
@@ -96,9 +95,9 @@ public class NotificationControllerIT {
         member = memberAndAuthFixtureDTO.memberList().get(0);
 
         tokenMap = tokenFixture.createAndSaveAllToken(member);
-        accessTokenValue = tokenMap.get(accessHeader);
-        refreshTokenValue = tokenMap.get(refreshHeader);
-        inoValue = tokenMap.get(inoHeader);
+        accessTokenValue = tokenMap.get(tokenProperties.getAccess().getHeader());
+        refreshTokenValue = tokenMap.get(tokenProperties.getRefresh().getHeader());
+        inoValue = tokenMap.get(cookieProperties.getIno().getHeader());
         heartBeatKey = redisPrefix + member.getUserId();
 
         em.flush();
@@ -119,9 +118,9 @@ public class NotificationControllerIT {
     @DisplayName(value = "WebSocket 연결 상태 확인을 위한 Redis HeartBeat 데이터 저장 또는 갱신")
     void checkHeartBeat() throws Exception {
         mockMvc.perform(get(URL_PREFIX + "heartbeat")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
 

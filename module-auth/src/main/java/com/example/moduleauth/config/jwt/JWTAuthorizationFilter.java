@@ -7,6 +7,8 @@ import com.example.moduleauthapi.service.JWTTokenProvider;
 import com.example.moduleauthapi.service.JWTTokenService;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.Result;
+import com.example.moduleconfig.properties.CookieProperties;
+import com.example.moduleconfig.properties.TokenProperties;
 import com.example.moduleuser.service.UserDataService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -15,7 +17,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -38,33 +39,25 @@ public class JWTAuthorizationFilter extends OncePerRequestFilter {
 
     private final JWTTokenService jwtTokenService;
 
-    @Value("#{jwt['token.all.prefix']}")
-    private String tokenPrefix;
+    private final TokenProperties tokenProperties;
 
-    @Value("#{jwt['token.access.header']}")
-    private String accessHeader;
-
-    @Value("#{jwt['token.refresh.header']}")
-    private String refreshHeader;
-
-    @Value("#{jwt['cookie.ino.header']}")
-    private String inoHeader;
+    private final CookieProperties cookieProperties;
 
 
     @Override
     protected void doFilterInternal(HttpServletRequest request
             , HttpServletResponse response
             , FilterChain chain) throws ServletException, IOException {
-        String accessToken = request.getHeader(accessHeader);
-        Cookie refreshToken = WebUtils.getCookie(request, refreshHeader);
-        Cookie inoToken = WebUtils.getCookie(request, inoHeader);
+        String accessToken = request.getHeader(tokenProperties.getAccess().getHeader());
+        Cookie refreshToken = WebUtils.getCookie(request, tokenProperties.getRefresh().getHeader());
+        Cookie inoToken = WebUtils.getCookie(request, cookieProperties.getIno().getHeader());
         String username = null; // Authentication 객체 생성 시 필요한 사용자 아이디
 
         if(inoToken != null){
             String inoValue = inoToken.getValue();
             if(accessToken != null && refreshToken != null) {
                 String refreshTokenValue = refreshToken.getValue();
-                String accessTokenValue = accessToken.replace(tokenPrefix, "");
+                String accessTokenValue = accessToken.replace(tokenProperties.getPrefix(), "");
 
                 if(!jwtTokenProvider.checkTokenPrefix(accessToken)
                         || !jwtTokenProvider.checkTokenPrefix(refreshTokenValue)){
@@ -89,7 +82,7 @@ public class JWTAuthorizationFilter extends OncePerRequestFilter {
                     }
                 }
             }else if(accessToken != null && refreshToken == null){
-                String decodeTokenClaim = jwtTokenProvider.decodeToken(accessToken.replace(tokenPrefix, ""));
+                String decodeTokenClaim = jwtTokenProvider.decodeToken(accessToken.replace(tokenProperties.getPrefix(), ""));
 
                 jwtTokenService.deleteTokenAndCookieAndThrowException(decodeTokenClaim, inoValue, response);
                 return;

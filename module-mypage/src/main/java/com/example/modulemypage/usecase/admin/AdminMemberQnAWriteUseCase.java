@@ -3,7 +3,6 @@ package com.example.modulemypage.usecase.admin;
 import com.example.modulecommon.model.dto.qna.in.QnAReplyInsertDTO;
 import com.example.modulecommon.model.entity.MemberQnA;
 import com.example.modulecommon.model.entity.QnAClassification;
-import com.example.modulecommon.model.enumuration.Result;
 import com.example.modulemypage.service.MemberQnADataService;
 import com.example.modulemypage.service.MemberQnAExternalService;
 import com.example.modulemypage.usecase.MemberQnAWriteUseCase;

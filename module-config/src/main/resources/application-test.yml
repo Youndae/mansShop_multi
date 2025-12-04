@@ -1,0 +1,41 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/mansShopTest?characterEncoding=UTF-8&serverTimezone=Asia/Seoul
+    username: root
+    password: dm1234
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: admin
+    password: admin123
+
+  # dev, test 용 secret yml. ignore로 관리
+  config:
+    import:
+      - classpath:secret.yml
+
+  #  mailhog
+  mail:
+    host: localhost
+    port: 1025
+    username: ""
+    password: ""
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls.enable: false
+          starttls.required: false
+
+logging:
+  file:
+    path: logback-spring-test
+  level:
+    org.hibernate.sql: debug
+    org.hibernate.tool.schema.internal: debug

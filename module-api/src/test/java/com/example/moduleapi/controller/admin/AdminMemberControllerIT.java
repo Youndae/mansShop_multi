@@ -11,6 +11,8 @@ import com.example.modulecommon.model.entity.Auth;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.modulecommon.utils.PaginationUtils;
+import com.example.moduleconfig.properties.CookieProperties;
+import com.example.moduleconfig.properties.TokenProperties;
 import com.example.moduleuser.model.dto.admin.in.AdminPostPointDTO;
 import com.example.moduleuser.model.dto.admin.out.AdminMemberDTO;
 import com.example.moduleuser.model.dto.admin.page.AdminMemberPageDTO;
@@ -25,7 +27,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -76,14 +77,11 @@ public class AdminMemberControllerIT {
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
 
-    @Value("#{jwt['token.access.header']}")
-    private String accessHeader;
+    @Autowired
+    private TokenProperties tokenProperties;
 
-    @Value("#{jwt['token.refresh.header']}")
-    private String refreshHeader;
-
-    @Value("#{jwt['cookie.ino.header']}")
-    private String inoHeader;
+    @Autowired
+    private CookieProperties cookieProperties;
 
     private Map<String, String> tokenMap;
 
@@ -115,9 +113,9 @@ public class AdminMemberControllerIT {
         Member admin = adminFixture.memberList().get(0);
 
         tokenMap = tokenFixture.createAndSaveAllToken(admin);
-        accessTokenValue = tokenMap.get(accessHeader);
-        refreshTokenValue = tokenMap.get(refreshHeader);
-        inoValue = tokenMap.get(inoHeader);
+        accessTokenValue = tokenMap.get(tokenProperties.getAccess().getHeader());
+        refreshTokenValue = tokenMap.get(tokenProperties.getRefresh().getHeader());
+        inoValue = tokenMap.get(cookieProperties.getIno().getHeader());
 
         em.flush();
         em.clear();
@@ -140,9 +138,9 @@ public class AdminMemberControllerIT {
         int totalPages = PaginationUtils.getTotalPages(ALL_MEMBER_COUNT + 1, pageDTOFixture.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "member")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -164,9 +162,9 @@ public class AdminMemberControllerIT {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "member")
                         .param("keyword", member.getUserId())
                         .param("searchType", "userId")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -197,9 +195,9 @@ public class AdminMemberControllerIT {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "member")
                         .param("keyword", member.getUserName())
                         .param("searchType", "userName")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -230,9 +228,9 @@ public class AdminMemberControllerIT {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "member")
                         .param("keyword", member.getNickname())
                         .param("searchType", "nickname")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -264,9 +262,9 @@ public class AdminMemberControllerIT {
         long pointFixture = member.getMemberPoint() + pointDTO.point();
         String requestDTO = om.writeValueAsString(pointDTO);
         mockMvc.perform(patch(URL_PREFIX + "member/point")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(requestDTO))
                 .andExpect(status().isOk())
@@ -283,9 +281,9 @@ public class AdminMemberControllerIT {
         AdminPostPointDTO pointDTO = new AdminPostPointDTO("noneMemberId", 1000);
         String requestDTO = om.writeValueAsString(pointDTO);
         MvcResult result = mockMvc.perform(patch(URL_PREFIX + "member/point")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(requestDTO))
                 .andExpect(status().isBadRequest())

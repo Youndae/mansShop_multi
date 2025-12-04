@@ -17,6 +17,8 @@ import com.example.modulecommon.model.entity.*;
 import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.modulecommon.model.enumuration.PageAmount;
 import com.example.modulecommon.utils.PaginationUtils;
+import com.example.moduleconfig.properties.CookieProperties;
+import com.example.moduleconfig.properties.TokenProperties;
 import com.example.moduleorder.model.dto.admin.out.AdminDailySalesResponseDTO;
 import com.example.moduleorder.repository.ProductOrderRepository;
 import com.example.moduleproduct.repository.classification.ClassificationRepository;
@@ -101,14 +103,11 @@ public class AdminSalesControllerIT {
     @Autowired
     private ProductSalesSummaryRepository productSalesSummaryRepository;
 
-    @Value("#{jwt['token.access.header']}")
-    private String accessHeader;
+    @Autowired
+    private TokenProperties tokenProperties;
 
-    @Value("#{jwt['token.refresh.header']}")
-    private String refreshHeader;
-
-    @Value("#{jwt['cookie.ino.header']}")
-    private String inoHeader;
+    @Autowired
+    private CookieProperties cookieProperties;
 
     private Map<String, String> tokenMap;
 
@@ -154,9 +153,9 @@ public class AdminSalesControllerIT {
         Member admin = adminFixture.memberList().get(0);
 
         tokenMap = tokenFixture.createAndSaveAllToken(admin);
-        accessTokenValue = tokenMap.get(accessHeader);
-        refreshTokenValue = tokenMap.get(refreshHeader);
-        inoValue = tokenMap.get(inoHeader);
+        accessTokenValue = tokenMap.get(tokenProperties.getAccess().getHeader());
+        refreshTokenValue = tokenMap.get(tokenProperties.getRefresh().getHeader());
+        inoValue = tokenMap.get(cookieProperties.getIno().getHeader());
 
         classificationList = ClassificationFixture.createClassifications();
         classificationRepository.saveAll(classificationList);
@@ -218,9 +217,9 @@ public class AdminSalesControllerIT {
         }
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/period/" + TERM_YEAR)
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -248,9 +247,9 @@ public class AdminSalesControllerIT {
     @DisplayName(value = "선택 연도의 월별 매출 조회. 데이터가 없는 경우")
     void getPeriodSalesEmpty() throws Exception {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/period/2000")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -330,9 +329,9 @@ public class AdminSalesControllerIT {
         }
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/period/detail/" + TERM_MONTH)
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -383,9 +382,9 @@ public class AdminSalesControllerIT {
         int lastDay = YearMonth.from(term).lengthOfMonth();
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/period/detail/" + emptyTerm)
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -451,9 +450,9 @@ public class AdminSalesControllerIT {
         }
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/period/detail/classification")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .param("term", TERM_MONTH)
                         .param("classification", classification))
                 .andExpect(status().isOk())
@@ -483,9 +482,9 @@ public class AdminSalesControllerIT {
                 .size();
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/period/detail/classification")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .param("term", TERM_MONTH)
                         .param("classification", classification))
                 .andExpect(status().isOk())
@@ -554,9 +553,9 @@ public class AdminSalesControllerIT {
         }
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/period/detail/day")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .param("term", TERM))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -585,9 +584,9 @@ public class AdminSalesControllerIT {
     @DisplayName(value = "일 매출 조회. 데이터가 없는 경우")
     void getSalesByDayEmpty() throws Exception {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/period/detail/day")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .param("term", "1900-01-01"))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -622,9 +621,9 @@ public class AdminSalesControllerIT {
         int contentSize = Math.min(orderFixtureList.size(), amount);
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/period/order-list")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .param("term", termParam)
                         .param("page", "1"))
                 .andExpect(status().isOk())
@@ -649,9 +648,9 @@ public class AdminSalesControllerIT {
     @DisplayName(value = "선택 일자의 모든 주문 목록 조회. 데이터가 없는 경우")
     void getOrderListByDayEmpty() throws Exception {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/period/order-list")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .param("term", "1900-01-01")
                         .param("page", "1"))
                 .andExpect(status().isOk())
@@ -677,9 +676,9 @@ public class AdminSalesControllerIT {
         int contentSize = Math.min(productList.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/product")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -731,9 +730,9 @@ public class AdminSalesControllerIT {
         int totalPages = PaginationUtils.getTotalPages(fixtureMap.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/product")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .param("keyword", productFixture.getProductName()))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -769,9 +768,9 @@ public class AdminSalesControllerIT {
         int contentSize = Math.min(productList.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/product")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -798,9 +797,9 @@ public class AdminSalesControllerIT {
         productRepository.deleteAll();
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/product")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -894,9 +893,9 @@ public class AdminSalesControllerIT {
         }
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/product/detail/" + fixture.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -977,9 +976,9 @@ public class AdminSalesControllerIT {
     @DisplayName(value = "선택 상품의 매출 상세 내역 조회. 상품 아이디가 잘못된 경우")
     void getProductSalesDetailWrongProductId() throws Exception {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/product/detail/noneProductId")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();

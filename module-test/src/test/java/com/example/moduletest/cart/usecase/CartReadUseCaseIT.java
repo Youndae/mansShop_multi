@@ -9,6 +9,7 @@ import com.example.modulecommon.fixture.MemberAndAuthFixture;
 import com.example.modulecommon.fixture.ProductFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.entity.*;
+import com.example.moduleconfig.properties.CookieProperties;
 import com.example.moduleproduct.repository.classification.ClassificationRepository;
 import com.example.moduleproduct.repository.product.ProductRepository;
 import com.example.moduleproduct.repository.productOption.ProductOptionRepository;
@@ -20,7 +21,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
@@ -77,8 +77,8 @@ public class CartReadUseCaseIT {
 
     private Cart anonymousCart;
 
-    @Value("#{jwt['cookie.cart.header']}")
-    private String cartCookieHeader;
+    @Autowired
+    private CookieProperties cookieProperties;
 
     private Cookie anonymousCartCookie;
 
@@ -106,7 +106,7 @@ public class CartReadUseCaseIT {
         productRepository.saveAll(productList);
         productOptionRepository.saveAll(optionList);
 
-        anonymousCartCookie = new Cookie(cartCookieHeader, "testAnonymousCookieValue");
+        anonymousCartCookie = new Cookie(cookieProperties.getCart().getHeader(), "testAnonymousCookieValue");
 
         cartList = CartFixture.createDefaultMemberCart(memberList, optionList);
         anonymousCart = CartFixture.createSaveAnonymousCart(optionList.get(0), anonymous, anonymousCartCookie.getValue());

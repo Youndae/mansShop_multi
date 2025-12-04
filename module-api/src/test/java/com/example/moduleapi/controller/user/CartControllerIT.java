@@ -13,9 +13,9 @@ import com.example.modulecommon.fixture.ClassificationFixture;
 import com.example.modulecommon.fixture.MemberAndAuthFixture;
 import com.example.modulecommon.fixture.ProductFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
-import com.example.modulecommon.model.dto.response.ResponseMessageDTO;
 import com.example.modulecommon.model.entity.*;
-import com.example.modulecommon.model.enumuration.Result;
+import com.example.moduleconfig.properties.CookieProperties;
+import com.example.moduleconfig.properties.TokenProperties;
 import com.example.moduleproduct.repository.classification.ClassificationRepository;
 import com.example.moduleproduct.repository.product.ProductRepository;
 import com.example.moduleproduct.repository.productOption.ProductOptionRepository;
@@ -30,7 +30,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -98,17 +97,11 @@ public class CartControllerIT {
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
 
-    @Value("#{jwt['token.access.header']}")
-    private String accessHeader;
+    @Autowired
+    private TokenProperties tokenProperties;
 
-    @Value("#{jwt['token.refresh.header']}")
-    private String refreshHeader;
-
-    @Value("#{jwt['cookie.ino.header']}")
-    private String inoHeader;
-
-    @Value("#{jwt['cookie.cart.header']}")
-    private String cartCookieHeader;
+    @Autowired
+    private CookieProperties cookieProperties;
 
     private String accessTokenValue;
 
@@ -147,9 +140,9 @@ public class CartControllerIT {
         authRepository.saveAll(saveAuthList);
 
         tokenMap = tokenFixture.createAndSaveAllToken(memberList.get(0));
-        accessTokenValue = tokenMap.get(accessHeader);
-        refreshTokenValue = tokenMap.get(refreshHeader);
-        inoValue = tokenMap.get(inoHeader);
+        accessTokenValue = tokenMap.get(tokenProperties.getAccess().getHeader());
+        refreshTokenValue = tokenMap.get(tokenProperties.getRefresh().getHeader());
+        inoValue = tokenMap.get(cookieProperties.getIno().getHeader());
 
         List<Classification> classificationList = ClassificationFixture.createClassifications();
         classificationRepository.saveAll(classificationList);
@@ -193,9 +186,9 @@ public class CartControllerIT {
                 .sorted(Comparator.comparingLong(CartDetail::getId).reversed())
                 .toList();
         MvcResult result = mockMvc.perform(get(URL_PREFIX)
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                 )
                 .andExpect(status().isOk())
                 .andReturn();
@@ -238,9 +231,9 @@ public class CartControllerIT {
     void getCartListByMemberEmpty() throws Exception{
         cartRepository.deleteAll();
         MvcResult result = mockMvc.perform(get(URL_PREFIX)
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                 )
                 .andExpect(status().isOk())
                 .andReturn();
@@ -264,7 +257,7 @@ public class CartControllerIT {
                 .sorted(Comparator.comparingLong(CartDetail::getId).reversed())
                 .toList();
         MvcResult result = mockMvc.perform(get(URL_PREFIX)
-                        .cookie(new Cookie(cartCookieHeader, ANONYMOUS_CART_COOKIE))
+                        .cookie(new Cookie(cookieProperties.getCart().getHeader(), ANONYMOUS_CART_COOKIE))
                 )
                 .andExpect(status().isOk())
                 .andReturn();
@@ -307,7 +300,7 @@ public class CartControllerIT {
     void getCartListByAnonymousEmpty() throws Exception{
         cartRepository.deleteAll();
         MvcResult result = mockMvc.perform(get(URL_PREFIX)
-                        .cookie(new Cookie(cartCookieHeader, ANONYMOUS_CART_COOKIE))
+                        .cookie(new Cookie(cookieProperties.getCart().getHeader(), ANONYMOUS_CART_COOKIE))
                 )
                 .andExpect(status().isOk())
                 .andReturn();
@@ -338,9 +331,9 @@ public class CartControllerIT {
         String addCartRequestBody = om.writeValueAsString(requestDTO);
 
         mockMvc.perform(post(URL_PREFIX)
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(addCartRequestBody)
                 )
@@ -378,9 +371,9 @@ public class CartControllerIT {
         String addCartRequestBody = om.writeValueAsString(requestDTO);
 
         mockMvc.perform(post(URL_PREFIX)
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(addCartRequestBody)
                 )
@@ -418,9 +411,9 @@ public class CartControllerIT {
         String addCartRequestBody = om.writeValueAsString(requestDTO);
 
         mockMvc.perform(post(URL_PREFIX)
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(addCartRequestBody)
                 )
@@ -453,9 +446,9 @@ public class CartControllerIT {
         String addCartRequestBody = om.writeValueAsString(requestDTO);
 
         mockMvc.perform(post(URL_PREFIX)
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(addCartRequestBody)
                 )
@@ -478,7 +471,7 @@ public class CartControllerIT {
         String addCartRequestBody = om.writeValueAsString(requestDTO);
 
         mockMvc.perform(post(URL_PREFIX)
-                        .cookie(new Cookie(cartCookieHeader, ANONYMOUS_CART_COOKIE))
+                        .cookie(new Cookie(cookieProperties.getCart().getHeader(), ANONYMOUS_CART_COOKIE))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(addCartRequestBody)
                 )
@@ -516,7 +509,7 @@ public class CartControllerIT {
         String addCartRequestBody = om.writeValueAsString(requestDTO);
 
         mockMvc.perform(post(URL_PREFIX)
-                        .cookie(new Cookie(cartCookieHeader, ANONYMOUS_CART_COOKIE))
+                        .cookie(new Cookie(cookieProperties.getCart().getHeader(), ANONYMOUS_CART_COOKIE))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(addCartRequestBody)
                 )
@@ -562,10 +555,10 @@ public class CartControllerIT {
 
         String cartCookie = result.getResponse().getHeaders("Set-Cookie")
                 .stream()
-                .filter(v -> v.startsWith(cartCookieHeader + "="))
+                .filter(v -> v.startsWith(cookieProperties.getCart().getHeader() + "="))
                 .findFirst()
                 .map(cookie -> {
-                    int start = (cartCookieHeader + "=").length();
+                    int start = (cookieProperties.getCart().getHeader() + "=").length();
                     int end = cookie.indexOf(';');
                     return (end != -1) ? cookie.substring(start, end) : cookie.substring(start);
                 })
@@ -598,9 +591,9 @@ public class CartControllerIT {
         int originCount = fixture.getCartCount();
 
         mockMvc.perform(patch(URL_PREFIX + "count-up/" + fixture.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                 )
                 .andExpect(status().isNoContent())
                 .andReturn();
@@ -615,9 +608,9 @@ public class CartControllerIT {
     @DisplayName(value = "장바구니 상품 수량 증가. 회원인 경우. 장바구니 상세 아이디가 잘못된 경우")
     void cartCountUpByMemberWrongDetailId() throws Exception {
         mockMvc.perform(patch(URL_PREFIX + "count-up/0")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                 )
                 .andExpect(status().is4xxClientError())
                 .andReturn();
@@ -628,9 +621,9 @@ public class CartControllerIT {
     void cartCountUpByMemberNotMatchedId() throws Exception {
         CartDetail fixture = anonymousCart.getCartDetailList().get(0);
         mockMvc.perform(patch(URL_PREFIX + "count-up/" + fixture.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                 )
                 .andExpect(status().is4xxClientError())
                 .andReturn();
@@ -643,7 +636,7 @@ public class CartControllerIT {
         int originCount = fixture.getCartCount();
 
         mockMvc.perform(patch(URL_PREFIX + "count-up/" + fixture.getId())
-                        .cookie(new Cookie(cartCookieHeader, ANONYMOUS_CART_COOKIE))
+                        .cookie(new Cookie(cookieProperties.getCart().getHeader(), ANONYMOUS_CART_COOKIE))
                 )
                 .andExpect(status().isNoContent())
                 .andReturn();
@@ -673,9 +666,9 @@ public class CartControllerIT {
         int originCount = fixture.getCartCount();
 
         mockMvc.perform(patch(URL_PREFIX + "count-down/" + fixture.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                 )
                 .andExpect(status().isNoContent())
                 .andReturn();
@@ -695,9 +688,9 @@ public class CartControllerIT {
                 .get();
 
         mockMvc.perform(patch(URL_PREFIX + "count-down/" + fixture.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                 )
                 .andExpect(status().isNoContent())
                 .andReturn();
@@ -712,9 +705,9 @@ public class CartControllerIT {
     @DisplayName(value = "장바구니 상품 수량 감소. 회원인 경우. 장바구니 상세 아이디가 잘못된 경우")
     void cartCountDownByMemberWrongDetailId() throws Exception {
         mockMvc.perform(patch(URL_PREFIX + "count-down/0")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                 )
                 .andExpect(status().is4xxClientError())
                 .andReturn();
@@ -725,9 +718,9 @@ public class CartControllerIT {
     void cartCountDownByMemberNotMatchedId() throws Exception {
         CartDetail fixture = anonymousCart.getCartDetailList().get(0);
         mockMvc.perform(patch(URL_PREFIX + "count-down/" + fixture.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                 )
                 .andExpect(status().is4xxClientError())
                 .andReturn();
@@ -740,7 +733,7 @@ public class CartControllerIT {
         int originCount = fixture.getCartCount();
 
         mockMvc.perform(patch(URL_PREFIX + "count-down/" + fixture.getId())
-                        .cookie(new Cookie(cartCookieHeader, ANONYMOUS_CART_COOKIE))
+                        .cookie(new Cookie(cookieProperties.getCart().getHeader(), ANONYMOUS_CART_COOKIE))
                 )
                 .andExpect(status().isNoContent())
                 .andReturn();
@@ -771,9 +764,9 @@ public class CartControllerIT {
         String deleteSelectId = om.writeValueAsString(deleteIds);
 
         mockMvc.perform(delete(URL_PREFIX + "select")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(deleteSelectId)
                 )
@@ -800,9 +793,9 @@ public class CartControllerIT {
         String deleteSelectId = om.writeValueAsString(deleteIds);
 
         mockMvc.perform(delete(URL_PREFIX + "select")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(deleteSelectId)
                 )
@@ -828,9 +821,9 @@ public class CartControllerIT {
         String deleteSelectId = om.writeValueAsString(deleteIds);
 
         mockMvc.perform(delete(URL_PREFIX + "select")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(deleteSelectId)
                 )
@@ -850,9 +843,9 @@ public class CartControllerIT {
         String deleteSelectId = om.writeValueAsString(deleteIds);
 
         mockMvc.perform(delete(URL_PREFIX + "select")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(deleteSelectId)
                 )
@@ -872,7 +865,7 @@ public class CartControllerIT {
         String deleteSelectId = om.writeValueAsString(deleteIds);
 
         mockMvc.perform(delete(URL_PREFIX + "select")
-                        .cookie(new Cookie(cartCookieHeader, ANONYMOUS_CART_COOKIE))
+                        .cookie(new Cookie(cookieProperties.getCart().getHeader(), ANONYMOUS_CART_COOKIE))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(deleteSelectId)
                 )
@@ -890,9 +883,9 @@ public class CartControllerIT {
         long cartId = memberCart.getId();
 
         mockMvc.perform(delete(URL_PREFIX + "all")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().isNoContent())
@@ -909,9 +902,9 @@ public class CartControllerIT {
         cartRepository.deleteAll();
 
         mockMvc.perform(delete(URL_PREFIX + "all")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().is4xxClientError())
@@ -924,7 +917,7 @@ public class CartControllerIT {
         long cartId = anonymousCart.getId();
 
         mockMvc.perform(delete(URL_PREFIX + "all")
-                        .cookie(new Cookie(cartCookieHeader, ANONYMOUS_CART_COOKIE))
+                        .cookie(new Cookie(cookieProperties.getCart().getHeader(), ANONYMOUS_CART_COOKIE))
                         .contentType(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().isNoContent())

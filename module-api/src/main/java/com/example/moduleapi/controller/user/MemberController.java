@@ -6,6 +6,8 @@ import com.example.moduleapi.config.exception.ExceptionEntity;
 import com.example.moduleauth.service.AuthenticationService;
 import com.example.modulecommon.customException.CustomAccessDeniedException;
 import com.example.modulecommon.model.enumuration.ErrorCode;
+import com.example.moduleconfig.properties.CookieProperties;
+import com.example.moduleconfig.properties.TokenProperties;
 import com.example.moduleuser.model.dto.member.in.*;
 import com.example.moduleuser.model.dto.member.out.UserStatusResponseDTO;
 import com.example.moduleuser.usecase.UserReadUseCase;
@@ -23,7 +25,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -39,11 +40,9 @@ import java.security.Principal;
 @Slf4j
 public class MemberController {
 
-    @Value("#{jwt['token.access.header']}")
-    private String authorizationHeader;
+    private final TokenProperties tokenProperties;
 
-    @Value("#{jwt['cookie.ino.header']}")
-    private String inoHeader;
+    private final CookieProperties cookieProperties;
 
     private final UserReadUseCase userReadUseCase;
 
@@ -102,8 +101,8 @@ public class MemberController {
 
         try{
             LogoutDTO dto = LogoutDTO.builder()
-                    .authorizationToken(request.getHeader(authorizationHeader))
-                    .inoValue(WebUtils.getCookie(request, inoHeader).getValue())
+                    .authorizationToken(request.getHeader(tokenProperties.getAccess().getHeader()))
+                    .inoValue(WebUtils.getCookie(request, cookieProperties.getIno().getHeader()).getValue())
                     .userId(principal.getName())
                     .build();
 

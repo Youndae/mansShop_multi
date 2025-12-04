@@ -41,7 +41,7 @@ public class UserDataService {
 
     public void saveMemberAndAuthToJoin(Member member) throws Exception {
         Auth auth = Auth.builder()
-                        .auth(Role.MEMBER.getRole())
+                        .auth(Role.MEMBER.getKey())
                         .build();
         member.addMemberAuth(auth);
         saveMember(member);

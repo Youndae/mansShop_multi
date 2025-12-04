@@ -9,6 +9,8 @@ import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.modulecommon.model.enumuration.MailSuffix;
 import com.example.modulecommon.model.enumuration.Result;
 import com.example.modulecommon.model.enumuration.Role;
+import com.example.moduleconfig.properties.CookieProperties;
+import com.example.moduleconfig.properties.TokenProperties;
 import com.example.moduleuser.model.dto.member.in.JoinDTO;
 import com.example.moduleuser.model.dto.member.out.MyPageInfoDTO;
 import jakarta.servlet.http.Cookie;
@@ -29,11 +31,9 @@ public class UserDomainService {
 
     private final JWTTokenProvider jwtTokenProvider;
 
-    @Value("#{jwt['token.temporary.header']}")
-    private String temporaryHeader;
+    private final TokenProperties tokenProperties;
 
-    @Value("#{jwt['cookie.ino.header']}")
-    private String inoHeader;
+    private final CookieProperties cookieProperties;
 
     public Member getJoinMember(JoinDTO dto) {
         Member memberEntity = dto.toEntity();
@@ -59,7 +59,7 @@ public class UserDomainService {
     private boolean checkInoAndIssueToken(String userId,
                                           HttpServletRequest request,
                                           HttpServletResponse response){
-        Cookie inoCookie = WebUtils.getCookie(request, inoHeader);
+        Cookie inoCookie = WebUtils.getCookie(request, cookieProperties.getIno().getHeader());
 
         if(inoCookie == null)
             jwtTokenProvider.issueAllTokens(userId, response);
@@ -70,7 +70,7 @@ public class UserDomainService {
     }
 
     public Cookie getOAuthTemporaryCookie(HttpServletRequest request) {
-        return WebUtils.getCookie(request, temporaryHeader);
+        return WebUtils.getCookie(request, tokenProperties.getTemporary().getHeader());
     }
 
     public String validateTemporaryClaimByUserId(Cookie temporaryCookie) {

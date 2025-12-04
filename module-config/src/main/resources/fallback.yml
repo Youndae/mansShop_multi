@@ -1,0 +1,6 @@
+fallback:
+  redis:
+    order:
+      prefix: failed_order_
+    orderMessage:
+      prefix: failed_message_

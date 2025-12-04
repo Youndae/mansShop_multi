@@ -7,6 +7,7 @@ import com.example.modulecommon.fixture.MemberAndAuthFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.Result;
+import com.example.moduleconfig.properties.TokenProperties;
 import com.example.moduletest.ModuleTestApplication;
 import com.example.moduleuser.repository.AuthRepository;
 import com.example.moduleuser.repository.MemberRepository;
@@ -61,8 +62,8 @@ public class UseDomainServiceIT {
 
     private Member member;
 
-    @Value("#{jwt['token.temporary.header']}")
-    private String temporaryHeader;
+    @Autowired
+    private TokenProperties tokenProperties;
 
     @BeforeEach
     void init() {
@@ -119,7 +120,7 @@ public class UseDomainServiceIT {
         tokenProvider.createTemporaryToken(member.getUserId(), temporaryResponse);
         String temporaryToken = temporaryResponse.getHeader("Set-Cookie").split(";", 2)[0].split("=", 2)[1];
 
-        Cookie temporaryCookie = new Cookie(temporaryHeader, temporaryToken);
+        Cookie temporaryCookie = new Cookie(tokenProperties.getTemporary().getHeader(), temporaryToken);
 
         String result = assertDoesNotThrow(() -> userDomainService.validateTemporaryClaimByUserId(temporaryCookie));
 
@@ -132,7 +133,7 @@ public class UseDomainServiceIT {
     @Test
     @DisplayName(value = "oAuth2 사용자의 임시토큰 검증. 잘못된 토큰인 경우")
     void validateTemporaryTokenIsWrong() {
-        Cookie temporaryCookie = new Cookie(temporaryHeader, "WrongTokenValue");
+        Cookie temporaryCookie = new Cookie(tokenProperties.getTemporary().getHeader(), "WrongTokenValue");
 
         assertThrows(
                 CustomBadCredentialsException.class,

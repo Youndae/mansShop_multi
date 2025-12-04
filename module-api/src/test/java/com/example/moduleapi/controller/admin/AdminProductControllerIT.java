@@ -12,6 +12,8 @@ import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.entity.*;
 import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.modulecommon.utils.PaginationUtils;
+import com.example.moduleconfig.properties.CookieProperties;
+import com.example.moduleconfig.properties.TokenProperties;
 import com.example.modulefile.service.FileService;
 import com.example.moduleproduct.model.dto.admin.product.in.AdminDiscountPatchDTO;
 import com.example.moduleproduct.model.dto.admin.product.in.AdminProductPatchDTO;
@@ -114,14 +116,11 @@ public class AdminProductControllerIT {
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
 
-    @Value("#{jwt['token.access.header']}")
-    private String accessHeader;
+    @Autowired
+    private TokenProperties tokenProperties;
 
-    @Value("#{jwt['token.refresh.header']}")
-    private String refreshHeader;
-
-    @Value("#{jwt['cookie.ino.header']}")
-    private String inoHeader;
+    @Autowired
+    private CookieProperties cookieProperties;
 
     private Map<String, String> tokenMap;
 
@@ -149,9 +148,9 @@ public class AdminProductControllerIT {
         authRepository.saveAll(adminFixture.authList());
 
         tokenMap = tokenFixture.createAndSaveAllToken(admin);
-        accessTokenValue = tokenMap.get(accessHeader);
-        refreshTokenValue = tokenMap.get(refreshHeader);
-        inoValue = tokenMap.get(inoHeader);
+        accessTokenValue = tokenMap.get(tokenProperties.getAccess().getHeader());
+        refreshTokenValue = tokenMap.get(tokenProperties.getRefresh().getHeader());
+        inoValue = tokenMap.get(cookieProperties.getIno().getHeader());
 
         classificationList = ClassificationFixture.createClassifications();
         classificationRepository.saveAll(classificationList);
@@ -197,9 +196,9 @@ public class AdminProductControllerIT {
         int totalPages = PaginationUtils.getTotalPages(allProductList.size(), pageDTOFixture.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "product")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -223,9 +222,9 @@ public class AdminProductControllerIT {
         int totalPages = PaginationUtils.getTotalPages(allProductList.size(), pageDTOFixture.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "product")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .param("keyword", "testProduct"))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -253,9 +252,9 @@ public class AdminProductControllerIT {
         Long optionCount = (long) fixture.getProductOptions().size();
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "product")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .param("keyword", fixture.getProductName()))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -286,9 +285,9 @@ public class AdminProductControllerIT {
         productRepository.deleteAll();
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "product")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -307,9 +306,9 @@ public class AdminProductControllerIT {
     @DisplayName(value = "상품 분류 리스트 조회")
     void getClassificationList() throws Exception {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "product/classification")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -330,9 +329,9 @@ public class AdminProductControllerIT {
         productRepository.deleteAll();
         classificationRepository.deleteAll();
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "product/classification")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -368,9 +367,9 @@ public class AdminProductControllerIT {
                 .map(ProductInfoImage::getImageName)
                 .toList();
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "product/detail/" + fixture.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -403,9 +402,9 @@ public class AdminProductControllerIT {
     @DisplayName(value = "상품 상세 정보 조회. 상품 아이디가 잘못된 경우")
     void getProductDetailWrongProductId() throws Exception {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "product/detail/noneProductId")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -530,9 +529,9 @@ public class AdminProductControllerIT {
                         builder
                                 .contentType(MediaType.MULTIPART_FORM_DATA)
                                 .accept(MediaType.APPLICATION_JSON)
-                                .header(accessHeader, accessTokenValue)
-                                .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                                .cookie(new Cookie(inoHeader, inoValue))
+                                .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                                .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                                .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                 )
                 .andExpect(status().isCreated())
                 .andReturn();
@@ -606,9 +605,9 @@ public class AdminProductControllerIT {
                         builder
                                 .contentType(MediaType.MULTIPART_FORM_DATA)
                                 .accept(MediaType.APPLICATION_JSON)
-                                .header(accessHeader, accessTokenValue)
-                                .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                                .cookie(new Cookie(inoHeader, inoValue))
+                                .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                                .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                                .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                 )
                 .andExpect(status().isOk())
                 .andReturn();
@@ -693,9 +692,9 @@ public class AdminProductControllerIT {
                         builder
                                 .contentType(MediaType.MULTIPART_FORM_DATA)
                                 .accept(MediaType.APPLICATION_JSON)
-                                .header(accessHeader, accessTokenValue)
-                                .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                                .cookie(new Cookie(inoHeader, inoValue))
+                                .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                                .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                                .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                 )
                 .andExpect(status().isBadRequest())
                 .andReturn();
@@ -765,9 +764,9 @@ public class AdminProductControllerIT {
                         builder
                                 .contentType(MediaType.MULTIPART_FORM_DATA)
                                 .accept(MediaType.APPLICATION_JSON)
-                                .header(accessHeader, accessTokenValue)
-                                .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                                .cookie(new Cookie(inoHeader, inoValue))
+                                .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                                .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                                .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                 )
                 .andExpect(status().isBadRequest())
                 .andReturn();
@@ -798,9 +797,9 @@ public class AdminProductControllerIT {
                 .toList();
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "product/stock")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -822,9 +821,9 @@ public class AdminProductControllerIT {
         productRepository.deleteAll();
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "product/stock")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -849,9 +848,9 @@ public class AdminProductControllerIT {
                 .sum();
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "product/stock")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .param("keyword", fixture.getProductName()))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -886,9 +885,9 @@ public class AdminProductControllerIT {
         int totalPages = PaginationUtils.getTotalPages(fixtureList.size(), pageDTOFixture.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "product/discount")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -910,9 +909,9 @@ public class AdminProductControllerIT {
         productRepository.deleteAll();
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "product/discount")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -937,9 +936,9 @@ public class AdminProductControllerIT {
         int discountPrice = (int) (fixture.getProductPrice() * (1 - ((double)fixture.getProductDiscount() / 100)));
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "product/discount")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .param("keyword", fixture.getProductName()))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -971,9 +970,9 @@ public class AdminProductControllerIT {
                 .sorted(Comparator.comparing(Product::getProductName))
                 .toList();
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "product/discount/select/" + classificationList.get(0).getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -1007,9 +1006,9 @@ public class AdminProductControllerIT {
         String requestDTO = om.writeValueAsString(discountDTO);
 
         mockMvc.perform(patch(URL_PREFIX + "product/discount")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().isNoContent())
@@ -1037,9 +1036,9 @@ public class AdminProductControllerIT {
         String requestDTO = om.writeValueAsString(discountDTO);
 
         mockMvc.perform(patch(URL_PREFIX + "product/discount")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().isNoContent())
@@ -1064,9 +1063,9 @@ public class AdminProductControllerIT {
         String requestDTO = om.writeValueAsString(discountDTO);
 
         MvcResult result = mockMvc.perform(patch(URL_PREFIX + "product/discount")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().isBadRequest())

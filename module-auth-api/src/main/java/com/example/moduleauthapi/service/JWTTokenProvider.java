@@ -5,11 +5,14 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.example.modulecommon.model.enumuration.Result;
+import com.example.moduleconfig.properties.CookieProperties;
+import com.example.moduleconfig.properties.JwtSecretProperties;
+import com.example.moduleconfig.properties.TokenProperties;
+import com.example.moduleconfig.properties.TokenRedisProperties;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.http.ResponseCookie;
@@ -24,56 +27,13 @@ import java.util.UUID;
 @Slf4j
 public class JWTTokenProvider {
 
-    @Value("#{jwt['token.all.prefix']}")
-    private String tokenPrefix;
+    private final TokenProperties tokenProperties;
 
-    @Value("#{jwt['token.access.header']}")
-    private String accessHeader;
+    private final JwtSecretProperties jwtSecretProperties;
 
-    @Value("#{jwt['token.access.secret']}")
-    private String accessSecret;
+    private final CookieProperties cookieProperties;
 
-    @Value("#{jwt['token.access.expiration']}")
-    private Long accessExpiration;
-
-    @Value("#{jwt['token.refresh.secret']}")
-    private String refreshSecret;
-
-    @Value("#{jwt['token.refresh.expiration']}")
-    private Long refreshExpiration;
-
-    @Value("#{jwt['token.refresh.header']}")
-    private String refreshHeader;
-
-    @Value("#{jwt['redis.accessExpiration']}")
-    private Long redisAtExpiration;
-
-    @Value("#{jwt['redis.refreshExpiration']}")
-    private Long redisRtExpiration;
-
-    @Value("#{jwt['redis.accessPrefix']}")
-    private String redisAccessPrefix;
-
-    @Value("#{jwt['redis.refreshPrefix']}")
-    private String redisRefreshPrefix;
-
-    @Value("#{jwt['cookie.ino.header']}")
-    private String inoHeader;
-
-    @Value("#{jwt['cookie.ino.age']}")
-    private Long inoCookieAge;
-
-    @Value("#{jwt['token.temporary.header']}")
-    private String temporaryHeader;
-
-    @Value("#{jwt['token.temporary.expiration']}")
-    private Long temporaryExpiration;
-
-    @Value("#{jwt['token.temporary.secret']}")
-    private String temporarySecret;
-
-    @Value("#{jwt['token.temporary.redis.expirationMinute']}")
-    private Long temporaryRedisExpiration;
+    private final TokenRedisProperties tokenRedisProperties;
 
     private final StringRedisTemplate redisTemplate;
 
@@ -110,7 +70,7 @@ public class JWTTokenProvider {
      */
     public boolean checkTokenPrefix(String token) {
 
-        return token.startsWith(tokenPrefix);
+        return token.startsWith(tokenProperties.getPrefix());
     }
 
     /**
@@ -127,14 +87,14 @@ public class JWTTokenProvider {
      * 불일치한다면 토큰은 정상이기 때문에 탈취로 판단. redis 데이터 삭제 후 TOKEN_STEALING 반환
      */
     public String verifyAccessToken(String accessTokenValue, String inoValue) {
-        String claimByUserId = getClaimByUserId(accessTokenValue, accessSecret);
+        String claimByUserId = getClaimByUserId(accessTokenValue, jwtSecretProperties.getAccess());
         if(claimByUserId.equals(Result.WRONG_TOKEN.getResultKey())
                 || claimByUserId.equals(Result.TOKEN_EXPIRATION.getResultKey())) {
 
             return claimByUserId;
         }
 
-        String redisKey = setRedisKey(redisAccessPrefix, inoValue, claimByUserId);
+        String redisKey = setRedisKey(tokenRedisProperties.getAccess().getPrefix(), inoValue, claimByUserId);
         String redisValue = getTokenValueToRedis(redisKey);
 
         if(accessTokenValue.equals(redisValue))
@@ -164,7 +124,7 @@ public class JWTTokenProvider {
      * 일치하지 않는다면 TOKEN_STEALING 반환
      */
     public String verifyRefreshToken(String refreshTokenValue, String inoValue, String accessTokenClaim) {
-        String claimByUserId = getClaimByUserId(refreshTokenValue, refreshSecret);
+        String claimByUserId = getClaimByUserId(refreshTokenValue, jwtSecretProperties.getRefresh());
 
         if(claimByUserId.equals(Result.WRONG_TOKEN.getResultKey())
                 || claimByUserId.equals(Result.TOKEN_EXPIRATION.getResultKey())) {
@@ -177,7 +137,7 @@ public class JWTTokenProvider {
             return Result.TOKEN_STEALING.getResultKey();
         }
 
-        String redisKey = setRedisKey(redisRefreshPrefix, inoValue, claimByUserId);
+        String redisKey = setRedisKey(tokenRedisProperties.getRefresh().getPrefix(), inoValue, claimByUserId);
         String redisValue = getTokenValueToRedis(redisKey);
 
         if(refreshTokenValue.equals(redisValue))
@@ -282,8 +242,8 @@ public class JWTTokenProvider {
      *
      */
     public void deleteTokenValueToRedis(String userId, String inoValue) {
-        String accessKey = setRedisKey(redisAccessPrefix, inoValue, userId);
-        String refreshKey = setRedisKey(redisRefreshPrefix, inoValue, userId);
+        String accessKey = setRedisKey(tokenRedisProperties.getAccess().getPrefix(), inoValue, userId);
+        String refreshKey = setRedisKey(tokenRedisProperties.getRefresh().getPrefix(), inoValue, userId);
 
         redisTemplate.delete(accessKey);
         redisTemplate.delete(refreshKey);
@@ -338,17 +298,17 @@ public class JWTTokenProvider {
      */
     public void setTokenCookie(String tokenHeader, String tokenValue, Duration tokenCookieAge, HttpServletResponse response) {
 
-        response.addHeader("Set-Cookie"
-                , createCookie(
-                        tokenHeader
-                        , tokenValue
-                        , tokenCookieAge
+        response.addHeader("Set-Cookie",
+                createCookie(
+                        tokenHeader,
+                        tokenValue,
+                        tokenCookieAge
                 ));
     }
 
     public void setAccessTokenToResponseHeader(String accessToken, HttpServletResponse response){
 
-        response.addHeader(accessHeader, accessToken);
+        response.addHeader(tokenProperties.getAccess().getHeader(), accessToken);
     }
 
     /**
@@ -362,8 +322,8 @@ public class JWTTokenProvider {
      */
     public void deleteCookie(HttpServletResponse response) {
         String[] cookieNameArr = {
-                refreshHeader
-                , inoHeader
+                tokenProperties.getRefresh().getHeader(),
+                cookieProperties.getIno().getHeader()
         };
 
         for(String name : cookieNameArr){
@@ -399,7 +359,7 @@ public class JWTTokenProvider {
         String ino = createIno();
         issueTokens(userId, ino, response);
 
-        setTokenCookie(inoHeader, ino, Duration.ofDays(inoCookieAge), response);
+        setTokenCookie(cookieProperties.getIno().getHeader(), ino, Duration.ofDays(cookieProperties.getIno().getAge()), response);
     }
 
     /**
@@ -411,20 +371,20 @@ public class JWTTokenProvider {
      * issue AccessToken, RefreshToken
      */
     public void issueTokens(String userId, String ino, HttpServletResponse response) {
-        String accessToken = createToken(userId, accessSecret, accessExpiration);
-        String refreshToken = createToken(userId, refreshSecret, refreshExpiration);
-        String accessKey = setRedisKey(redisAccessPrefix, ino, userId);
-        String refreshKey = setRedisKey(redisRefreshPrefix, ino, userId);
-        Duration accessTokenExpiration = Duration.ofHours(redisAtExpiration);
-        Duration tokenExpiration = Duration.ofDays(redisRtExpiration);
+        String accessToken = createToken(userId, jwtSecretProperties.getAccess(), tokenProperties.getAccess().getExpiration());
+        String refreshToken = createToken(userId, jwtSecretProperties.getRefresh(), tokenProperties.getRefresh().getExpiration());
+        String accessKey = setRedisKey(tokenRedisProperties.getAccess().getPrefix(), ino, userId);
+        String refreshKey = setRedisKey(tokenRedisProperties.getRefresh().getPrefix(), ino, userId);
+        Duration accessTokenExpiration = Duration.ofHours(tokenRedisProperties.getAccess().getExpiration());
+        Duration tokenExpiration = Duration.ofDays(tokenRedisProperties.getRefresh().getExpiration());
         saveTokenToRedis(accessKey, accessToken, accessTokenExpiration);
         saveTokenToRedis(refreshKey, refreshToken, tokenExpiration);
 
-        accessToken = tokenPrefix + accessToken;
-        refreshToken = tokenPrefix + refreshToken;
+        accessToken = tokenProperties.getPrefix() + accessToken;
+        refreshToken = tokenProperties.getPrefix() + refreshToken;
 
         setAccessTokenToResponseHeader(accessToken, response);
-        setTokenCookie(refreshHeader, refreshToken, Duration.ofDays(redisRtExpiration), response);
+        setTokenCookie(tokenProperties.getRefresh().getHeader(), refreshToken, Duration.ofDays(tokenRedisProperties.getRefresh().getExpiration()), response);
     }
 
     /**
@@ -437,10 +397,10 @@ public class JWTTokenProvider {
      * response.sendRedirect로 처리되기 때문에 AccessToken 저장 처리를 Client에서 수행할 수 없기 때문에 임시 토큰 발행.
      */
     public void createTemporaryToken(String userId, HttpServletResponse response) {
-        String temporaryToken = createToken(userId, temporarySecret, temporaryExpiration);
+        String temporaryToken = createToken(userId, jwtSecretProperties.getTemporary(), tokenProperties.getTemporary().getExpiration());
 
-        saveTokenToRedis(userId, temporaryToken, Duration.ofMinutes(temporaryRedisExpiration));
-        setTokenCookie(temporaryHeader, temporaryToken, Duration.ofMinutes(temporaryRedisExpiration), response);
+        saveTokenToRedis(userId, temporaryToken, Duration.ofMinutes(tokenRedisProperties.getTemporary().getExpiration()));
+        setTokenCookie(tokenProperties.getTemporary().getHeader(), temporaryToken, Duration.ofMinutes(tokenRedisProperties.getTemporary().getExpiration()), response);
     }
 
     /**
@@ -454,7 +414,7 @@ public class JWTTokenProvider {
      *
      */
     public String verifyTemporaryToken(String temporaryTokenValue) {
-        String claimByUserId = getClaimByUserId(temporaryTokenValue, temporarySecret);
+        String claimByUserId = getClaimByUserId(temporaryTokenValue, jwtSecretProperties.getTemporary());
 
         if(claimByUserId.equals(Result.WRONG_TOKEN.getResultKey())
                 || claimByUserId.equals(Result.TOKEN_EXPIRATION.getResultKey())) {
@@ -483,7 +443,7 @@ public class JWTTokenProvider {
     public void deleteTemporaryTokenAndCookie(String userId, HttpServletResponse response) {
         redisTemplate.delete(userId);
 
-        Cookie cookie = new Cookie(temporaryHeader, null);
+        Cookie cookie = new Cookie(tokenProperties.getTemporary().getHeader(), null);
         cookie.setMaxAge(0);
         cookie.setPath("/");
         response.addCookie(cookie);

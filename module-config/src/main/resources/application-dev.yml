@@ -1,0 +1,39 @@
+spring:
+  devtools:
+    livereload:
+      enabled: true
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/mansShop?characterEncoding=UTF-8&serverTimezone=Asia/Seoul
+    username: root
+    password: dm1234
+
+  # dev, test 용 secret yml. ignore로 관리
+  config:
+    import:
+      - classpath:secret.yml
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: admin
+    password: admin123
+
+  # mailHog
+  mail:
+    host: localhost
+    port: 1025
+    username: ""
+    password: ""
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+            required: false

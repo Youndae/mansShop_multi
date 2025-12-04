@@ -1,9 +1,10 @@
 package com.example.modulefile.service;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.*;
+import com.example.moduleconfig.properties.AwsS3Properties;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
@@ -22,15 +23,15 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class FileService {
 
     @Value("#{filePath['file.product.path']}")
     private String filePath;
 
-    @Value("${cloud.aws.s3.bucket}")
-    private String bucket;
+    private final AwsS3Properties awsS3Properties;
+
     private final AmazonS3 amazonS3;
-    private final AmazonS3Client amazonS3Client;
 
     /**
      *
@@ -75,8 +76,8 @@ public class FileService {
      * S3로부터 파일을 다운받아 InputStreamResource 타입으로 반환.
      * 프론트엔드에서는 blob으로 받아 처리.
      */
-    /*public ResponseEntity<InputStreamResource> getImageFileByS3(String imageName) {
-        S3Object s3Object = amazonS3.getObject(bucket, imageName);
+    public ResponseEntity<InputStreamResource> getImageFileByS3(String imageName) {
+        S3Object s3Object = amazonS3.getObject(awsS3Properties.getBucket(), imageName);
         InputStreamResource resource = new InputStreamResource(s3Object.getObjectContent());
 
         return ResponseEntity.status(HttpStatus.OK)
@@ -84,9 +85,9 @@ public class FileService {
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .contentLength(s3Object.getObjectMetadata().getContentLength())
                 .body(resource);
-    }*/
+    }
 
-    public String imageInsert(MultipartFile image) throws Exception{
+    /*public String imageInsert(MultipartFile image) throws Exception{
         StringBuffer sb = new StringBuffer();
         String saveName = sb.append(new SimpleDateFormat("yyyyMMddHHmmss")
                         .format(System.currentTimeMillis()))
@@ -98,15 +99,13 @@ public class FileService {
         image.transferTo(new File(saveFile));
 
         return saveName;
-    }
+    }*/
 
     /**
      *
      * @param image
      * S3에 파일 저장
      */
-    /*
-    @Override
     public String imageInsert(MultipartFile image) throws Exception{
         StringBuffer sb = new StringBuffer();
         String saveName = sb.append(new SimpleDateFormat("yyyyMMddHHmmss")
@@ -122,12 +121,11 @@ public class FileService {
         try{
             amazonS3.putObject(
                     new PutObjectRequest(
-                            bucket
-                            , saveName
-                            , image.getInputStream()
-                            , objectMetadata
+                            awsS3Properties.getBucket(),
+                            saveName,
+                            image.getInputStream(),
+                            objectMetadata
                     )
-                            .withCannedAcl(CannedAccessControlList.PublicRead)
             );
         }catch (Exception e) {
             log.warn("productImage insert IOException");
@@ -136,25 +134,23 @@ public class FileService {
         }
 
         return saveName;
-    }*/
+    }
 
-    public void deleteImage(String imageName) {
+    /*public void deleteImage(String imageName) {
         File file = new File(filePath + imageName);
 
         if(file.exists())
             file.delete();
-    }
+    }*/
 
     /**
      *
      *
      * S3 파일 삭제
      */
-    /*
-    @Override
     public void deleteImage(String imageName) {
         amazonS3.deleteObject(
-                new DeleteObjectRequest(bucket, imageName)
+                new DeleteObjectRequest(awsS3Properties.getBucket(), imageName)
         );
-    }*/
+    }
 }

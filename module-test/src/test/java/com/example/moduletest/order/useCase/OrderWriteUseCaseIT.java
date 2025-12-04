@@ -15,6 +15,7 @@ import com.example.modulecommon.fixture.ProductFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.entity.*;
 import com.example.modulecommon.model.enumuration.Result;
+import com.example.moduleconfig.properties.CookieProperties;
 import com.example.moduleorder.model.dto.business.OrderDataDTO;
 import com.example.moduleorder.model.dto.business.ProductOrderDataDTO;
 import com.example.moduleorder.model.dto.in.OrderProductDTO;
@@ -103,8 +104,8 @@ public class OrderWriteUseCaseIT {
     @MockitoBean
     private OrderExternalService orderExternalService;
 
-    @Value("#{jwt['cookie.cart.header']}")
-    private String cartCookieHeader;
+    @Autowired
+    private CookieProperties cookieProperties;
 
     private Member member;
 
@@ -518,7 +519,7 @@ public class OrderWriteUseCaseIT {
 
         assertThrows(
                 CustomAccessDeniedException.class,
-                () -> orderWriteUseCase.getCartOrderData(cartDetailIds, null, new Cookie(cartCookieHeader, "wrongCookieValue"), anonymous.getUserId(), response)
+                () -> orderWriteUseCase.getCartOrderData(cartDetailIds, null, new Cookie(cookieProperties.getCart().getHeader(), "wrongCookieValue"), anonymous.getUserId(), response)
         );
     }
 

@@ -14,7 +14,9 @@ import com.example.modulecommon.fixture.ProductFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.entity.*;
 import com.example.moduleconfig.config.rabbitMQ.RabbitMQPrefix;
+import com.example.moduleconfig.properties.CookieProperties;
 import com.example.moduleconfig.properties.RabbitMQProperties;
+import com.example.moduleconfig.properties.TokenProperties;
 import com.example.moduleorder.model.dto.business.ProductOrderDataDTO;
 import com.example.moduleorder.model.dto.in.OrderProductDTO;
 import com.example.moduleorder.model.dto.in.PaymentDTO;
@@ -39,7 +41,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -121,14 +122,11 @@ public class AdminFailedDataControllerIT {
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
 
-    @Value("#{jwt['token.access.header']}")
-    private String accessHeader;
+    @Autowired
+    private TokenProperties tokenProperties;
 
-    @Value("#{jwt['token.refresh.header']}")
-    private String refreshHeader;
-
-    @Value("#{jwt['cookie.ino.header']}")
-    private String inoHeader;
+    @Autowired
+    private CookieProperties cookieProperties;
 
     private Map<String, String> tokenMap;
 
@@ -165,9 +163,9 @@ public class AdminFailedDataControllerIT {
         Member admin = adminFixture.memberList().get(0);
 
         tokenMap = tokenFixture.createAndSaveAllToken(admin);
-        accessTokenValue = tokenMap.get(accessHeader);
-        refreshTokenValue = tokenMap.get(refreshHeader);
-        inoValue = tokenMap.get(inoHeader);
+        accessTokenValue = tokenMap.get(tokenProperties.getAccess().getHeader());
+        refreshTokenValue = tokenMap.get(tokenProperties.getRefresh().getHeader());
+        inoValue = tokenMap.get(cookieProperties.getIno().getHeader());
 
         List<Classification> classificationList = ClassificationFixture.createClassifications();
         classificationRepository.saveAll(classificationList);
@@ -332,9 +330,9 @@ public class AdminFailedDataControllerIT {
                 .pollInterval(200, TimeUnit.MILLISECONDS)
                 .untilAsserted(() -> {
                     MvcResult result = mockMvc.perform(get(URL_PREFIX + "message")
-                                    .header(accessHeader, accessTokenValue)
-                                    .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                                    .cookie(new Cookie(inoHeader, inoValue)))
+                                    .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                                    .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                                    .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                             .andExpect(status().isOk())
                             .andReturn();
                     String content = result.getResponse().getContentAsString();
@@ -358,9 +356,9 @@ public class AdminFailedDataControllerIT {
                 .pollInterval(200, TimeUnit.MILLISECONDS)
                 .untilAsserted(() -> {
                     MvcResult result = mockMvc.perform(get(URL_PREFIX + "message")
-                                    .header(accessHeader, accessTokenValue)
-                                    .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                                    .cookie(new Cookie(inoHeader, inoValue)))
+                                    .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                                    .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                                    .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                             .andExpect(status().isOk())
                             .andReturn();
                     String content = result.getResponse().getContentAsString();

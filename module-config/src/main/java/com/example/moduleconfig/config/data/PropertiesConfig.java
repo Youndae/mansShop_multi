@@ -1,19 +1,31 @@
 package com.example.moduleconfig.config.data;
 
+import com.example.moduleconfig.properties.*;
 import org.springframework.beans.factory.config.PropertiesFactoryBean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 
 @Configuration
+@EnableConfigurationProperties({
+        AwsCredentialsProperties.class,
+        AwsS3Properties.class,
+        CacheProperties.class,
+        CookieProperties.class,
+        DataSourceProperties.class,
+        FallbackProperties.class,
+        IamportProperties.class,
+        JwtSecretProperties.class,
+        MailProperties.class,
+        OAuth2Properties.class,
+        RabbitMQConnectionProperties.class,
+        RabbitMQProperties.class,
+        RedisProperties.class,
+        TokenProperties.class,
+        TokenRedisProperties.class
+})
 public class PropertiesConfig {
-
-    @Bean(name = "jwt")
-    public PropertiesFactoryBean jwtPropertiesFactoryBean() throws Exception {
-        String jwtPropertiesPath = "jwt.properties";
-
-        return setPropertiesFactoryBean(jwtPropertiesPath);
-    }
 
     @Bean(name = "filePath")
     public PropertiesFactoryBean filePathPropertiesFactoryBean() throws Exception {

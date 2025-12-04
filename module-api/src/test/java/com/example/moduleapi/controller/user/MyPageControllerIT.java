@@ -12,13 +12,13 @@ import com.example.modulecommon.model.dto.page.MyPagePageDTO;
 import com.example.modulecommon.model.dto.qna.in.QnAReplyInsertDTO;
 import com.example.modulecommon.model.dto.qna.in.QnAReplyPatchDTO;
 import com.example.modulecommon.model.dto.qna.out.QnADetailReplyDTO;
-import com.example.modulecommon.model.dto.response.ResponseMessageDTO;
 import com.example.modulecommon.model.entity.*;
 import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.modulecommon.model.enumuration.MailSuffix;
 import com.example.modulecommon.model.enumuration.OrderStatus;
-import com.example.modulecommon.model.enumuration.Result;
 import com.example.modulecommon.utils.PaginationUtils;
+import com.example.moduleconfig.properties.CookieProperties;
+import com.example.moduleconfig.properties.TokenProperties;
 import com.example.modulemypage.model.dto.memberQnA.in.MemberQnAInsertDTO;
 import com.example.modulemypage.model.dto.memberQnA.in.MemberQnAModifyDTO;
 import com.example.modulemypage.model.dto.memberQnA.out.MemberQnADetailResponseDTO;
@@ -60,7 +60,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -157,14 +156,11 @@ public class MyPageControllerIT {
     @Autowired
     private MemberQnAReplyRepository memberQnAReplyRepository;
 
-    @Value("#{jwt['token.access.header']}")
-    private String accessHeader;
+    @Autowired
+    private TokenProperties tokenProperties;
 
-    @Value("#{jwt['token.refresh.header']}")
-    private String refreshHeader;
-
-    @Value("#{jwt['cookie.ino.header']}")
-    private String inoHeader;
+    @Autowired
+    private CookieProperties cookieProperties;
 
     private Member member;
 
@@ -233,9 +229,9 @@ public class MyPageControllerIT {
         admin = adminFixture.memberList().get(0);
 
         tokenMap = tokenFixture.createAndSaveAllToken(member);
-        accessTokenValue = tokenMap.get(accessHeader);
-        refreshTokenValue = tokenMap.get(refreshHeader);
-        inoValue = tokenMap.get(inoHeader);
+        accessTokenValue = tokenMap.get(tokenProperties.getAccess().getHeader());
+        refreshTokenValue = tokenMap.get(tokenProperties.getRefresh().getHeader());
+        inoValue = tokenMap.get(cookieProperties.getIno().getHeader());
 
         List<Classification> classificationList = ClassificationFixture.createClassifications();
         classificationRepository.saveAll(classificationList);
@@ -305,9 +301,9 @@ public class MyPageControllerIT {
         int totalPages = PaginationUtils.getTotalPages(productOrderList.size(), pageDTO.amount());
         int contentSize = Math.min(productOrderList.size(), pageDTO.amount());
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "order/3")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -328,9 +324,9 @@ public class MyPageControllerIT {
     void getOrderListEmpty() throws Exception {
         productOrderRepository.deleteAll();
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "order/3")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -352,9 +348,9 @@ public class MyPageControllerIT {
         int totalPages = PaginationUtils.getTotalPages(productLikeList.size(), pageDTO.amount());
         int contentSize = Math.min(productLikeList.size(), pageDTO.amount());
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "like")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -375,9 +371,9 @@ public class MyPageControllerIT {
     void getLikeProductListEmpty() throws Exception {
         productLikeRepository.deleteAll();
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "like")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -399,9 +395,9 @@ public class MyPageControllerIT {
         int totalPages = PaginationUtils.getTotalPages(allProductQnAList.size(), pageDTO.amount());
         int contentSize = Math.min(allProductQnAList.size(), pageDTO.amount());
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/product")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -422,9 +418,9 @@ public class MyPageControllerIT {
     void getProductQnAListEmpty() throws Exception {
         productQnARepository.deleteAll();
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/product")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -445,9 +441,9 @@ public class MyPageControllerIT {
         ProductQnA fixture = newProductQnAList.get(0);
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/product/detail/" + fixture.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -472,9 +468,9 @@ public class MyPageControllerIT {
         ProductQnA fixture = replyFixture.getProductQnA();
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/product/detail/" + fixture.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -502,9 +498,9 @@ public class MyPageControllerIT {
     @DisplayName(value = "회원의 상품 문의 상세 조회. 작성자가 일치하지 않는 경우")
     void getProductQnADetailWriterNotEquals() throws Exception {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/product/detail/" + noneMemberProductQnA.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().is(403))
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -521,9 +517,9 @@ public class MyPageControllerIT {
     @DisplayName(value = "회원의 상품 문의 상세 조회. 데이터가 없는 경우")
     void getProductQnADetailNotFound() throws Exception {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/product/detail/0")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().is(400))
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -542,9 +538,9 @@ public class MyPageControllerIT {
         Long fixtureId = allProductQnAList.get(0).getId();
 
         mockMvc.perform(delete(URL_PREFIX + "qna/product/" + fixtureId)
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isNoContent())
                 .andReturn();
 
@@ -557,9 +553,9 @@ public class MyPageControllerIT {
     void deleteProductQnAWriterNotEquals() throws Exception {
         Long fixtureId = noneMemberProductQnA.getId();
         MvcResult result = mockMvc.perform(delete(URL_PREFIX + "qna/product/" + fixtureId)
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().is(403))
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -579,9 +575,9 @@ public class MyPageControllerIT {
     @DisplayName(value = "회원의 상품 문의 삭제. 데이터가 없는 경우")
     void deleteProductQnANotFound() throws Exception {
         MvcResult result = mockMvc.perform(delete(URL_PREFIX + "qna/product/0")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().is(400))
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -601,9 +597,9 @@ public class MyPageControllerIT {
         int totalPages = PaginationUtils.getTotalPages(allMemberQnAList.size(), pageDTO.amount());
         int contentSize = Math.min(allMemberQnAList.size(), pageDTO.amount());
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/member")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -624,9 +620,9 @@ public class MyPageControllerIT {
     void getMemberQnAEmpty() throws Exception {
         memberQnARepository.deleteAll();
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/member")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -652,9 +648,9 @@ public class MyPageControllerIT {
         String requestDTO = om.writeValueAsString(insertDTO);
 
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna/member")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().isCreated())
@@ -688,9 +684,9 @@ public class MyPageControllerIT {
         String requestDTO = om.writeValueAsString(insertDTO);
 
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna/member")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().is(400))
@@ -719,9 +715,9 @@ public class MyPageControllerIT {
                 .toList();
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/member/detail/" + fixture.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -754,9 +750,9 @@ public class MyPageControllerIT {
     void getNewMemberQnADetail() throws Exception {
         MemberQnA fixture = newMemberQnAList.get(0);
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/member/detail/" + fixture.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -779,9 +775,9 @@ public class MyPageControllerIT {
     @DisplayName(value = "회원 문의 상세 조회. 작성자가 일치하지 않는 경우")
     void getMemberQnADetailWriterNotEquals() throws Exception {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/member/detail/" + noneMemberQnA.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().is(403))
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -798,9 +794,9 @@ public class MyPageControllerIT {
     @DisplayName(value = "회원 문의 상세 조회. 데이터가 없는 경우")
     void getMemberQnADetailNotFound() throws Exception {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/member/detail/0")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().is(400))
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -830,9 +826,9 @@ public class MyPageControllerIT {
         String requestDTO = om.writeValueAsString(insertDTO);
 
         mockMvc.perform(post(URL_PREFIX + "qna/member/reply")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().isOk())
@@ -859,9 +855,9 @@ public class MyPageControllerIT {
         String requestDTO = om.writeValueAsString(insertDTO);
 
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna/member/reply")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().is(400))
@@ -883,9 +879,9 @@ public class MyPageControllerIT {
         String requestDTO = om.writeValueAsString(insertDTO);
 
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna/member/reply")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().is(403))
@@ -913,9 +909,9 @@ public class MyPageControllerIT {
         String requestDTO = om.writeValueAsString(replyDTO);
 
         mockMvc.perform(patch(URL_PREFIX + "qna/member/reply")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().isNoContent())
@@ -933,9 +929,9 @@ public class MyPageControllerIT {
         String requestDTO = om.writeValueAsString(replyDTO);
 
         MvcResult result = mockMvc.perform(patch(URL_PREFIX + "qna/member/reply")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().is(400))
@@ -963,9 +959,9 @@ public class MyPageControllerIT {
         String requestDTO = om.writeValueAsString(replyDTO);
 
         MvcResult result = mockMvc.perform(patch(URL_PREFIX + "qna/member/reply")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().is(403))
@@ -986,9 +982,9 @@ public class MyPageControllerIT {
         MemberQnA fixture = allMemberQnAList.get(0);
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/member/modify/" + fixture.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -1009,9 +1005,9 @@ public class MyPageControllerIT {
     @DisplayName(value = "회원 문의 수정을 위한 데이터 조회. 데이터가 없는 경우")
     void getModifyDataEmpty() throws Exception {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/member/modify/0")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().is(400))
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -1028,9 +1024,9 @@ public class MyPageControllerIT {
     @DisplayName(value = "회원 문의 수정을 위한 데이터 조회. 작성자가 일치하지 않는 경우")
     void getModifyDataWriterNotEquals() throws Exception {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/member/modify/" + noneMemberQnA.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().is(400))
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -1061,9 +1057,9 @@ public class MyPageControllerIT {
         String requestDTO = om.writeValueAsString(modifyDTO);
 
         mockMvc.perform(patch(URL_PREFIX + "qna/member")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().isNoContent())
@@ -1088,9 +1084,9 @@ public class MyPageControllerIT {
         String requestDTO = om.writeValueAsString(modifyDTO);
 
         MvcResult result = mockMvc.perform(patch(URL_PREFIX + "qna/member")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().is(400))
@@ -1117,9 +1113,9 @@ public class MyPageControllerIT {
         String requestDTO = om.writeValueAsString(modifyDTO);
 
         MvcResult result = mockMvc.perform(patch(URL_PREFIX + "qna/member")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().is(403))
@@ -1152,9 +1148,9 @@ public class MyPageControllerIT {
         String requestDTO = om.writeValueAsString(modifyDTO);
 
         MvcResult result = mockMvc.perform(patch(URL_PREFIX + "qna/member")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().is(400))
@@ -1180,9 +1176,9 @@ public class MyPageControllerIT {
                 .get()
                 .getId();
         mockMvc.perform(delete(URL_PREFIX + "qna/member/" + deleteId)
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isNoContent())
                 .andReturn();
 
@@ -1194,9 +1190,9 @@ public class MyPageControllerIT {
     @DisplayName(value = "회원 문의 삭제. 데이터가 없는 경우")
     void deleteMemberQnANotFound() throws Exception {
         MvcResult result = mockMvc.perform(delete(URL_PREFIX + "qna/member/0")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().is(400))
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -1213,9 +1209,9 @@ public class MyPageControllerIT {
     @DisplayName(value = "회원 문의 삭제. 작성자가 일치하지 않는 경우")
     void deleteMemberQnAWriterNotEquals() throws Exception {
         MvcResult result = mockMvc.perform(delete(URL_PREFIX + "qna/member/" + noneMemberQnA.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().is(403))
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -1241,9 +1237,9 @@ public class MyPageControllerIT {
                 .toList();
         fixture.forEach(v -> System.out.println("fixture : " + v));
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/classification")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -1263,9 +1259,9 @@ public class MyPageControllerIT {
     void getQnAClassificationEmpty() throws Exception {
         qnAClassificationRepository.deleteAll();
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/classification")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -1286,9 +1282,9 @@ public class MyPageControllerIT {
         int totalPages = PaginationUtils.getTotalPages(allReviewList.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "review")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -1309,9 +1305,9 @@ public class MyPageControllerIT {
     void getReviewEmpty() throws Exception {
         productReviewRepository.deleteAll();
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "review")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -1336,9 +1332,9 @@ public class MyPageControllerIT {
                 .findFirst()
                 .get();
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "review/modify/" + fixture.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -1357,9 +1353,9 @@ public class MyPageControllerIT {
     @DisplayName(value = "리뷰 수정을 위한 데이터 조회. 데이터가 없는 경우")
     void getModifyReviewDataNotFound() throws Exception {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "review/modify/0")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().is(400))
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -1376,9 +1372,9 @@ public class MyPageControllerIT {
     @DisplayName(value = "리뷰 수정을 위한 데이터 조회. 작성자가 일치하지 않는 경우")
     void getModifyReviewDataWriterNotEquals() throws Exception {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "review/modify/" + noneMemberReview.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().is(403))
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -1419,9 +1415,9 @@ public class MyPageControllerIT {
         String requestDTO = om.writeValueAsString(reviewDTO);
 
         mockMvc.perform(post(URL_PREFIX + "review")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().isNoContent())
@@ -1465,9 +1461,9 @@ public class MyPageControllerIT {
         String requestDTO = om.writeValueAsString(reviewDTO);
 
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "review")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().is(400))
@@ -1507,9 +1503,9 @@ public class MyPageControllerIT {
         String requestDTO = om.writeValueAsString(reviewDTO);
 
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "review")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().is(400))
@@ -1551,9 +1547,9 @@ public class MyPageControllerIT {
         String requestDTO = om.writeValueAsString(reviewDTO);
 
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "review")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().is(400))
@@ -1595,9 +1591,9 @@ public class MyPageControllerIT {
         String requestDTO = om.writeValueAsString(reviewDTO);
 
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "review")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().is(400))
@@ -1642,9 +1638,9 @@ public class MyPageControllerIT {
         String requestDTO = om.writeValueAsString(reviewDTO);
 
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "review")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().is(400))
@@ -1671,9 +1667,9 @@ public class MyPageControllerIT {
         MyPagePatchReviewDTO patchDTO = new MyPagePatchReviewDTO(fixture.getId(), "test modify review content");
         String requestDTO = om.writeValueAsString(patchDTO);
         mockMvc.perform(patch(URL_PREFIX + "review")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().isNoContent())
@@ -1690,9 +1686,9 @@ public class MyPageControllerIT {
         MyPagePatchReviewDTO patchDTO = new MyPagePatchReviewDTO(0L, "test modify review content");
         String requestDTO = om.writeValueAsString(patchDTO);
         MvcResult result = mockMvc.perform(patch(URL_PREFIX + "review")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().is(400))
@@ -1713,9 +1709,9 @@ public class MyPageControllerIT {
         MyPagePatchReviewDTO patchDTO = new MyPagePatchReviewDTO(noneMemberReview.getId(), "test modify review content");
         String requestDTO = om.writeValueAsString(patchDTO);
         MvcResult result = mockMvc.perform(patch(URL_PREFIX + "review")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().is(403))
@@ -1741,9 +1737,9 @@ public class MyPageControllerIT {
                 .get()
                 .getId();
         mockMvc.perform(delete(URL_PREFIX + "review/" + deleteId)
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isNoContent())
                 .andReturn();
 
@@ -1755,9 +1751,9 @@ public class MyPageControllerIT {
     @DisplayName(value = "리뷰 삭제. 데이터가 없는 경우")
     void deleteReviewNotFound() throws Exception {
         MvcResult result = mockMvc.perform(delete(URL_PREFIX + "review/0")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().is(400))
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -1774,9 +1770,9 @@ public class MyPageControllerIT {
     @DisplayName(value = "리뷰 삭제. 작성자가 일치하지 않는 경우")
     void deleteReviewWriterNotEquals() throws Exception {
         MvcResult result = mockMvc.perform(delete(URL_PREFIX + "review/" + noneMemberReview.getId())
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().is(403))
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -1799,9 +1795,9 @@ public class MyPageControllerIT {
         String mailSuffix = splitMail[1].substring(0, splitMail[1].indexOf('.'));
         String type = MailSuffix.findSuffixType(mailSuffix);
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "info")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -1829,9 +1825,9 @@ public class MyPageControllerIT {
         String requestDTO = om.writeValueAsString(patchDTO);
 
         mockMvc.perform(patch(URL_PREFIX + "info")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().isNoContent())

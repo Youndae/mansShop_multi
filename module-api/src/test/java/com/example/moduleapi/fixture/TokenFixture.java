@@ -3,8 +3,11 @@ package com.example.moduleapi.fixture;
 
 import com.example.moduleauthapi.service.JWTTokenProvider;
 import com.example.modulecommon.model.entity.Member;
+import com.example.moduleconfig.properties.CookieProperties;
+import com.example.moduleconfig.properties.JwtSecretProperties;
+import com.example.moduleconfig.properties.TokenProperties;
+import com.example.moduleconfig.properties.TokenRedisProperties;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -19,84 +22,51 @@ public class TokenFixture {
     @Autowired
     private JWTTokenProvider tokenProvider;
 
-    @Value("#{jwt['token.access.secret']}")
-    private String accessSecret;
+    @Autowired
+    private JwtSecretProperties jwtSecretProperties;
 
-    @Value("#{jwt['token.access.expiration']}")
-    private Long accessExpiration;
+    @Autowired
+    private TokenProperties tokenProperties;
 
-    @Value("#{jwt['redis.accessExpiration']}")
-    private Long redisAtExpiration;
+    @Autowired
+    private TokenRedisProperties tokenRedisProperties;
 
-    @Value("#{jwt['token.access.header']}")
-    private String accessHeader;
-
-    @Value("#{jwt['token.refresh.secret']}")
-    private String refreshSecret;
-
-    @Value("#{jwt['token.refresh.expiration']}")
-    private Long refreshExpiration;
-
-    @Value("#{jwt['redis.refreshExpiration']}")
-    private Long redisRtExpiration;
-
-    @Value("#{jwt['token.refresh.header']}")
-    private String refreshHeader;
-
-    @Value("#{jwt['cookie.ino.header']}")
-    private String inoHeader;
-
-    @Value("#{jwt['redis.accessPrefix']}")
-    private String redisAccessPrefix;
-
-    @Value("#{jwt['redis.refreshPrefix']}")
-    private String redisRefreshPrefix;
-
-    @Value("#{jwt['token.all.prefix']}")
-    private String tokenPrefix;
-
-    @Value("#{jwt['token.temporary.expiration']}")
-    private Long temporaryExpiration;
-
-    @Value("#{jwt['token.temporary.secret']}")
-    private String temporarySecret;
-
-    @Value("#{jwt['token.temporary.redis.expirationMinute']}")
-    private Long temporaryRedisExpiration;
+    @Autowired
+    private CookieProperties cookieProperties;
 
     private static final String ACCESS_KEY_NAME = "accessKey";
 
     private static final String REFRESH_KEY_NAME = "refreshKey";
 
     public String createAccessToken(Member member) {
-        String token = tokenProvider.createToken(member.getUserId(), accessSecret, accessExpiration);
+        String token = tokenProvider.createToken(member.getUserId(), jwtSecretProperties.getAccess(), tokenProperties.getAccess().getExpiration());
 
-        return tokenPrefix + token;
+        return tokenProperties.getPrefix() + token;
     }
 
     public String createExpirationToken(Member member) {
-        String token = tokenProvider.createToken(member.getUserId(), accessSecret, 1);
+        String token = tokenProvider.createToken(member.getUserId(), jwtSecretProperties.getAccess(), 1);
 
-        return tokenPrefix + token;
+        return tokenProperties.getPrefix() + token;
     }
 
     public Map<String, String> createAndSaveAllToken(Member member) {
         Map<String, String> tokenMap = new HashMap<>();
         String ino = tokenProvider.createIno();
-        String accessToken = tokenProvider.createToken(member.getUserId(), accessSecret, accessExpiration);
-        String refreshToken = tokenProvider.createToken(member.getUserId(), refreshSecret, refreshExpiration);
+        String accessToken = tokenProvider.createToken(member.getUserId(), jwtSecretProperties.getAccess(), tokenProperties.getAccess().getExpiration());
+        String refreshToken = tokenProvider.createToken(member.getUserId(), jwtSecretProperties.getRefresh(), tokenProperties.getRefresh().getExpiration());
 
         Map<String, String> keyMap = getRedisKeyMap(member, ino);
 
         String accessKey = keyMap.get(ACCESS_KEY_NAME);
         String refreshKey = keyMap.get(REFRESH_KEY_NAME);
 
-        tokenProvider.saveTokenToRedis(accessKey, accessToken, Duration.ofHours(redisAtExpiration));
-        tokenProvider.saveTokenToRedis(refreshKey, refreshToken, Duration.ofDays(redisRtExpiration));
+        tokenProvider.saveTokenToRedis(accessKey, accessToken, Duration.ofHours(tokenRedisProperties.getAccess().getExpiration()));
+        tokenProvider.saveTokenToRedis(refreshKey, refreshToken, Duration.ofDays(tokenRedisProperties.getRefresh().getExpiration()));
 
-        tokenMap.put(inoHeader, ino);
-        tokenMap.put(accessHeader, tokenPrefix + accessToken);
-        tokenMap.put(refreshHeader, tokenPrefix + refreshToken);
+        tokenMap.put(cookieProperties.getIno().getHeader(), ino);
+        tokenMap.put(tokenProperties.getAccess().getHeader(), tokenProperties.getPrefix() + accessToken);
+        tokenMap.put(tokenProperties.getRefresh().getHeader(), tokenProperties.getPrefix() + refreshToken);
         tokenMap.put(ACCESS_KEY_NAME, accessKey);
         tokenMap.put(REFRESH_KEY_NAME, refreshKey);
 
@@ -105,8 +75,8 @@ public class TokenFixture {
 
     public Map<String, String> getRedisKeyMap(Member member, String ino) {
         Map<String, String> keyMap = new HashMap<>();
-        String accessKey = tokenProvider.setRedisKey(redisAccessPrefix, ino, member.getUserId());
-        String refreshKey = tokenProvider.setRedisKey(redisRefreshPrefix, ino, member.getUserId());
+        String accessKey = tokenProvider.setRedisKey(tokenRedisProperties.getAccess().getPrefix(), ino, member.getUserId());
+        String refreshKey = tokenProvider.setRedisKey(tokenRedisProperties.getRefresh().getPrefix(), ino, member.getUserId());
 
         keyMap.put(ACCESS_KEY_NAME, accessKey);
         keyMap.put(REFRESH_KEY_NAME, refreshKey);
@@ -115,25 +85,25 @@ public class TokenFixture {
     }
 
     public String createTemporaryToken(Member oAuthMember) {
-        return tokenProvider.createToken(oAuthMember.getUserId(), temporarySecret, temporaryExpiration);
+        return tokenProvider.createToken(oAuthMember.getUserId(), jwtSecretProperties.getTemporary(), tokenProperties.getTemporary().getExpiration());
     }
 
     public String createAndRedisSaveTemporaryToken(Member oAuthMember) {
         String token = createTemporaryToken(oAuthMember);
-        tokenProvider.saveTokenToRedis(oAuthMember.getUserId(), token, Duration.ofMinutes(temporaryRedisExpiration));
+        tokenProvider.saveTokenToRedis(oAuthMember.getUserId(), token, Duration.ofMinutes(tokenRedisProperties.getTemporary().getExpiration()));
 
         return token;
     }
 
     public String createAndRedisSaveExpirationTemporaryToken(Member oAuthMember) {
-        String token = tokenProvider.createToken(oAuthMember.getUserId(), temporarySecret, 1);
-        tokenProvider.saveTokenToRedis(oAuthMember.getUserId(), token, Duration.ofMinutes(temporaryRedisExpiration));
+        String token = tokenProvider.createToken(oAuthMember.getUserId(), jwtSecretProperties.getTemporary(), 1);
+        tokenProvider.saveTokenToRedis(oAuthMember.getUserId(), token, Duration.ofMinutes(tokenRedisProperties.getTemporary().getExpiration()));
 
         return token;
     }
 
     public String getResponseAuthorization(MvcResult result) {
-        return result.getResponse().getHeader(accessHeader).substring(6);
+        return result.getResponse().getHeader(tokenProperties.getAccess().getHeader()).substring(6);
     }
 
     public Map<String, String> getCookieMap(MvcResult result) {

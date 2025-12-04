@@ -13,12 +13,12 @@ import com.example.modulecommon.fixture.ClassificationFixture;
 import com.example.modulecommon.fixture.MemberAndAuthFixture;
 import com.example.modulecommon.fixture.ProductFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
-import com.example.modulecommon.model.dto.response.ResponseMessageDTO;
 import com.example.modulecommon.model.entity.*;
 import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.modulecommon.model.enumuration.OrderStatus;
-import com.example.modulecommon.model.enumuration.Result;
 import com.example.modulecommon.utils.PhoneNumberUtils;
+import com.example.moduleconfig.properties.CookieProperties;
+import com.example.moduleconfig.properties.TokenProperties;
 import com.example.moduleorder.model.dto.business.OrderDataDTO;
 import com.example.moduleorder.model.dto.in.OrderProductDTO;
 import com.example.moduleorder.model.dto.in.OrderProductRequestDTO;
@@ -35,14 +35,12 @@ import com.example.moduleuser.repository.AuthRepository;
 import com.example.moduleuser.repository.MemberRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -122,17 +120,11 @@ public class OrderControllerIT {
     @Autowired
     private ProductSalesSummaryRepository productSalesSummaryRepository;
 
-    @Value("#{jwt['token.access.header']}")
-    private String accessHeader;
+    @Autowired
+    private TokenProperties tokenProperties;
 
-    @Value("#{jwt['token.refresh.header']}")
-    private String refreshHeader;
-
-    @Value("#{jwt['cookie.ino.header']}")
-    private String inoHeader;
-
-    @Value("#{jwt['cookie.cart.header']}")
-    private String cartCookieHeader;
+    @Autowired
+    private CookieProperties cookieProperties;
 
     private Member member;
 
@@ -184,9 +176,9 @@ public class OrderControllerIT {
         anonymous = anonymousFixture.memberList().get(0);
 
         tokenMap = tokenFixture.createAndSaveAllToken(member);
-        accessTokenValue = tokenMap.get(accessHeader);
-        refreshTokenValue = tokenMap.get(refreshHeader);
-        inoValue = tokenMap.get(inoHeader);
+        accessTokenValue = tokenMap.get(tokenProperties.getAccess().getHeader());
+        refreshTokenValue = tokenMap.get(tokenProperties.getRefresh().getHeader());
+        inoValue = tokenMap.get(cookieProperties.getIno().getHeader());
 
         List<Classification> classificationList = ClassificationFixture.createClassifications();
         classificationRepository.saveAll(classificationList);
@@ -390,9 +382,9 @@ public class OrderControllerIT {
         );
         String requestDTO = om.writeValueAsString(paymentDTO);
         mockMvc.perform(post(URL_PREFIX)
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
@@ -432,7 +424,7 @@ public class OrderControllerIT {
         );
         String requestDTO = om.writeValueAsString(paymentDTO);
         mockMvc.perform(post(URL_PREFIX)
-                        .cookie(new Cookie(cartCookieHeader, ANONYMOUS_CART_COOKIE))
+                        .cookie(new Cookie(cookieProperties.getCart().getHeader(), ANONYMOUS_CART_COOKIE))
                         .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
@@ -481,9 +473,9 @@ public class OrderControllerIT {
         String requestDTO = om.writeValueAsString(orderProductDTO);
 
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "product")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().isOk())
@@ -600,9 +592,9 @@ public class OrderControllerIT {
         String requestDTO = om.writeValueAsString(orderProductDTO);
 
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "product")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().isBadRequest())
@@ -667,9 +659,9 @@ public class OrderControllerIT {
         PreOrderDataVO redisFixture = new PreOrderDataVO(member.getUserId(), redisFixtureFieldList, totalPrice);
         String requestDTO = om.writeValueAsString(requestDetailIds);
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "cart")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().isOk())
@@ -709,9 +701,9 @@ public class OrderControllerIT {
 
         String requestDTO = om.writeValueAsString(requestDetailIds);
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "cart")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().isBadRequest())
@@ -739,9 +731,9 @@ public class OrderControllerIT {
 
         String requestDTO = om.writeValueAsString(requestDetailIds);
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "cart")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().isForbidden())
@@ -769,7 +761,7 @@ public class OrderControllerIT {
 
         String requestDTO = om.writeValueAsString(requestDetailIds);
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "cart")
-                        .cookie(new Cookie(cartCookieHeader, "noneAnonymousCookieValue"))
+                        .cookie(new Cookie(cookieProperties.getCart().getHeader(), "noneAnonymousCookieValue"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().isForbidden())
@@ -833,7 +825,7 @@ public class OrderControllerIT {
         PreOrderDataVO redisFixture = new PreOrderDataVO(anonymous.getUserId(), redisFixtureFieldList, totalPrice);
         String requestDTO = om.writeValueAsString(requestDetailIds);
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "cart")
-                        .cookie(new Cookie(cartCookieHeader, ANONYMOUS_CART_COOKIE))
+                        .cookie(new Cookie(cookieProperties.getCart().getHeader(), ANONYMOUS_CART_COOKIE))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().isOk())
@@ -935,9 +927,9 @@ public class OrderControllerIT {
         String requestDTO = om.writeValueAsString(requestOrderDataDTO);
 
         mockMvc.perform(post(URL_PREFIX + "validate")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
@@ -987,7 +979,7 @@ public class OrderControllerIT {
         String requestDTO = om.writeValueAsString(requestOrderDataDTO);
 
         mockMvc.perform(post(URL_PREFIX + "validate")
-                        .cookie(new Cookie(cartCookieHeader, ANONYMOUS_CART_COOKIE))
+                        .cookie(new Cookie(cookieProperties.getCart().getHeader(), ANONYMOUS_CART_COOKIE))
                         .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
@@ -1022,9 +1014,9 @@ public class OrderControllerIT {
         String requestDTO = om.writeValueAsString(requestOrderDataDTO);
 
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "validate")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
                 .andExpect(status().isUnauthorized())
@@ -1068,9 +1060,9 @@ public class OrderControllerIT {
         String requestDTO = om.writeValueAsString(requestOrderDataDTO);
 
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "validate")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
@@ -1129,9 +1121,9 @@ public class OrderControllerIT {
         String requestDTO = om.writeValueAsString(requestOrderDataDTO);
 
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "validate")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))

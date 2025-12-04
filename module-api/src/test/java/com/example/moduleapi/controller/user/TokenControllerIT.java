@@ -5,10 +5,10 @@ import com.example.moduleapi.config.exception.ExceptionEntity;
 import com.example.moduleapi.fixture.TokenFixture;
 import com.example.modulecommon.fixture.MemberAndAuthFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
-import com.example.modulecommon.model.dto.response.ResponseMessageDTO;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.ErrorCode;
-import com.example.modulecommon.model.enumuration.Result;
+import com.example.moduleconfig.properties.CookieProperties;
+import com.example.moduleconfig.properties.TokenProperties;
 import com.example.moduleuser.repository.AuthRepository;
 import com.example.moduleuser.repository.MemberRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -20,7 +20,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -69,14 +68,11 @@ public class TokenControllerIT {
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
 
-    @Value("#{jwt['token.access.header']}")
-    private String accessHeader;
+    @Autowired
+    private TokenProperties tokenProperties;
 
-    @Value("#{jwt['token.refresh.header']}")
-    private String refreshHeader;
-
-    @Value("#{jwt['cookie.ino.header']}")
-    private String inoHeader;
+    @Autowired
+    private CookieProperties cookieProperties;
 
     private Map<String, String> tokenMap;
 
@@ -96,9 +92,9 @@ public class TokenControllerIT {
         Member member = memberAndAuthFixtureDTO.memberList().get(0);
 
         tokenMap = tokenFixture.createAndSaveAllToken(member);
-        accessTokenValue = tokenMap.get(accessHeader);
-        refreshTokenValue = tokenMap.get(refreshHeader);
-        inoValue = tokenMap.get(inoHeader);
+        accessTokenValue = tokenMap.get(tokenProperties.getAccess().getHeader());
+        refreshTokenValue = tokenMap.get(tokenProperties.getRefresh().getHeader());
+        inoValue = tokenMap.get(cookieProperties.getIno().getHeader());
 
         em.flush();
         em.clear();
@@ -117,16 +113,16 @@ public class TokenControllerIT {
     @DisplayName(value = "토큰 재발급 요청")
     void reIssue() throws Exception {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "reissue")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
 
         String accessToken = tokenFixture.getResponseAuthorization(result);
         Map<String, String> cookieMap = tokenFixture.getCookieMap(result);
-        String refreshToken = cookieMap.get(refreshHeader).substring(6);
-        String ino = cookieMap.get(inoHeader);
+        String refreshToken = cookieMap.get(tokenProperties.getRefresh().getHeader()).substring(6);
+        String ino = cookieMap.get(cookieProperties.getIno().getHeader());
 
         assertNotNull(accessToken);
         assertNotNull(refreshToken);
@@ -149,8 +145,8 @@ public class TokenControllerIT {
     @DisplayName(value = "토큰 재발급 요청. ino가 없는 경우 탈취로 판단")
     void reIssueNotExistsIno() throws Exception {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "reissue")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue)))
                 .andExpect(status().isUnauthorized())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -166,13 +162,13 @@ public class TokenControllerIT {
 
         boolean refreshCookie = cookies.stream()
                 .anyMatch(v ->
-                        v.startsWith(refreshHeader + "=")
+                        v.startsWith(tokenProperties.getRefresh().getHeader() + "=")
                                 && v.contains("Max-Age=0")
                 );
 
         boolean inoCookie = cookies.stream()
                 .anyMatch(v ->
-                        v.startsWith(inoHeader + "=")
+                        v.startsWith(cookieProperties.getIno().getHeader() + "=")
                                 && v.contains("Max-Age=0")
                 );
 
@@ -184,9 +180,9 @@ public class TokenControllerIT {
     @DisplayName(value = "토큰 재발급 요청. AccessToken이 잘못된 토큰인 경우. Redis 저장 토큰까지 제거.")
     void reIssueWrongAccessToken() throws Exception {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "reissue")
-                        .header(accessHeader, "WrongAccessTokenValue")
-                        .cookie(new Cookie(refreshHeader, refreshTokenValue))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), "WrongAccessTokenValue")
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isUnauthorized())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -202,13 +198,13 @@ public class TokenControllerIT {
 
         boolean refreshCookie = cookies.stream()
                 .anyMatch(v ->
-                        v.startsWith(refreshHeader + "=")
+                        v.startsWith(tokenProperties.getRefresh().getHeader() + "=")
                                 && v.contains("Max-Age=0")
                 );
 
         boolean inoCookie = cookies.stream()
                 .anyMatch(v ->
-                        v.startsWith(inoHeader + "=")
+                        v.startsWith(cookieProperties.getIno().getHeader() + "=")
                                 && v.contains("Max-Age=0")
                 );
 
@@ -229,9 +225,9 @@ public class TokenControllerIT {
     @DisplayName(value = "토큰 재발급 요청. AccessToken, RefreshToken이 잘못된 토큰인 경우. Redis는 유지, cookie는 제거.")
     void reIssueWrongAccessTokenAndRefreshToken() throws Exception {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "reissue")
-                        .header(accessHeader, "WrongAccessTokenValue")
-                        .cookie(new Cookie(refreshHeader, "WrongRefreshTokenValue"))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), "WrongAccessTokenValue")
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), "WrongRefreshTokenValue"))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isUnauthorized())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -247,13 +243,13 @@ public class TokenControllerIT {
 
         boolean refreshCookie = cookies.stream()
                 .anyMatch(v ->
-                        v.startsWith(refreshHeader + "=")
+                        v.startsWith(tokenProperties.getRefresh().getHeader() + "=")
                                 && v.contains("Max-Age=0")
                 );
 
         boolean inoCookie = cookies.stream()
                 .anyMatch(v ->
-                        v.startsWith(inoHeader + "=")
+                        v.startsWith(cookieProperties.getIno().getHeader() + "=")
                                 && v.contains("Max-Age=0")
                 );
 
@@ -274,9 +270,9 @@ public class TokenControllerIT {
     @DisplayName(value = "토큰 재발급 요청. RefreshToken이 잘못된 토큰인 경우. Redis 데이터까지 제거.")
     void reIssueWrongRefreshToken() throws Exception {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "reissue")
-                        .header(accessHeader, accessTokenValue)
-                        .cookie(new Cookie(refreshHeader, "WrongRefreshTokenValue"))
-                        .cookie(new Cookie(inoHeader, inoValue)))
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), "WrongRefreshTokenValue"))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isUnauthorized())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -292,13 +288,13 @@ public class TokenControllerIT {
 
         boolean refreshCookie = cookies.stream()
                 .anyMatch(v ->
-                        v.startsWith(refreshHeader + "=")
+                        v.startsWith(tokenProperties.getRefresh().getHeader() + "=")
                                 && v.contains("Max-Age=0")
                 );
 
         boolean inoCookie = cookies.stream()
                 .anyMatch(v ->
-                        v.startsWith(inoHeader + "=")
+                        v.startsWith(cookieProperties.getIno().getHeader() + "=")
                                 && v.contains("Max-Age=0")
                 );
 
