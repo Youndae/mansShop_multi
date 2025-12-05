@@ -29,7 +29,7 @@ public class RedisConfig {
     private final RedisProperties redisProperties;
 
     @Bean
-    public RedisConnectionFactory redisConnectionFactory() {
+    public LettuceConnectionFactory redisConnectionFactory() {
 
         log.info("=========================================redis=============================================");
         log.info("host:{}", redisProperties.getHost());
