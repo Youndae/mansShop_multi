@@ -51,7 +51,7 @@ public class RedisConfig {
 //        return new LettuceConnectionFactory(redisProperties.getHost(), redisProperties.getPort());
     }
 
-    private <V> RedisTemplate<String, V> buildTemplate(RedisSerializer<V> redisSerializer) {
+    /*private <V> RedisTemplate<String, V> buildTemplate(RedisSerializer<V> redisSerializer) {
         RedisTemplate<String, V> template = new RedisTemplate<>();
         template.setConnectionFactory(redisConnectionFactory());
         template.setKeySerializer(redisSerializer);
@@ -63,6 +63,24 @@ public class RedisConfig {
     @Bean
     public RedisTemplate<?, ?> redisTemplate() {
         return buildTemplate(new GenericJackson2JsonRedisSerializer());
+    }*/
+
+    @Bean
+    public RedisTemplate<String, Object> redisTemplate(LettuceConnectionFactory factory) {
+
+        RedisTemplate<String, Object> template = new RedisTemplate<>();
+        template.setConnectionFactory(factory);
+
+        GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer();
+        StringRedisSerializer stringSerializer = new StringRedisSerializer();
+
+        template.setKeySerializer(stringSerializer);
+        template.setValueSerializer(jsonSerializer);
+
+        template.setHashKeySerializer(stringSerializer);
+        template.setHashValueSerializer(jsonSerializer);
+
+        return template;
     }
 
     @Bean
@@ -76,8 +94,20 @@ public class RedisConfig {
         return stringRedisTemplate;
     }
 
-    @Bean
+    /*@Bean
     public RedisTemplate<String, Long> longRedisTemplate() {
         return buildTemplate(new GenericToStringSerializer<>(Long.class));
+    }*/
+
+    @Bean
+    public RedisTemplate<String, Long> longRedisTemplate(LettuceConnectionFactory factory) {
+
+        RedisTemplate<String, Long> template = new RedisTemplate<>();
+        template.setConnectionFactory(factory);
+
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setValueSerializer(new GenericToStringSerializer<>(Long.class));
+
+        return template;
     }
 }
