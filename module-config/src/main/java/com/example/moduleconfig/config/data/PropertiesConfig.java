@@ -5,6 +5,7 @@ import org.springframework.beans.factory.config.PropertiesFactoryBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.ClassPathResource;
 
 @Configuration
@@ -28,6 +29,7 @@ import org.springframework.core.io.ClassPathResource;
 public class PropertiesConfig {
 
     @Bean(name = "filePath")
+    @Profile({"dev", "test"})
     public PropertiesFactoryBean filePathPropertiesFactoryBean() throws Exception {
         String filePathPropertiesPath = "filePath.properties";
 
