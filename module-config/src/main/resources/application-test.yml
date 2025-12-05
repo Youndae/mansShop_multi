@@ -17,6 +17,8 @@ spring:
 
   # dev, test 용 secret yml. ignore로 관리
   config:
+    activate:
+      on-profile: test
     import:
       - classpath:secret.yml
 

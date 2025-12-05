@@ -49,3 +49,7 @@ tasks.named('test') {
     useJUnitPlatform()
     maxParallelForks = 1
 }
+
+bootJar {
+    archiveFileName = "app.jar"
+}

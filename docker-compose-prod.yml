@@ -1,0 +1,98 @@
+version: "3.8"
+
+services:
+  # APP (Spring Boot)
+  app:
+    image: ${APP_IMAGE}
+    container_name: springboot-app
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+    networks:
+      - monitoring
+
+  # PROMETHEUS
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring
+
+  # GRAFANA
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    depends_on:
+      - prometheus
+    volumes:
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "3000:3000"
+    networks:
+      - monitoring
+
+  # MYSQL EXPORTER (RDS Metric)
+  mysql-exporter:
+    image: prom/mysqld-exporter:latest
+    container_name: mysql-exporter
+    volumes:
+      - ./docker/exporters/.my.cnf:/.my.cnf
+    ports:
+      - "9104:9104"
+    networks:
+      - monitoring
+
+  # REDIS EXPORTER (ElastiCache Metric)
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: redis-exporter
+    env_file:
+      - ./docker/exporters/redis-exporter.env
+    ports:
+      - "9121:9121"
+    networks:
+      - monitoring
+
+  # RABBITMQ EXPORTER (AmazonMQ Metric)
+  rabbitmq-exporter:
+    image: kbudde/rabbitmq-exporter:latest
+    container_name: rabbitmq-exporter
+    env_file:
+      - ./docker/exporters/rabbitmq-exporter.env
+    ports:
+      - "9419:9419"
+    networks:
+      - monitoring
+
+  # NODE EXPORTER (EC2 System Metric)
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    ports:
+      - "9100:9100"
+    networks:
+      - monitoring
+
+  # CADVISOR (Docker Container Metric)
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    ports:
+      - "8081:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/rum:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - monitoring
+
+# NETWORK
+networks:
+  monitoring:
+    driver: bridge

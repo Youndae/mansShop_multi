@@ -23,19 +23,20 @@ COPY module-user/build.gradle module-user/build.gradle
 
 RUN ./gradlew dependencies --no-daemon || true
 
-COPY .. .
+COPY . .
 
 RUN ./gradlew :module-api:bootJar --no-daemon -x test
 
 FROM openjdk:17.0.1-jdk-slim
 WORKDIR /app
-COPY --from=build /app/module-api/build/libs/module-api-*.jar app.jar
+COPY --from=build /app/module-api/build/libs/app.jar app.jar
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
 CMD curl -f http://localhost:8080/actuator/health || exit 1
 
 EXPOSE 8080
 
+ENV SPRING_PROFILES_ACTIVE=prod
 ENV JAVA_OPTS="-Xmx512m -Xms256m"
 
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar --spring.profiles.active=${SPRING_PROFILES_ACTIVE}"]

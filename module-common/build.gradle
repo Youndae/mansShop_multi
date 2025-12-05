@@ -31,6 +31,10 @@ dependencies {
 //    implementation project(':module-config')
 
     testFixturesImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+    // Flyway
+    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.flywaydb:flyway-mysql'
 }
 
 tasks.register("prepareKotlinBuildScriptModel"){}

@@ -10,6 +10,8 @@ spring:
 
   # dev, test 용 secret yml. ignore로 관리
   config:
+    activate:
+      on-profile: dev
     import:
       - classpath:secret.yml
 
@@ -23,6 +25,11 @@ spring:
     port: 5672
     username: admin
     password: admin123
+
+  flyway:
+    locations:
+      - classpath:db/migration
+      - classpath:db/migration-dev
 
   # mailHog
   mail:
