@@ -89,3 +89,4 @@ management:
   metrics:
     enable:
       all: true
+      process: false
