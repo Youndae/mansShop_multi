@@ -1,12 +1,16 @@
 package com.example.moduleconfig.config.data;
 
 import com.example.moduleconfig.properties.RedisProperties;
+import io.lettuce.core.ClientOptions;
+import io.lettuce.core.TimeoutOptions;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -14,6 +18,8 @@ import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSeriali
 import org.springframework.data.redis.serializer.GenericToStringSerializer;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+
+import java.time.Duration;
 
 @Configuration
 @RequiredArgsConstructor
@@ -30,7 +36,19 @@ public class RedisConfig {
         log.info("port:{}", redisProperties.getPort());
         log.info("=========================================redis=============================================");
 
-        return new LettuceConnectionFactory(redisProperties.getHost(), redisProperties.getPort());
+        RedisStandaloneConfiguration standaloneConfiguration = new RedisStandaloneConfiguration();
+        standaloneConfiguration.setHostName(redisProperties.getHost());
+        standaloneConfiguration.setPort(redisProperties.getPort());
+
+        LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
+                .commandTimeout(Duration.ofSeconds(5))
+                .clientOptions(ClientOptions.builder().timeoutOptions(TimeoutOptions.enabled()).build())
+                .useSsl()
+                .build();
+
+
+        return new LettuceConnectionFactory(standaloneConfiguration, clientConfig);
+//        return new LettuceConnectionFactory(redisProperties.getHost(), redisProperties.getPort());
     }
 
     private <V> RedisTemplate<String, V> buildTemplate(RedisSerializer<V> redisSerializer) {
@@ -48,11 +66,12 @@ public class RedisConfig {
     }
 
     @Bean
-    public StringRedisTemplate stringRedisTemplate() {
+    public StringRedisTemplate stringRedisTemplate(LettuceConnectionFactory factory) {
         StringRedisTemplate stringRedisTemplate = new StringRedisTemplate();
         stringRedisTemplate.setKeySerializer(new StringRedisSerializer());
         stringRedisTemplate.setValueSerializer(new StringRedisSerializer());
-        stringRedisTemplate.setConnectionFactory(redisConnectionFactory());
+//        stringRedisTemplate.setConnectionFactory(redisConnectionFactory());
+        stringRedisTemplate.setConnectionFactory(factory);
 
         return stringRedisTemplate;
     }
