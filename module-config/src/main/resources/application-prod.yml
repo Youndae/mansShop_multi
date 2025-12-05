@@ -7,10 +7,9 @@ spring:
     ssl:
       enabled: true
 
-  data:
-    redis:
-      ssl:
-        enabled: true
+  redis:
+    ssl:
+      enabled: true
 
   mail:
     properties:
