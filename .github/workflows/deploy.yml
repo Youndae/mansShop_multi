@@ -44,5 +44,6 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            IMAGE_URI="${{ env.IMAGE_URI }}"
             cd ~/app/scripts
             bash deploy.sh "${IMAGE_URI}"
