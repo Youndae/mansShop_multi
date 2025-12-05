@@ -26,8 +26,8 @@ import java.util.UUID;
 @Slf4j
 public class FileService {
 
-    @Value("#{filePath['file.product.path']}")
-    private String filePath;
+    /*@Value("#{filePath['file.product.path']}")
+    private String filePath;*/
 
     private final AwsS3Properties awsS3Properties;
 
@@ -40,7 +40,8 @@ public class FileService {
      * 개발 환경용 로컬에서 이미지 파일 관리
      */
     public ResponseEntity<byte[]> getDisplayImage(String imageName) {
-        File file = new File(filePath + imageName);
+//        File file = new File(filePath + imageName);
+        File file = new File("" + imageName);
         ResponseEntity<byte[]> result = null;
 
         try {
