@@ -5,10 +5,10 @@ import io.lettuce.core.ClientOptions;
 import io.lettuce.core.TimeoutOptions;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
@@ -16,7 +16,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.GenericToStringSerializer;
-import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
@@ -28,42 +27,31 @@ public class RedisConfig {
 
     private final RedisProperties redisProperties;
 
+    private final Environment environment;
+
     @Bean
     public LettuceConnectionFactory redisConnectionFactory() {
-
-        log.info("=========================================redis=============================================");
-        log.info("host:{}", redisProperties.getHost());
-        log.info("port:{}", redisProperties.getPort());
-        log.info("=========================================redis=============================================");
-
         RedisStandaloneConfiguration standaloneConfiguration = new RedisStandaloneConfiguration();
         standaloneConfiguration.setHostName(redisProperties.getHost());
         standaloneConfiguration.setPort(redisProperties.getPort());
 
-        LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
+        LettuceClientConfiguration.LettuceClientConfigurationBuilder builder = LettuceClientConfiguration.builder()
                 .commandTimeout(Duration.ofSeconds(5))
-                .clientOptions(ClientOptions.builder().timeoutOptions(TimeoutOptions.enabled()).build())
-                .useSsl()
-                .build();
+                .clientOptions(
+                        ClientOptions.builder()
+                                .timeoutOptions(TimeoutOptions.enabled())
+                                .build()
+                );
 
+        if(environment.acceptsProfiles(Profiles.of("prod"))) {
+            log.info("Redis SSL is enabled in the 'prod' profile");
+            builder.useSsl();
+        }else {
+            log.info("Redis SSL is disabled in the 'dev' profile");
+        }
 
-        return new LettuceConnectionFactory(standaloneConfiguration, clientConfig);
-//        return new LettuceConnectionFactory(redisProperties.getHost(), redisProperties.getPort());
+        return new LettuceConnectionFactory(standaloneConfiguration, builder.build());
     }
-
-    /*private <V> RedisTemplate<String, V> buildTemplate(RedisSerializer<V> redisSerializer) {
-        RedisTemplate<String, V> template = new RedisTemplate<>();
-        template.setConnectionFactory(redisConnectionFactory());
-        template.setKeySerializer(redisSerializer);
-        template.setValueSerializer(redisSerializer);
-
-        return template;
-    }
-
-    @Bean
-    public RedisTemplate<?, ?> redisTemplate() {
-        return buildTemplate(new GenericJackson2JsonRedisSerializer());
-    }*/
 
     @Bean
     public RedisTemplate<String, Object> redisTemplate(LettuceConnectionFactory factory) {
@@ -88,16 +76,10 @@ public class RedisConfig {
         StringRedisTemplate stringRedisTemplate = new StringRedisTemplate();
         stringRedisTemplate.setKeySerializer(new StringRedisSerializer());
         stringRedisTemplate.setValueSerializer(new StringRedisSerializer());
-//        stringRedisTemplate.setConnectionFactory(redisConnectionFactory());
         stringRedisTemplate.setConnectionFactory(factory);
 
         return stringRedisTemplate;
     }
-
-    /*@Bean
-    public RedisTemplate<String, Long> longRedisTemplate() {
-        return buildTemplate(new GenericToStringSerializer<>(Long.class));
-    }*/
 
     @Bean
     public RedisTemplate<String, Long> longRedisTemplate(LettuceConnectionFactory factory) {

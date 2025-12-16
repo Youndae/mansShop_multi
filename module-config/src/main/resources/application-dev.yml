@@ -27,6 +27,8 @@ spring:
     password: admin123
 
   flyway:
+    baseline-on-migrate: true
+    baseline-version: 1
     locations:
       - classpath:db/migration
       - classpath:db/migration-dev

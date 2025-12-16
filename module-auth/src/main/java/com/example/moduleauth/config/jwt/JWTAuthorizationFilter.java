@@ -68,7 +68,7 @@ public class JWTAuthorizationFilter extends OncePerRequestFilter {
 
                     if(claimByAccessToken.equals(Result.WRONG_TOKEN.getResultKey())
                             || claimByAccessToken.equals(Result.TOKEN_STEALING.getResultKey())){
-                        jwtTokenService.deleteCookieAndThrowException(response);
+                        jwtTokenService.deleteCookieAndThrowException(Result.fromKey(claimByAccessToken), response);
                         return;
                     }else if(claimByAccessToken.equals(Result.TOKEN_EXPIRATION.getResultKey())){
                         if(request.getRequestURI().equals("/api/reissue")) {

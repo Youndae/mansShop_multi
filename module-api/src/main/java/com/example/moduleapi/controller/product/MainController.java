@@ -177,27 +177,7 @@ public class MainController {
      *
      * @param imageName
      *
-     * 파일 저장을 local로 처리하는 경우 사용.
-     */
-    /*@Operation(summary = "이미지 파일 Binary Data 반환")
-    @DefaultApiResponse
-    @Parameter(name = "imageName",
-            description = "이미지 파일명",
-            example = "2149347511.jpg",
-            required = true,
-            in = ParameterIn.PATH
-    )
-    @GetMapping("/display/{imageName}")
-    public ResponseEntity<byte[]> display(@PathVariable(name = "imageName") String imageName) {
-
-        return fileReadUseCase.getDisplayImage(imageName);
-    }*/
-
-    /**
-     *
-     * @param imageName
-     *
-     * 파일 저장을 S3로 처리하는 경우 사용.
+     * 이미지 파일 조회
      */
     @Operation(summary = "이미지 파일 Binary Data 반환")
     @DefaultApiResponse
@@ -208,9 +188,9 @@ public class MainController {
             in = ParameterIn.PATH
     )
     @GetMapping("/display/{imageName}")
-    public ResponseEntity<InputStreamResource> displayByS3(@PathVariable(name = "imageName") String imageName) {
+    public ResponseEntity<?> displayByS3(@PathVariable(name = "imageName") String imageName) {
 
-        return fileReadUseCase.getImageByS3(imageName);
+        return fileReadUseCase.getDisplayImage(imageName);
     }
 
     /**

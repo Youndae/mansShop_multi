@@ -3,7 +3,7 @@ package com.example.moduletest.admin.product.usecase;
 import com.example.modulecommon.fixture.ClassificationFixture;
 import com.example.modulecommon.fixture.ProductFixture;
 import com.example.modulecommon.model.entity.*;
-import com.example.modulecommon.model.enumuration.Result;
+import com.example.modulefile.service.FileDomainService;
 import com.example.modulefile.service.FileService;
 import com.example.moduleproduct.model.dto.admin.product.in.AdminDiscountPatchDTO;
 import com.example.moduleproduct.model.dto.admin.product.in.AdminProductImageDTO;
@@ -71,6 +71,9 @@ public class AdminProductWriteUseCaseIT {
     @MockitoBean
     private FileService fileService;
 
+    @MockitoBean
+    private FileDomainService fileDomainService;
+
     @Autowired
     private EntityManager em;
 
@@ -125,7 +128,7 @@ public class AdminProductWriteUseCaseIT {
 
     @Test
     @DisplayName(value = "상품 등록")
-    void postProduct() {
+    void postProduct() throws Exception {
         List<PatchOptionDTO> optionList = IntStream.range(0, 2)
                 .mapToObj(v -> new PatchOptionDTO(
                         0L,
@@ -155,12 +158,9 @@ public class AdminProductWriteUseCaseIT {
                 null
         );
 
-        try {
-            given(fileService.imageInsert(any(MultipartFile.class)))
-                    .willReturn("saved-first-thumb.jpg");
-        }catch (Exception e) {
-            e.printStackTrace();
-        }
+        given(fileDomainService.setImageSaveName(any(MultipartFile.class)))
+                .willReturn("saved-first-thumb.jpg");
+        willDoNothing().given(fileService).imageInsert(any(MultipartFile.class), anyString());
 
         String result = assertDoesNotThrow(() -> adminProductWriteUseCase.postProduct(patchDTO, imageDTO));
 
@@ -181,7 +181,7 @@ public class AdminProductWriteUseCaseIT {
 
     @Test
     @DisplayName(value = "상품 등록. 대표 썸네일이 없는 경우")
-    void postProductFirstThumbnailIsNull() {
+    void postProductFirstThumbnailIsNull() throws Exception {
         List<PatchOptionDTO> optionList = IntStream.range(0, 2)
                 .mapToObj(v -> new PatchOptionDTO(
                         0L,
@@ -215,16 +215,13 @@ public class AdminProductWriteUseCaseIT {
                 () -> adminProductWriteUseCase.postProduct(patchDTO, imageDTO)
         );
 
-        try {
-            verify(fileService, never()).imageInsert(any(MultipartFile.class));
-        }catch (Exception e) {
-            e.printStackTrace();
-        }
+
+        verify(fileService, never()).imageInsert(any(MultipartFile.class), anyString());
     }
 
     @Test
     @DisplayName(value = "상품 수정 처리")
-    void patchProduct() {
+    void patchProduct() throws Exception {
         Product productFixture = productList.get(0);
         List<Long> deleteOptionList = List.of(productFixture.getProductOptions().get(0).getId());
         List<PatchOptionDTO> addOptionList = List.of(new PatchOptionDTO(
@@ -256,14 +253,12 @@ public class AdminProductWriteUseCaseIT {
                 List.of("deleteInfoImageName")
         );
 
-        try {
-            given(fileService.imageInsert(any(MultipartFile.class)))
-                    .willReturn("saved-first-thumb.jpg");
 
-            willDoNothing().given(fileService).deleteImage(anyString());
-        }catch (Exception e) {
-            e.printStackTrace();
-        }
+        given(fileDomainService.setImageSaveName(any(MultipartFile.class)))
+                .willReturn("saved-first-thumb.jpg");
+        willDoNothing().given(fileService).imageInsert(any(MultipartFile.class), anyString());
+
+        willDoNothing().given(fileService).deleteImage(anyString());
 
         String result = assertDoesNotThrow(() -> adminProductWriteUseCase.patchProduct(productFixture.getId(), deleteOptionList, patchDTO, imageDTO));
 
@@ -275,7 +270,7 @@ public class AdminProductWriteUseCaseIT {
 
     @Test
     @DisplayName(value = "상품 수정 처리. 추가하는 대표 썸네일은 있으나, 삭제하는 대표 썸네일이 없는 경우")
-    void patchProductDeleteFirstThumbnailException() {
+    void patchProductDeleteFirstThumbnailException() throws Exception {
         Product productFixture = productList.get(0);
         List<Long> deleteOptionList = List.of(productFixture.getProductOptions().get(0).getId());
         List<PatchOptionDTO> addOptionList = List.of(new PatchOptionDTO(
@@ -307,14 +302,12 @@ public class AdminProductWriteUseCaseIT {
                 List.of("deleteInfoImageName")
         );
 
-        try {
-            given(fileService.imageInsert(any(MultipartFile.class)))
-                    .willReturn("saved-first-thumb.jpg");
 
-            willDoNothing().given(fileService).deleteImage(anyString());
-        }catch (Exception e) {
-            e.printStackTrace();
-        }
+        given(fileDomainService.setImageSaveName(any(MultipartFile.class)))
+                .willReturn("saved-first-thumb.jpg");
+        willDoNothing().given(fileService).imageInsert(any(MultipartFile.class), anyString());
+
+        willDoNothing().given(fileService).deleteImage(anyString());
 
         assertThrows(
                 IllegalArgumentException.class,
@@ -326,7 +319,7 @@ public class AdminProductWriteUseCaseIT {
 
     @Test
     @DisplayName(value = "상품 수정 처리. 추가하는 대표 썸네일은 없으나, 삭제하는 대표 썸네일이 있는 경우")
-    void patchProductFirstThumbnailException() {
+    void patchProductFirstThumbnailException() throws Exception {
         Product productFixture = productList.get(0);
         List<Long> deleteOptionList = List.of(productFixture.getProductOptions().get(0).getId());
         List<PatchOptionDTO> addOptionList = List.of(new PatchOptionDTO(
@@ -357,14 +350,12 @@ public class AdminProductWriteUseCaseIT {
                 List.of("deleteInfoImageName")
         );
 
-        try {
-            given(fileService.imageInsert(any(MultipartFile.class)))
-                    .willReturn("saved-first-thumb.jpg");
 
-            willDoNothing().given(fileService).deleteImage(anyString());
-        }catch (Exception e) {
-            e.printStackTrace();
-        }
+        given(fileDomainService.setImageSaveName(any(MultipartFile.class)))
+                .willReturn("saved-first-thumb.jpg");
+        willDoNothing().given(fileService).imageInsert(any(MultipartFile.class), anyString());
+
+        willDoNothing().given(fileService).deleteImage(anyString());
 
         assertThrows(
                 IllegalArgumentException.class,
@@ -376,7 +367,7 @@ public class AdminProductWriteUseCaseIT {
 
     @Test
     @DisplayName(value = "상품 수정 처리. 상품 데이터가 없는 경우(아이디가 잘못 된 경우)")
-    void patchProductNotFound() {
+    void patchProductNotFound() throws Exception {
         Product productFixture = productList.get(0);
         List<Long> deleteOptionList = List.of(productFixture.getProductOptions().get(0).getId());
         List<PatchOptionDTO> addOptionList = List.of(new PatchOptionDTO(
@@ -413,18 +404,14 @@ public class AdminProductWriteUseCaseIT {
                 () -> adminProductWriteUseCase.patchProduct("noneProductId", deleteOptionList, patchDTO, imageDTO)
         );
 
-        try {
-            verify(fileService, never()).deleteImage(anyString());
-            verify(fileService, never()).imageInsert(any(MultipartFile.class));
-        }catch (Exception e) {
-            e.printStackTrace();
-            fail("verify fail");
-        }
+
+        verify(fileService, never()).deleteImage(anyString());
+        verify(fileService, never()).imageInsert(any(MultipartFile.class), anyString());
     }
 
     @Test
     @DisplayName(value = "상품 수정 처리. 상품 분류 데이터가 없는 경우 (상품 분류 아이디가 잘못 된 경우)")
-    void patchProductClassificationNotFound() {
+    void patchProductClassificationNotFound() throws Exception {
         Product productFixture = productList.get(0);
         List<Long> deleteOptionList = List.of(productFixture.getProductOptions().get(0).getId());
         List<PatchOptionDTO> addOptionList = List.of(new PatchOptionDTO(
@@ -461,13 +448,8 @@ public class AdminProductWriteUseCaseIT {
                 () -> adminProductWriteUseCase.patchProduct(productFixture.getId(), deleteOptionList, patchDTO, imageDTO)
         );
 
-        try {
-            verify(fileService, never()).deleteImage(anyString());
-            verify(fileService, never()).imageInsert(any(MultipartFile.class));
-        }catch (Exception e) {
-            e.printStackTrace();
-            fail("verify fail");
-        }
+        verify(fileService, never()).deleteImage(anyString());
+        verify(fileService, never()).imageInsert(any(MultipartFile.class), anyString());
     }
 
     @Test

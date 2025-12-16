@@ -10,6 +10,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
+import org.springframework.core.env.Profiles;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,6 +19,12 @@ public class SecretEnvironmentPostProcessor implements EnvironmentPostProcessor 
 
     @Override
     public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
+        // prod가 아니라면 즉시 종료
+        if(!environment.acceptsProfiles(Profiles.of("prod"))) {
+            return;
+        }
+
+
         String region = environment.getProperty("cloud.aws.region.static");
 
         if(region == null) {

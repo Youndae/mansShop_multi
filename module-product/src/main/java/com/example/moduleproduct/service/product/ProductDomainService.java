@@ -1,7 +1,7 @@
 package com.example.moduleproduct.service.product;
 
 import com.example.modulecommon.model.entity.*;
-import com.example.modulefile.service.FileService;
+import com.example.modulefile.facade.FileFacade;
 import com.example.moduleproduct.model.dto.admin.product.business.AdminOptionStockDTO;
 import com.example.moduleproduct.model.dto.admin.product.business.AdminProductStockDataDTO;
 import com.example.moduleproduct.model.dto.admin.product.in.AdminProductImageDTO;
@@ -27,7 +27,7 @@ import java.util.List;
 @Slf4j
 public class ProductDomainService {
 
-    private final FileService fileService;
+    private final FileFacade fileFacade;
 
     public List<ProductQnAResponseDTO> mapToProductQnAResponseDTO(Page<ProductQnADTO> productQnA,
                                                                   List<ProductDetailQnAReplyListDTO> productQnAReplyList) {
@@ -55,9 +55,9 @@ public class ProductDomainService {
         String thumbnail = null;
 
         if (firstThumbnail != null) {
-            String saveName = fileService.imageInsert(firstThumbnail);
-            thumbnail = saveName;
-            product.setThumbnail(saveName);
+            thumbnail = fileFacade.imageInsert(firstThumbnail);
+
+            product.setThumbnail(thumbnail);
         }
 
         return thumbnail;
@@ -86,7 +86,7 @@ public class ProductDomainService {
 
         if(imageList != null){
             for(MultipartFile image : imageList){
-                String saveName = fileService.imageInsert(image);
+                String saveName = fileFacade.imageInsert(image);
                 thumbnailList.add(saveName);
                 product.addProductThumbnail(
                         ProductThumbnail.builder()
@@ -114,7 +114,7 @@ public class ProductDomainService {
 
         if(imageList != null) {
             for(MultipartFile image : imageList) {
-                String saveName = fileService.imageInsert(image);
+                String saveName = fileFacade.imageInsert(image);
                 infoImages.add(saveName);
                 product.addProductInfoImage(
                         ProductInfoImage.builder()
@@ -162,7 +162,7 @@ public class ProductDomainService {
     }
 
     public void deleteImage(String imageName) {
-        fileService.deleteImage(imageName);
+        fileFacade.deleteImage(imageName);
     }
 
     public List<AdminProductStockDTO> mapProductStockDTO(List<AdminProductStockDataDTO> dataList, List<AdminOptionStockDTO> optionList) {

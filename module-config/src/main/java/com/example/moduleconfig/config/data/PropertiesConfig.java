@@ -30,7 +30,7 @@ public class PropertiesConfig {
 
     @Bean(name = "filePath")
     @Profile({"dev", "test"})
-    public PropertiesFactoryBean filePathPropertiesFactoryBean() throws Exception {
+    public PropertiesFactoryBean filePathPropertiesFactoryBean() {
         String filePathPropertiesPath = "filePath.properties";
 
         return setPropertiesFactoryBean(filePathPropertiesPath);

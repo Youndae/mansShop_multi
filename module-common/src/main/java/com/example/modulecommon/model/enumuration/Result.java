@@ -3,6 +3,10 @@ package com.example.modulecommon.model.enumuration;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+import java.util.Arrays;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 @Getter
 @RequiredArgsConstructor
 public enum Result {
@@ -19,4 +23,13 @@ public enum Result {
     EMPTY("empty");
 
     private final String resultKey;
+
+    private static final Map<String, Result> mapper = Arrays.stream(values())
+                                                        .collect(
+                                                                Collectors.toMap(Result::getResultKey, r -> r)
+                                                        );
+
+    public static Result fromKey(String key) {
+        return mapper.get(key);
+    }
 }

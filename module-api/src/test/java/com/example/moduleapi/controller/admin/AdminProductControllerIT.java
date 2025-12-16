@@ -14,6 +14,7 @@ import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.modulecommon.utils.PaginationUtils;
 import com.example.moduleconfig.properties.CookieProperties;
 import com.example.moduleconfig.properties.TokenProperties;
+import com.example.modulefile.service.FileDomainService;
 import com.example.modulefile.service.FileService;
 import com.example.moduleproduct.model.dto.admin.product.in.AdminDiscountPatchDTO;
 import com.example.moduleproduct.model.dto.admin.product.in.AdminProductPatchDTO;
@@ -36,7 +37,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -79,6 +79,9 @@ public class AdminProductControllerIT {
 
     @MockitoBean
     private FileService fileService;
+
+    @MockitoBean
+    private FileDomainService fileDomainService;
 
     @Autowired
     private MockMvc mockMvc;
@@ -522,8 +525,9 @@ public class AdminProductControllerIT {
         AdminProductPatchDTO patchFixture = getAdminProductPatchDTOFixture(optionList);
         MockMultipartHttpServletRequestBuilder builder = createMockMultipartRequestBuilder(requestURL, optionList, true);
 
-        given(fileService.imageInsert(any(MultipartFile.class)))
+        given(fileDomainService.setImageSaveName(any(MultipartFile.class)))
                 .willReturn("saved-first-thumb.jpg");
+        willDoNothing().given(fileService).imageInsert(any(MultipartFile.class), anyString());
 
         MvcResult result = mockMvc.perform(
                         builder
@@ -597,8 +601,9 @@ public class AdminProductControllerIT {
                     return req;
                 });
 
-        given(fileService.imageInsert(any(MultipartFile.class)))
+        given(fileDomainService.setImageSaveName(any(MultipartFile.class)))
                 .willReturn("saved-first-thumb.jpg");
+        willDoNothing().given(fileService).imageInsert(any(MultipartFile.class), anyString());
         willDoNothing().given(fileService).deleteImage(anyString());
 
         MvcResult result = mockMvc.perform(
@@ -684,8 +689,9 @@ public class AdminProductControllerIT {
                     return req;
                 });
 
-        given(fileService.imageInsert(any(MultipartFile.class)))
+        given(fileDomainService.setImageSaveName(any(MultipartFile.class)))
                 .willReturn("saved-first-thumb.jpg");
+        willDoNothing().given(fileService).imageInsert(any(MultipartFile.class), anyString());
         willDoNothing().given(fileService).deleteImage(anyString());
 
         MvcResult result = mockMvc.perform(
@@ -756,8 +762,9 @@ public class AdminProductControllerIT {
                     return req;
                 });
 
-        given(fileService.imageInsert(any(MultipartFile.class)))
+        given(fileDomainService.setImageSaveName(any(MultipartFile.class)))
                 .willReturn("saved-first-thumb.jpg");
+        willDoNothing().given(fileService).imageInsert(any(MultipartFile.class), anyString());
         willDoNothing().given(fileService).deleteImage(anyString());
 
         MvcResult result = mockMvc.perform(

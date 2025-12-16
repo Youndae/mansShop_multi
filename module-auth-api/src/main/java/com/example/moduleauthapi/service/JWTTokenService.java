@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 
@@ -33,9 +32,13 @@ public class JWTTokenService {
      *
      * 대체로 모든 쿠키가 전달되지 않아 탈취라고 판단하는 경우.
      */
-    public void deleteCookieAndThrowException(HttpServletResponse response) {
+    public void deleteCookieAndThrowException(Result result, HttpServletResponse response) {
         jwtTokenProvider.deleteCookie(response);
-        tokenStealingExceptionResponse(response);
+        switch (result) {
+            case WRONG_TOKEN -> setExceptionResponse(ErrorCode.TOKEN_INVALID, response);
+            case TOKEN_STEALING -> setExceptionResponse(ErrorCode.TOKEN_STEALING, response);
+        }
+
     }
 
     /**
@@ -51,30 +54,7 @@ public class JWTTokenService {
      */
     public void deleteTokenAndCookieAndThrowException(String tokenClaim, String ino, HttpServletResponse response) {
         jwtTokenProvider.deleteRedisDataAndCookie(tokenClaim, ino, response);
-        tokenStealingExceptionResponse(response);
-    }
-
-    /**
-     *
-     * @param response
-     *
-     * 토큰 탈취 응답 설정
-     */
-    public void tokenStealingExceptionResponse(HttpServletResponse response) {
-        response.setStatus(ErrorCode.TOKEN_STEALING.getHttpStatus().value());
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.setCharacterEncoding("utf-8");
-
-        Map<String, Object> body = Map.of(
-                "code", ErrorCode.TOKEN_STEALING.getHttpStatus().value(),
-                "message", ErrorCode.TOKEN_STEALING.getMessage()
-        );
-
-        try {
-            new ObjectMapper().writeValue(response.getWriter(), body);
-        }catch(IOException e) {
-            throw new RuntimeException(e);
-        }
+        setExceptionResponse(ErrorCode.TOKEN_STEALING, response);
     }
 
     /**
@@ -84,13 +64,18 @@ public class JWTTokenService {
      * 토큰 만료 응답 설정
      */
     public void tokenExpirationResponse(HttpServletResponse response) {
-        response.setStatus(HttpStatus.UNAUTHORIZED.value());
+        setExceptionResponse(ErrorCode.TOKEN_EXPIRED, response);
+    }
+
+
+    public void setExceptionResponse(ErrorCode errorCode, HttpServletResponse response) {
+        response.setStatus(errorCode.getHttpStatus().value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("utf-8");
 
         Map<String, Object> body = Map.of(
-                "code", HttpStatus.UNAUTHORIZED.value(),
-                "message", ErrorCode.UNAUTHORIZED.getMessage()
+                "code", errorCode.getHttpStatus().value(),
+                "message", errorCode.getMessage()
         );
 
         try {
@@ -113,7 +98,7 @@ public class JWTTokenService {
     public void reIssueToken(TokenDTO tokenDTO, HttpServletResponse response) {
         // ino가 존재하지 않는다면 무조건 탈취로 판단.
         if(tokenDTO.inoValue() == null) {
-            deleteCookieAndThrowException(response);
+            deleteCookieAndThrowException(Result.TOKEN_STEALING, response);
         }else {
             String accessTokenClaim = jwtTokenProvider.decodeToken(tokenDTO.accessTokenValue());
 
