@@ -1275,7 +1275,7 @@ RabbitMQ를 통한 비동기 처리는 테스트 종료 시점을 보장하기 �
     - 각 도메인 모듈 내부에 위치
 - UseCase 중심 통합 테스트
     - module-test 모듈에 분리
-        - [🔗 module-test/src/test 디렉토리](https://)
+        - [🔗 module-test/src/test 디렉토리](https://github.com/Youndae/mansShop_multi/tree/master/module-test/src/test/java/com/example/moduletest)
 - API 통합 테스트
     - module-api 모듈에 배치
     - 실제 API 요청 환경과 가장 유사한 구조로 검증
@@ -1297,7 +1297,7 @@ RabbitMQ를 통한 비동기 처리는 테스트 종료 시점을 보장하기 �
 <details>
     <summary><strong>✔️ OrderController E2E 코드</strong></summary>
 
-[🔗 OrderControllerIT 전체 코드](https://)
+[🔗 OrderControllerIT 전체 코드](https://github.com/Youndae/mansShop_multi/blob/master/module-api/src/test/java/com/example/moduleapi/controller/order/OrderControllerIT.java#L73)
 
 ```java
 @Test
