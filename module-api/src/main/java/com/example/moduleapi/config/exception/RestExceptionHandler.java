@@ -3,22 +3,59 @@ package com.example.moduleapi.config.exception;
 import com.example.modulecommon.customException.*;
 import com.example.modulecommon.model.enumuration.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.transaction.CannotCreateTransactionException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.sql.SQLException;
+import java.util.List;
 
 @RestControllerAdvice
 @Slf4j
 public class RestExceptionHandler extends ResponseEntityExceptionHandler {
+
+    @Override
+    protected ResponseEntity<Object> handleHandlerMethodValidationException(
+            HandlerMethodValidationException e,
+            HttpHeaders headers,
+            HttpStatusCode status,
+            WebRequest request
+    ) {
+        log.warn("HandlerMethodValidationException::message : {}", e.getMessage());
+        log.warn("HandlerMethodValidationException::AllErrors : {}", e.getAllErrors());
+
+        List<ExceptionEntity> resBody = e.getAllErrors().stream()
+                .map(v -> toValidationExceptionEntity(ErrorCode.BAD_REQUEST, v.getDefaultMessage()))
+                .toList();
+
+        return toValidationResponseEntity(ErrorCode.BAD_REQUEST, resBody);
+    }
+
+    private ExceptionEntity toValidationExceptionEntity(ErrorCode errorCode, String message) {
+        return new ExceptionEntity(
+                errorCode.getHttpStatus().value(),
+                message
+        );
+    }
+
+    private ResponseEntity<Object> toValidationResponseEntity(ErrorCode errorCode, List<ExceptionEntity> exceptionEntities) {
+
+        return ResponseEntity.status(errorCode.getHttpStatus())
+                .body(
+                        exceptionEntities
+                );
+    }
 
     @ExceptionHandler(CustomTokenExpiredException.class)
     public ResponseEntity<ExceptionEntity> tokenExpiredException(Exception e) {

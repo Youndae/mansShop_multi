@@ -4,6 +4,7 @@ import com.example.moduleadmin.model.dto.failedData.out.FailedQueueDTO;
 import com.example.moduleadmin.repository.PeriodSalesSummaryRepository;
 import com.example.moduleadmin.repository.ProductSalesSummaryRepository;
 import com.example.moduleapi.ModuleApiApplication;
+import com.example.moduleapi.config.exception.ExceptionEntity;
 import com.example.moduleapi.fixture.TokenFixture;
 import com.example.modulecart.model.dto.business.CartMemberDTO;
 import com.example.modulecart.repository.CartRepository;
@@ -47,6 +48,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -61,6 +63,7 @@ import java.util.concurrent.TimeUnit;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(classes = ModuleApiApplication.class)
@@ -370,5 +373,38 @@ public class AdminFailedDataControllerIT {
                     assertNotNull(response);
                     assertTrue(response.isEmpty());
                 });
+    }
+
+    @Test
+    @DisplayName(value = "DLQ 재처리 요청. queueName이 Null인 경우")
+    void postRetryDLQMessages() throws Exception {
+        List<FailedQueueDTO> bodyList = List.of(
+                new FailedQueueDTO("", 0)
+        );
+
+        String requestDTO = om.writeValueAsString(bodyList);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "message")
+                .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        Exception ex = result.getResolvedException();
+
+        String content = result.getResponse().getContentAsString();
+        List<ExceptionEntity> response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+        System.out.println("-------------------------------------------");
+        System.out.println("ResolvedException : " + (ex == null ? "null" : ex.getClass().getName()));
+        ex.printStackTrace();
+        System.out.println("content : " + content);
+        System.out.println("response : " + response);
+        System.out.println("-------------------------------------------");
     }
 }

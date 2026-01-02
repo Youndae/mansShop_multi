@@ -9,6 +9,7 @@ import com.example.moduleapi.model.response.ResponseIdDTO;
 import com.example.modulecommon.model.enumuration.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -53,7 +54,7 @@ public class AdminFailedDataController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PostMapping("/message")
-    public ResponseEntity<Void> retryDLQMessages(@RequestBody List<FailedQueueDTO> failedQueueDTO) {
+    public ResponseEntity<Void> retryDLQMessages(@RequestBody List<@Valid FailedQueueDTO> failedQueueDTO) {
         adminFailedDataWriteUseCase.retryDLQMessages(failedQueueDTO);
 
         return ResponseEntity.ok().build();
