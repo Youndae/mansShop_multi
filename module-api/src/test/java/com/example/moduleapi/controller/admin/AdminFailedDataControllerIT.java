@@ -377,9 +377,9 @@ public class AdminFailedDataControllerIT {
 
     @Test
     @DisplayName(value = "DLQ 재처리 요청. queueName이 Null인 경우")
-    void postRetryDLQMessages() throws Exception {
+    void postRetryDLQMessagesQueueNameIsNull() throws Exception {
         List<FailedQueueDTO> bodyList = List.of(
-                new FailedQueueDTO("", 0)
+                new FailedQueueDTO(null, 1)
         );
 
         String requestDTO = om.writeValueAsString(bodyList);
@@ -400,11 +400,114 @@ public class AdminFailedDataControllerIT {
                 content,
                 new TypeReference<>() {}
         );
-        System.out.println("-------------------------------------------");
-        System.out.println("ResolvedException : " + (ex == null ? "null" : ex.getClass().getName()));
-        ex.printStackTrace();
-        System.out.println("content : " + content);
-        System.out.println("response : " + response);
-        System.out.println("-------------------------------------------");
+
+        assertFalse(response.isEmpty());
+        assertEquals(1, response.size());
+        assertEquals(400, response.get(0).errorCode());
+        assertEquals("queueName is Not Blank", response.get(0).errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "DLQ 재처리 요청. queueName이 Blank인 경우")
+    void postRetryDLQMessagesQueueNameIsBlank() throws Exception {
+        List<FailedQueueDTO> bodyList = List.of(
+                new FailedQueueDTO("", 1)
+        );
+
+        String requestDTO = om.writeValueAsString(bodyList);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "message")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON_VALUE)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        Exception ex = result.getResolvedException();
+
+        String content = result.getResponse().getContentAsString();
+        List<ExceptionEntity> response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertFalse(response.isEmpty());
+        assertEquals(1, response.size());
+        assertEquals(400, response.get(0).errorCode());
+        assertEquals("queueName is Not Blank", response.get(0).errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "DLQ 재처리 요청. messageCount가 1보다 작은 경우")
+    void postRetryDLQMessagesMessageCountIsZero() throws Exception {
+        List<FailedQueueDTO> bodyList = List.of(
+                new FailedQueueDTO("testDLQ", 0)
+        );
+
+        String requestDTO = om.writeValueAsString(bodyList);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "message")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON_VALUE)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        Exception ex = result.getResolvedException();
+
+        String content = result.getResponse().getContentAsString();
+        List<ExceptionEntity> response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertFalse(response.isEmpty());
+        assertEquals(1, response.size());
+        assertEquals(400, response.get(0).errorCode());
+        assertEquals("The minimum value for message Count is 1", response.get(0).errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "DLQ 재처리 요청. QueueName이 Blank, messageCount가 1보다 작은 경우")
+    void postRetryDLQMessagesQueueNameIsBlankAndMessageCountIsZero() throws Exception {
+        List<FailedQueueDTO> bodyList = List.of(
+                new FailedQueueDTO("", 0)
+        );
+
+        String requestDTO = om.writeValueAsString(bodyList);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "message")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON_VALUE)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        Exception ex = result.getResolvedException();
+
+        String content = result.getResponse().getContentAsString();
+        List<ExceptionEntity> response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        String[] messageArr = {"The minimum value for message Count is 1", "queueName is Not Blank"};
+
+        assertFalse(response.isEmpty());
+        assertEquals(2, response.size());
+
+        for(int i = 0; i < messageArr.length; i++) {
+            ExceptionEntity responseEntity = response.get(i);
+            String message = messageArr[i];
+
+            assertEquals(400, responseEntity.errorCode());
+            assertEquals(message, responseEntity.errorMessage());
+        }
     }
 }
