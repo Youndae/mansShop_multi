@@ -2,8 +2,13 @@ package com.example.moduleapi.config.exception;
 
 import com.example.modulecommon.customException.*;
 import com.example.modulecommon.model.enumuration.ErrorCode;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Path;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSourceResolvable;
+import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.jpa.JpaSystemException;
@@ -11,6 +16,9 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.transaction.CannotCreateTransactionException;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -19,11 +27,29 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 @RestControllerAdvice
 @Slf4j
 public class RestExceptionHandler extends ResponseEntityExceptionHandler {
+
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException e, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        log.debug("HandleMethodArgumentNotValidException::message : {}", e.getMessage());
+        log.debug("HandleMethodArgumentNotValidException::AllErrors : {}", e.getAllErrors());
+
+        List<ValidationError> errors = e.getFieldErrors()
+                .stream()
+                .map(err -> new ValidationError(
+                        err.getField(),
+                        err.getCode(),
+                        err.getDefaultMessage()
+                ))
+                .toList();
+
+        return toValidationExceptionEntity(ErrorCode.BAD_REQUEST, errors);
+    }
 
     @Override
     protected ResponseEntity<Object> handleHandlerMethodValidationException(
@@ -32,29 +58,38 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
             HttpStatusCode status,
             WebRequest request
     ) {
-        log.warn("HandlerMethodValidationException::message : {}", e.getMessage());
-        log.warn("HandlerMethodValidationException::AllErrors : {}", e.getAllErrors());
+        log.debug("HandlerMethodValidationException::message : {}", e.getMessage());
+        log.debug("HandlerMethodValidationException::AllErrors : {}", e.getAllErrors());
 
-        List<ExceptionEntity> resBody = e.getAllErrors().stream()
-                .map(v -> toValidationExceptionEntity(ErrorCode.BAD_REQUEST, v.getDefaultMessage()))
+        List<ValidationError> errors = e.getAllErrors().stream()
+                .filter(FieldError.class::isInstance)
+                .map(FieldError.class::cast)
+                .map(err ->
+                    new ValidationError(
+                            err.getField(),
+                            err.getCode(),
+                            err.getDefaultMessage()
+                    )
+                )
                 .toList();
 
-        return toValidationResponseEntity(ErrorCode.BAD_REQUEST, resBody);
+        if(errors.isEmpty()){
+            return ResponseEntity.status(ErrorCode.BAD_REQUEST.getHttpStatus())
+                    .body(toExceptionEntity(ErrorCode.BAD_REQUEST));
+        }
+
+        return toValidationExceptionEntity(ErrorCode.BAD_REQUEST, errors);
     }
 
-    private ExceptionEntity toValidationExceptionEntity(ErrorCode errorCode, String message) {
-        return new ExceptionEntity(
+    private ResponseEntity<Object> toValidationExceptionEntity(ErrorCode errorCode, List<ValidationError> errors) {
+        ValidationExceptionEntity body = new ValidationExceptionEntity(
                 errorCode.getHttpStatus().value(),
-                message
+                errorCode.getMessage(),
+                errors
         );
-    }
-
-    private ResponseEntity<Object> toValidationResponseEntity(ErrorCode errorCode, List<ExceptionEntity> exceptionEntities) {
 
         return ResponseEntity.status(errorCode.getHttpStatus())
-                .body(
-                        exceptionEntities
-                );
+                .body(body);
     }
 
     @ExceptionHandler(CustomTokenExpiredException.class)
@@ -91,7 +126,12 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler({CustomNotFoundException.class, IllegalArgumentException.class})
     public ResponseEntity<ExceptionEntity> notFoundException(Exception e) {
-        log.warn("NotFoundException : {}", e.getMessage());
+        String logMessagePrefix = "NotFoundException";
+
+        if(e.getClass().getSimpleName().equals("IllegalArgumentException"))
+            logMessagePrefix = "IllegalArgumentException";
+
+        log.warn(logMessagePrefix + " : {}", e.getMessage());
 
         return toResponseEntity(ErrorCode.BAD_REQUEST);
     }
@@ -141,11 +181,13 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
     private ResponseEntity<ExceptionEntity> toResponseEntity(ErrorCode errorCode) {
 
         return ResponseEntity.status(errorCode.getHttpStatus())
-                .body(
-                        new ExceptionEntity(
-                                errorCode.getHttpStatus().value(),
-                                errorCode.getMessage()
-                        )
-                );
+                .body(toExceptionEntity(errorCode));
+    }
+
+    private ExceptionEntity toExceptionEntity(ErrorCode errorCode) {
+        return new ExceptionEntity(
+                errorCode.getHttpStatus().value(),
+                errorCode.getMessage()
+        );
     }
 }

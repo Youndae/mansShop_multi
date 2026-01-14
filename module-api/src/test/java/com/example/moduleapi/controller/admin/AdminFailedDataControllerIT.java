@@ -489,9 +489,10 @@ public class AdminFailedDataControllerIT {
                 .andExpect(status().isBadRequest())
                 .andReturn();
 
-        Exception ex = result.getResolvedException();
-
         String content = result.getResponse().getContentAsString();
+
+        System.out.println("content : " +  content);
+
         List<ExceptionEntity> response = om.readValue(
                 content,
                 new TypeReference<>() {}

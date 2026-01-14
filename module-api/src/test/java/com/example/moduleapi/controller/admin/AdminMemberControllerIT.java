@@ -3,6 +3,8 @@ package com.example.moduleapi.controller.admin;
 
 import com.example.moduleapi.ModuleApiApplication;
 import com.example.moduleapi.config.exception.ExceptionEntity;
+import com.example.moduleapi.config.exception.ValidationError;
+import com.example.moduleapi.config.exception.ValidationExceptionEntity;
 import com.example.moduleapi.fixture.TokenFixture;
 import com.example.moduleapi.model.response.PagingResponseDTO;
 import com.example.modulecommon.fixture.MemberAndAuthFixture;
@@ -40,6 +42,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -256,6 +259,141 @@ public class AdminMemberControllerIT {
     }
 
     @Test
+    @DisplayName(value = "회원 목록 조회. 페이지 번호가 0으로 전달된 경우")
+    void getMemberListValidationPageIsZero() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "member")
+                        .param("page", "0")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+        assertEquals("page", responseObj.field());
+        assertEquals("Min", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원 목록 조회. 검색 타입 없이 검색어만 존재하는 경우")
+    void getMemberListValidationSearchTypeNull() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "member")
+                        .param("keyword", member.getNickname())
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원 목록 조회. 페이지 값이 0이고 keyword는 한글자인 경우")
+    void getMemberListValidationPageZeroAndKeywordLength1() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "member")
+                        .param("page", "0")
+                        .param("keyword", "a")
+                        .param("searchType", "userId")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(2, response.errors().size());
+
+        Map<String, String> validationMap = new HashMap<>();
+        validationMap.put("page", "Min");
+        validationMap.put("keyword", "Size");
+
+        response.errors().forEach(v -> {
+            String constraint = validationMap.getOrDefault(v.field(), null);
+
+            assertNotNull(constraint);
+            assertEquals(constraint, v.constraint());
+        });
+    }
+
+    @Test
+    @DisplayName(value = "회원 목록 조회. 검색어 없이 검색 타입만 존재하는 경우")
+    void getMemberListValidationKeywordNull() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "member")
+                        .param("searchType", "nick")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원 목록 조회. 검색어가 한글자인 경우")
+    void getMemberListValidationKeywordLengthIs1() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "member")
+                        .param("keyword", "a")
+                        .param("searchType", "userId")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+        assertEquals("keyword", responseObj.field());
+        assertEquals("Size", responseObj.constraint());
+    }
+
+    @Test
     @DisplayName(value = "포인트 지급")
     void postPoint() throws Exception {
         AdminPostPointDTO pointDTO = new AdminPostPointDTO(member.getUserId(), 1000);
@@ -296,5 +434,110 @@ public class AdminMemberControllerIT {
 
         assertNotNull(response);
         assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "포인트 지급. 사용자 아이디가 짧은 경우")
+    void postPointValidationUserIdIsShort() throws Exception {
+        AdminPostPointDTO pointDTO = new AdminPostPointDTO("abc", 1000);
+        String requestDTO = om.writeValueAsString(pointDTO);
+        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "member/point")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON_VALUE)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("userId", responseObj.field());
+        assertEquals("Size", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "포인트 지급. 사용자 아이디가 짧은 경우")
+    void postPointValidationPointIsZero() throws Exception {
+        AdminPostPointDTO pointDTO = new AdminPostPointDTO("nonMemberUserId", 0);
+        String requestDTO = om.writeValueAsString(pointDTO);
+        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "member/point")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON_VALUE)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("point", responseObj.field());
+        assertEquals("Min", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "포인트 지급. 사용자 아이디가 짧은 경우")
+    void postPointValidationUserIdShortAndPointZero() throws Exception {
+        AdminPostPointDTO pointDTO = new AdminPostPointDTO("abc", 0);
+        String requestDTO = om.writeValueAsString(pointDTO);
+        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "member/point")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON_VALUE)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(2, response.errors().size());
+
+        Map<String, String> validationMap = new HashMap<>();
+        validationMap.put("userId", "Size");
+        validationMap.put("point", "Min");
+
+        response.errors().forEach(v -> {
+            String constraint = validationMap.getOrDefault(v.field(), null);
+
+            assertNotNull(constraint);
+            assertEquals(constraint, v.constraint());
+        });
     }
 }
