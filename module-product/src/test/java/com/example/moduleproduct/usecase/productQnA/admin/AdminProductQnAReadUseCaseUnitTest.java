@@ -4,7 +4,7 @@ import com.example.modulecommon.model.dto.admin.qna.out.AdminQnAListResponseDTO;
 import com.example.modulecommon.model.dto.page.AdminQnAPageDTO;
 import com.example.modulecommon.model.dto.response.PagingListDTO;
 import com.example.modulecommon.model.enumuration.AdminListType;
-import com.example.modulecommon.utils.PaginationUtils;
+import com.example.modulecommon.utils.TestPaginationUtils;
 import com.example.moduleproduct.service.productQnA.ProductQnADataService;
 import com.example.moduleproduct.usecase.admin.productQnA.AdminProductQnAReadUseCase;
 import org.junit.jupiter.api.DisplayName;
@@ -49,7 +49,7 @@ public class AdminProductQnAReadUseCaseUnitTest {
         List<AdminQnAListResponseDTO> allDataFixture = getAdminQnAListResponseDTO();
         AdminQnAPageDTO pageDTO = new AdminQnAPageDTO(AdminListType.ALL.getType(), 1);
         List<AdminQnAListResponseDTO> responseDTOFixture = allDataFixture.stream().limit(pageDTO.amount()).toList();
-        int totalPages = PaginationUtils.getTotalPages(allDataFixture.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(allDataFixture.size(), pageDTO.amount());
 
         when(productQnADataService.getAdminProductQnAList(any(AdminQnAPageDTO.class))).thenReturn(responseDTOFixture);
 
@@ -72,7 +72,7 @@ public class AdminProductQnAReadUseCaseUnitTest {
         List<AdminQnAListResponseDTO> allDataFixture = getAdminQnAListResponseDTO();
         AdminQnAPageDTO pageDTO = new AdminQnAPageDTO("tester", AdminListType.ALL.getType(), 1);
         List<AdminQnAListResponseDTO> responseDTOFixture = allDataFixture.stream().limit(pageDTO.amount()).toList();
-        int totalPages = PaginationUtils.getTotalPages(allDataFixture.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(allDataFixture.size(), pageDTO.amount());
 
         when(productQnADataService.getAdminProductQnAList(any(AdminQnAPageDTO.class))).thenReturn(responseDTOFixture);
         when(productQnADataService.findAllAdminProductQnAListCount(any(AdminQnAPageDTO.class))).thenReturn((long) allDataFixture.size());
@@ -94,7 +94,7 @@ public class AdminProductQnAReadUseCaseUnitTest {
         List<AdminQnAListResponseDTO> allDataFixture = getAdminQnAListResponseDTO();
         AdminQnAPageDTO pageDTO = new AdminQnAPageDTO(AdminListType.NEW.getType(), 1);
         List<AdminQnAListResponseDTO> responseDTOFixture = allDataFixture.stream().limit(pageDTO.amount()).toList();
-        int totalPages = PaginationUtils.getTotalPages(allDataFixture.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(allDataFixture.size(), pageDTO.amount());
 
         when(productQnADataService.getAdminProductQnAList(any(AdminQnAPageDTO.class))).thenReturn(responseDTOFixture);
         when(productQnADataService.findAllAdminProductQnAListCount(any(AdminQnAPageDTO.class))).thenReturn((long) allDataFixture.size());
@@ -116,7 +116,7 @@ public class AdminProductQnAReadUseCaseUnitTest {
         List<AdminQnAListResponseDTO> allDataFixture = getAdminQnAListResponseDTO();
         AdminQnAPageDTO pageDTO = new AdminQnAPageDTO("tester", AdminListType.NEW.getType(), 1);
         List<AdminQnAListResponseDTO> responseDTOFixture = allDataFixture.stream().limit(pageDTO.amount()).toList();
-        int totalPages = PaginationUtils.getTotalPages(allDataFixture.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(allDataFixture.size(), pageDTO.amount());
 
         when(productQnADataService.getAdminProductQnAList(any(AdminQnAPageDTO.class))).thenReturn(responseDTOFixture);
         when(productQnADataService.findAllAdminProductQnAListCount(any(AdminQnAPageDTO.class))).thenReturn((long) allDataFixture.size());

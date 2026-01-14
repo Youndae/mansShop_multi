@@ -1,7 +1,8 @@
 package com.example.moduleuser.model.dto.admin.page;
 
+import com.example.modulecommon.model.dto.request.ListRequestDTO;
 import com.example.modulecommon.model.enumuration.PageAmount;
-import com.example.moduleuser.model.dto.admin.in.AdminMemberListRequestDTO;
+import com.example.modulecommon.utils.PaginationUtils;
 import com.example.moduleuser.model.enumuration.AdminMemberSearchType;
 
 public record AdminMemberPageDTO(
@@ -12,35 +13,20 @@ public record AdminMemberPageDTO(
         long offset
 ) {
 
-    public static AdminMemberPageDTO fromRequestDTO(AdminMemberListRequestDTO requestDTO, String searchType) {
-        int page = setPageValue(requestDTO.page());
+    private static final PageAmount pageAmount = PageAmount.DEFAULT_AMOUNT;
 
-        // keyword가 없는데 SearchType이 있거나
-        // keyword는 있는데 SearchType이 없는 경우
-        // 정상적인 요청이 아니므로 IllegalArgumentException으로 단순 BAD_REQUEST를 반환
-        if((requestDTO.keyword() == null && searchType != null)
-                || (requestDTO.keyword() != null && searchType == null)) {
-            throw new IllegalArgumentException("AdminMemberPageDTO.fromRequestDTO :: keyword and searchType must both be null or both must exist. keyword=" + requestDTO.keyword() + ", searchType=" + searchType);
-        }
-
-        String searchTypeValue = searchType == null ? null : AdminMemberSearchType.from(searchType).getValue();
+    public static AdminMemberPageDTO fromRequestDTO(ListRequestDTO requestDTO, String searchType) {
+        int page = PaginationUtils.getRequestPageValue(requestDTO.page());
+        String searchTypeValue = searchType == null ? null : AdminMemberSearchType.from(searchType).value();
+        long offset = PaginationUtils.getOffsetOperation(page, pageAmount);
 
         return new AdminMemberPageDTO(
                 requestDTO.keyword(),
                 searchTypeValue,
                 page,
-                PageAmount.DEFAULT_AMOUNT.getAmount(),
-                offsetOperation(page)
+                pageAmount.getAmount(),
+                offset
         );
-    }
-
-    private static int setPageValue(Integer page) {
-        return page == null ? 1 : page;
-    }
-
-    private static long offsetOperation(int page) {
-
-        return (long) (page - 1) * PageAmount.DEFAULT_AMOUNT.getAmount();
     }
 
     public AdminMemberPageDTO(String keyword, String searchType, int page) {
@@ -48,8 +34,8 @@ public record AdminMemberPageDTO(
                 keyword,
                 searchType,
                 page,
-                PageAmount.DEFAULT_AMOUNT.getAmount(),
-                (long) (page - 1) * PageAmount.DEFAULT_AMOUNT.getAmount()
+                pageAmount.getAmount(),
+                PaginationUtils.getOffsetOperation(page, pageAmount)
         );
     }
 
@@ -58,8 +44,8 @@ public record AdminMemberPageDTO(
                 null,
                 null,
                 page,
-                PageAmount.DEFAULT_AMOUNT.getAmount(),
-                (long) (page - 1) * PageAmount.DEFAULT_AMOUNT.getAmount()
+                pageAmount.getAmount(),
+                PaginationUtils.getOffsetOperation(page, pageAmount)
         );
     }
 }

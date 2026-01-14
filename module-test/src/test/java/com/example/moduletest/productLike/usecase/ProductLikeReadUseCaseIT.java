@@ -6,7 +6,7 @@ import com.example.modulecommon.fixture.ProductFixture;
 import com.example.modulecommon.fixture.ProductLikeFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.entity.*;
-import com.example.modulecommon.utils.PaginationUtils;
+import com.example.modulecommon.utils.TestPaginationUtils;
 import com.example.moduleproduct.model.dto.page.LikePageDTO;
 import com.example.moduleproduct.model.dto.productLike.out.ProductLikeDTO;
 import com.example.moduleproduct.repository.classification.ClassificationRepository;
@@ -120,7 +120,7 @@ public class ProductLikeReadUseCaseIT {
     void getLikeList() {
         LikePageDTO pageDTO = new LikePageDTO(1);
         List<ProductLike> fixtureList = getMemberProductLikeList(member, 0);
-        int totalPages = PaginationUtils.getTotalPages(fixtureList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(fixtureList.size(), pageDTO.amount());
         int pageElements = Math.min(fixtureList.size(), pageDTO.amount());
         Page<ProductLikeDTO> result = assertDoesNotThrow(() -> productLikeReadUseCase.getLikeList(pageDTO, member.getUserId()));
 

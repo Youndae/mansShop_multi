@@ -13,7 +13,7 @@ import com.example.modulecommon.model.entity.*;
 import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.modulecommon.model.enumuration.NotificationType;
 import com.example.modulecommon.model.enumuration.RedisCaching;
-import com.example.modulecommon.utils.PaginationUtils;
+import com.example.modulecommon.utils.TestPaginationUtils;
 import com.example.moduleconfig.properties.CookieProperties;
 import com.example.moduleconfig.properties.TokenProperties;
 import com.example.modulenotification.repository.NotificationRepository;
@@ -36,7 +36,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -207,7 +206,7 @@ public class AdminReviewControllerIT {
                 .limit(pageDTO.amount())
                 .toList();
         int contentSize = Math.min(fixture.size(), pageDTO.amount());
-        int totalPages = PaginationUtils.getTotalPages(newReviewList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(newReviewList.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "review")
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
@@ -264,7 +263,7 @@ public class AdminReviewControllerIT {
                 .limit(pageDTO.amount())
                 .toList();
         int contentSize = Math.min(contentFixture.size(), pageDTO.amount());
-        int totalPages = PaginationUtils.getTotalPages(filterFixtureList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(filterFixtureList.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "review")
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
@@ -301,7 +300,7 @@ public class AdminReviewControllerIT {
                 .limit(pageDTO.amount())
                 .toList();
         int contentSize = Math.min(contentFixture.size(), pageDTO.amount());
-        int totalPages = PaginationUtils.getTotalPages(filterFixtureList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(filterFixtureList.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "review")
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
@@ -332,7 +331,7 @@ public class AdminReviewControllerIT {
                 .limit(pageDTO.amount())
                 .toList();
         int contentSize = Math.min(fixture.size(), pageDTO.amount());
-        int totalPages = PaginationUtils.getTotalPages(allReviewList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(allReviewList.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "review/all")
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
@@ -396,7 +395,7 @@ public class AdminReviewControllerIT {
                 .limit(pageDTO.amount())
                 .toList();
         int contentSize = Math.min(contentFixture.size(), pageDTO.amount());
-        int totalPages = PaginationUtils.getTotalPages(filterFixtureList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(filterFixtureList.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "review/all")
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
@@ -436,7 +435,7 @@ public class AdminReviewControllerIT {
                 .limit(pageDTO.amount())
                 .toList();
         int contentSize = Math.min(contentFixture.size(), pageDTO.amount());
-        int totalPages = PaginationUtils.getTotalPages(filterFixtureList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(filterFixtureList.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "review/all")
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)

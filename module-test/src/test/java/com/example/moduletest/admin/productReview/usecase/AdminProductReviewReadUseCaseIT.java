@@ -8,7 +8,7 @@ import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.dto.response.PagingListDTO;
 import com.example.modulecommon.model.entity.*;
 import com.example.modulecommon.model.enumuration.AdminListType;
-import com.example.modulecommon.utils.PaginationUtils;
+import com.example.modulecommon.utils.TestPaginationUtils;
 import com.example.moduleproduct.model.dto.admin.review.out.AdminReviewDTO;
 import com.example.moduleproduct.model.dto.admin.review.out.AdminReviewDetailDTO;
 import com.example.moduleproduct.model.dto.page.AdminReviewPageDTO;
@@ -114,7 +114,7 @@ public class AdminProductReviewReadUseCaseIT {
     void getAllReviewList() {
         AdminReviewPageDTO pageDTO = new AdminReviewPageDTO(1);
         AdminListType listType = AdminListType.ALL;
-        int totalPages = PaginationUtils.getTotalPages(allProductReviewList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(allProductReviewList.size(), pageDTO.amount());
         int resultContentSize = Math.min(allProductReviewList.size(), pageDTO.amount());
         PagingListDTO<AdminReviewDTO> result = assertDoesNotThrow(() -> adminProductReviewReadUseCase.getReviewList(pageDTO, listType, allProductReviewList.size()));
 
@@ -158,7 +158,7 @@ public class AdminProductReviewReadUseCaseIT {
                         v.getMember().getUserName().equals(searchMember.getUserName())
                 )
                 .toList();
-        int totalPages = PaginationUtils.getTotalPages(reviewFixtureList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(reviewFixtureList.size(), pageDTO.amount());
         int resultContentSize = Math.min(reviewFixtureList.size(), pageDTO.amount());
 
         PagingListDTO<AdminReviewDTO> result = assertDoesNotThrow(() -> adminProductReviewReadUseCase.getReviewList(pageDTO, listType, 0L));
@@ -186,7 +186,7 @@ public class AdminProductReviewReadUseCaseIT {
                         v.getProduct().getProductName().equals(searchProduct.getProductName())
                 )
                 .toList();
-        int totalPages = PaginationUtils.getTotalPages(reviewFixtureList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(reviewFixtureList.size(), pageDTO.amount());
         int resultContentSize = Math.min(reviewFixtureList.size(), pageDTO.amount());
 
         PagingListDTO<AdminReviewDTO> result = assertDoesNotThrow(() -> adminProductReviewReadUseCase.getReviewList(pageDTO, listType, 0L));
@@ -204,7 +204,7 @@ public class AdminProductReviewReadUseCaseIT {
     void getNewReviewList() {
         AdminReviewPageDTO pageDTO = new AdminReviewPageDTO(1);
         AdminListType listType = AdminListType.NEW;
-        int totalPages = PaginationUtils.getTotalPages(newProductReviewList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(newProductReviewList.size(), pageDTO.amount());
         int resultContentSize = Math.min(newProductReviewList.size(), pageDTO.amount());
         PagingListDTO<AdminReviewDTO> result = assertDoesNotThrow(() -> adminProductReviewReadUseCase.getReviewList(pageDTO, listType, 0L));
 

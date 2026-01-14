@@ -12,7 +12,7 @@ import com.example.modulecommon.customException.CustomNotFoundException;
 import com.example.modulecommon.fixture.*;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.entity.*;
-import com.example.modulecommon.utils.PaginationUtils;
+import com.example.modulecommon.utils.TestPaginationUtils;
 import com.example.moduleorder.repository.ProductOrderDetailRepository;
 import com.example.moduleorder.repository.ProductOrderRepository;
 import com.example.moduleproduct.repository.classification.ClassificationRepository;
@@ -493,7 +493,7 @@ public class SalesReadUseCaseIT {
     @DisplayName(value = "상품별 매출 조회")
     void getProductSalesList() {
         AdminSalesPageDTO pageDTO = new AdminSalesPageDTO(null, 1);
-        int totalPages = PaginationUtils.getTotalPages(productList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(productList.size(), pageDTO.amount());
         int contentSize = Math.min(productList.size(), pageDTO.amount());
         Page<AdminProductSalesListDTO> result = assertDoesNotThrow(() -> salesReadeUseCase.getProductSalesList(pageDTO));
 
@@ -510,7 +510,7 @@ public class SalesReadUseCaseIT {
     void getProductSalesListSalesEmpty() {
         productSalesSummaryRepository.deleteAll();
         AdminSalesPageDTO pageDTO = new AdminSalesPageDTO(null, 1);
-        int totalPages = PaginationUtils.getTotalPages(productList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(productList.size(), pageDTO.amount());
         int contentSize = Math.min(productList.size(), pageDTO.amount());
         Page<AdminProductSalesListDTO> result = assertDoesNotThrow(() -> salesReadeUseCase.getProductSalesList(pageDTO));
 

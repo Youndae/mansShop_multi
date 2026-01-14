@@ -2,7 +2,7 @@ package com.example.moduleproduct.usecase.productReview.admin;
 
 import com.example.modulecommon.model.dto.response.PagingListDTO;
 import com.example.modulecommon.model.enumuration.AdminListType;
-import com.example.modulecommon.utils.PaginationUtils;
+import com.example.modulecommon.utils.TestPaginationUtils;
 import com.example.moduleproduct.model.dto.admin.review.out.AdminReviewDTO;
 import com.example.moduleproduct.model.dto.page.AdminReviewPageDTO;
 import com.example.moduleproduct.service.productReview.ProductReviewDataService;
@@ -48,7 +48,7 @@ public class AdminProductReviewReadUseCaseUnitTest {
         AdminReviewPageDTO pageDTO = new AdminReviewPageDTO(1);
         List<AdminReviewDTO> fixture = getAdminReviewDTOList();
         List<AdminReviewDTO> fixtureList = fixture.stream().limit(pageDTO.amount()).toList();
-        int totalPages = PaginationUtils.getTotalPages(fixture.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(fixture.size(), pageDTO.amount());
 
         when(productReviewDataService.getAdminProductReviewList(any(AdminReviewPageDTO.class), any()))
                 .thenReturn(fixtureList);
@@ -74,7 +74,7 @@ public class AdminProductReviewReadUseCaseUnitTest {
         AdminReviewPageDTO pageDTO = new AdminReviewPageDTO("tester", "user", 1);
         List<AdminReviewDTO> fixture = getAdminReviewDTOList();
         List<AdminReviewDTO> fixtureList = fixture.stream().limit(pageDTO.amount()).toList();
-        int totalPages = PaginationUtils.getTotalPages(fixture.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(fixture.size(), pageDTO.amount());
 
         when(productReviewDataService.getAdminProductReviewList(any(AdminReviewPageDTO.class), any()))
                 .thenReturn(fixtureList);
@@ -100,7 +100,7 @@ public class AdminProductReviewReadUseCaseUnitTest {
         AdminReviewPageDTO pageDTO = new AdminReviewPageDTO(1);
         List<AdminReviewDTO> fixture = getAdminReviewDTOList();
         List<AdminReviewDTO> fixtureList = fixture.stream().limit(pageDTO.amount()).toList();
-        int totalPages = PaginationUtils.getTotalPages(fixture.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(fixture.size(), pageDTO.amount());
 
         when(productReviewDataService.getAdminProductReviewList(any(AdminReviewPageDTO.class), any()))
                 .thenReturn(fixtureList);
@@ -126,7 +126,7 @@ public class AdminProductReviewReadUseCaseUnitTest {
         AdminReviewPageDTO pageDTO = new AdminReviewPageDTO("tester", "user", 1);
         List<AdminReviewDTO> fixture = getAdminReviewDTOList();
         List<AdminReviewDTO> fixtureList = fixture.stream().limit(pageDTO.amount()).toList();
-        int totalPages = PaginationUtils.getTotalPages(fixture.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(fixture.size(), pageDTO.amount());
 
         when(productReviewDataService.getAdminProductReviewList(any(AdminReviewPageDTO.class), any()))
                 .thenReturn(fixtureList);

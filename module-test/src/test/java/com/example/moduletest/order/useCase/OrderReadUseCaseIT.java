@@ -7,7 +7,7 @@ import com.example.modulecommon.fixture.ProductOrderFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.dto.response.PagingListDTO;
 import com.example.modulecommon.model.entity.*;
-import com.example.modulecommon.utils.PaginationUtils;
+import com.example.modulecommon.utils.TestPaginationUtils;
 import com.example.moduleorder.model.dto.in.MemberOrderDTO;
 import com.example.moduleorder.model.dto.out.OrderListDTO;
 import com.example.moduleorder.model.dto.page.OrderPageDTO;
@@ -118,7 +118,7 @@ public class OrderReadUseCaseIT {
         OrderPageDTO pageDTO = new OrderPageDTO(1, "3");
         MemberOrderDTO memberOrderDTO = new MemberOrderDTO(member.getUserId(), null, null);
         List<ProductOrder> orderFixture = getMemberProductOrderList(member, 0);
-        int totalPages = PaginationUtils.getTotalPages(orderFixture.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(orderFixture.size(), pageDTO.amount());
         PagingListDTO<OrderListDTO> result = assertDoesNotThrow(() -> orderReadUseCase.getOrderList(pageDTO, memberOrderDTO));
 
         assertNotNull(result);

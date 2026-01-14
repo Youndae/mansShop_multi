@@ -10,7 +10,7 @@ import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.dto.page.MyPagePageDTO;
 import com.example.modulecommon.model.dto.qna.out.QnADetailReplyDTO;
 import com.example.modulecommon.model.entity.*;
-import com.example.modulecommon.utils.PaginationUtils;
+import com.example.modulecommon.utils.TestPaginationUtils;
 import com.example.moduleproduct.model.dto.productQnA.out.ProductQnADetailResponseDTO;
 import com.example.moduleproduct.model.dto.productQnA.out.ProductQnAListDTO;
 import com.example.moduleproduct.repository.classification.ClassificationRepository;
@@ -118,7 +118,7 @@ public class ProductQnAReadUseCaseIT {
                 .filter(v -> v.getMember().getUserId().equals(member.getUserId()))
                 .toList();
         int contentSize = Math.min(fixtureList.size(), pageDTO.amount());
-        int totalPages = PaginationUtils.getTotalPages(fixtureList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(fixtureList.size(), pageDTO.amount());
 
         Page<ProductQnAListDTO> result = assertDoesNotThrow(
                 () -> productQnAReadUseCase.getProductQnAList(pageDTO, member.getUserId())

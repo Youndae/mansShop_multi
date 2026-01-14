@@ -12,7 +12,7 @@ import com.example.modulecommon.model.entity.MemberQnA;
 import com.example.modulecommon.model.entity.MemberQnAReply;
 import com.example.modulecommon.model.entity.QnAClassification;
 import com.example.modulecommon.model.enumuration.AdminListType;
-import com.example.modulecommon.utils.PaginationUtils;
+import com.example.modulecommon.utils.TestPaginationUtils;
 import com.example.modulemypage.repository.MemberQnAReplyRepository;
 import com.example.modulemypage.repository.MemberQnARepository;
 import com.example.modulemypage.repository.QnAClassificationRepository;
@@ -107,7 +107,7 @@ public class AdminMemberQnAReadUseCaseIT {
     @DisplayName(value = "전체 회원 문의 목록 조회")
     void getAllMemberQnAList() {
         AdminQnAPageDTO pageDTO = new AdminQnAPageDTO(ALL_LIST_TYPE, 1);
-        int totalPages = PaginationUtils.getTotalPages(allMemberQnA.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(allMemberQnA.size(), pageDTO.amount());
         PagingListDTO<AdminQnAListResponseDTO> result = assertDoesNotThrow(() -> adminMemberQnAReadUseCase.getMemberQnAList(pageDTO, allMemberQnA.size()));
 
         assertNotNull(result);
@@ -144,7 +144,7 @@ public class AdminMemberQnAReadUseCaseIT {
                         v.getMember().getUserId().equals(searchMemberFixture.getUserId()))
                 .toList()
                 .size();
-        int totalPages = PaginationUtils.getTotalPages(totalElements, pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(totalElements, pageDTO.amount());
         int resultContentSize = Math.min(totalElements, pageDTO.amount());
         PagingListDTO<AdminQnAListResponseDTO> result = assertDoesNotThrow(() -> adminMemberQnAReadUseCase.getMemberQnAList(pageDTO, 0L));
 
@@ -173,7 +173,7 @@ public class AdminMemberQnAReadUseCaseIT {
     @DisplayName(value = "미처리 회원 문의 목록 조회")
     void getNewMemberQnAList() {
         AdminQnAPageDTO pageDTO = new AdminQnAPageDTO(NEW_LIST_TYPE, 1);
-        int totalPages = PaginationUtils.getTotalPages(newMemberQnAList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(newMemberQnAList.size(), pageDTO.amount());
         PagingListDTO<AdminQnAListResponseDTO> result = assertDoesNotThrow(() -> adminMemberQnAReadUseCase.getMemberQnAList(pageDTO, 0L));
 
         assertNotNull(result);
@@ -210,7 +210,7 @@ public class AdminMemberQnAReadUseCaseIT {
                         v.getMember().getUserId().equals(searchMemberFixture.getUserId()))
                 .toList()
                 .size();
-        int totalPages = PaginationUtils.getTotalPages(totalElements, pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(totalElements, pageDTO.amount());
         int resultContentSize = Math.min(totalElements, pageDTO.amount());
         PagingListDTO<AdminQnAListResponseDTO> result = assertDoesNotThrow(() -> adminMemberQnAReadUseCase.getMemberQnAList(pageDTO, 0L));
 

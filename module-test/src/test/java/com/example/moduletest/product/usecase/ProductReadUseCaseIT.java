@@ -3,7 +3,7 @@ package com.example.moduletest.product.usecase;
 import com.example.modulecommon.fixture.*;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.entity.*;
-import com.example.modulecommon.utils.PaginationUtils;
+import com.example.modulecommon.utils.TestPaginationUtils;
 import com.example.modulecommon.utils.ProductDiscountUtils;
 import com.example.moduleproduct.model.dto.page.ProductDetailPageDTO;
 import com.example.moduleproduct.model.dto.product.business.ProductQnAResponseDTO;
@@ -162,9 +162,9 @@ public class ProductReadUseCaseIT {
         int discountPrice = ProductDiscountUtils.calcDiscountPrice(product.getProductPrice(), product.getProductDiscount());
         ProductDetailPageDTO pageDTO = new ProductDetailPageDTO();
         int reviewContentSize = Math.min(allReviewList.size(), pageDTO.reviewAmount());
-        int reviewTotalPages = PaginationUtils.getTotalPages(allReviewList.size(), pageDTO.reviewAmount());
+        int reviewTotalPages = TestPaginationUtils.getTotalPages(allReviewList.size(), pageDTO.reviewAmount());
         int qnaContentSize = Math.min(allProductQnAList.size(), pageDTO.qnaAmount());
-        int qnaTotalPages = PaginationUtils.getTotalPages(allProductQnAList.size(), pageDTO.qnaAmount());
+        int qnaTotalPages = TestPaginationUtils.getTotalPages(allProductQnAList.size(), pageDTO.qnaAmount());
         List<ProductOption> options = product.getProductOptions()
                 .stream()
                 .filter(ProductOption::isOpen)
@@ -214,9 +214,9 @@ public class ProductReadUseCaseIT {
         int discountPrice = ProductDiscountUtils.calcDiscountPrice(product.getProductPrice(), product.getProductDiscount());
         ProductDetailPageDTO pageDTO = new ProductDetailPageDTO();
         int reviewContentSize = Math.min(allReviewList.size(), pageDTO.reviewAmount());
-        int reviewTotalPages = PaginationUtils.getTotalPages(allReviewList.size(), pageDTO.reviewAmount());
+        int reviewTotalPages = TestPaginationUtils.getTotalPages(allReviewList.size(), pageDTO.reviewAmount());
         int qnaContentSize = Math.min(allProductQnAList.size(), pageDTO.qnaAmount());
-        int qnaTotalPages = PaginationUtils.getTotalPages(allProductQnAList.size(), pageDTO.qnaAmount());
+        int qnaTotalPages = TestPaginationUtils.getTotalPages(allProductQnAList.size(), pageDTO.qnaAmount());
         List<ProductOption> options = product.getProductOptions()
                 .stream()
                 .filter(ProductOption::isOpen)
@@ -266,9 +266,9 @@ public class ProductReadUseCaseIT {
         int discountPrice = ProductDiscountUtils.calcDiscountPrice(product.getProductPrice(), product.getProductDiscount());
         ProductDetailPageDTO pageDTO = new ProductDetailPageDTO();
         int reviewContentSize = Math.min(allReviewList.size(), pageDTO.reviewAmount());
-        int reviewTotalPages = PaginationUtils.getTotalPages(allReviewList.size(), pageDTO.reviewAmount());
+        int reviewTotalPages = TestPaginationUtils.getTotalPages(allReviewList.size(), pageDTO.reviewAmount());
         int qnaContentSize = Math.min(allProductQnAList.size(), pageDTO.qnaAmount());
-        int qnaTotalPages = PaginationUtils.getTotalPages(allProductQnAList.size(), pageDTO.qnaAmount());
+        int qnaTotalPages = TestPaginationUtils.getTotalPages(allProductQnAList.size(), pageDTO.qnaAmount());
         List<ProductOption> options = product.getProductOptions()
                 .stream()
                 .filter(ProductOption::isOpen)
@@ -326,7 +326,7 @@ public class ProductReadUseCaseIT {
     void getDetailReview() {
         ProductDetailPageDTO pageDTO = new ProductDetailPageDTO();
         int contentSize = Math.min(allReviewList.size(), pageDTO.reviewAmount());
-        int totalPages = PaginationUtils.getTotalPages(allReviewList.size(), pageDTO.reviewAmount());
+        int totalPages = TestPaginationUtils.getTotalPages(allReviewList.size(), pageDTO.reviewAmount());
 
         Page<ProductDetailReviewDTO> result = assertDoesNotThrow(() -> productReadUseCase.getProductDetailReview(pageDTO, product.getId()));
 
@@ -359,7 +359,7 @@ public class ProductReadUseCaseIT {
     void getDetailQnA() {
         ProductDetailPageDTO pageDTO = new ProductDetailPageDTO();
         int contentSize = Math.min(allProductQnAList.size(), pageDTO.qnaAmount());
-        int totalPages = PaginationUtils.getTotalPages(allProductQnAList.size(), pageDTO.qnaAmount());
+        int totalPages = TestPaginationUtils.getTotalPages(allProductQnAList.size(), pageDTO.qnaAmount());
 
         Page<ProductQnAResponseDTO> result = assertDoesNotThrow(() -> productReadUseCase.getProductDetailQnA(pageDTO, product.getId()));
 

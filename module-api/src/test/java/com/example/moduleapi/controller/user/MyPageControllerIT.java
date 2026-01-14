@@ -16,7 +16,7 @@ import com.example.modulecommon.model.entity.*;
 import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.modulecommon.model.enumuration.MailSuffix;
 import com.example.modulecommon.model.enumuration.OrderStatus;
-import com.example.modulecommon.utils.PaginationUtils;
+import com.example.modulecommon.utils.TestPaginationUtils;
 import com.example.moduleconfig.properties.CookieProperties;
 import com.example.moduleconfig.properties.TokenProperties;
 import com.example.modulemypage.model.dto.memberQnA.in.MemberQnAInsertDTO;
@@ -298,7 +298,7 @@ public class MyPageControllerIT {
     @DisplayName(value = "회원 주문 내역 조회")
     void getOrderList() throws Exception {
         OrderPageDTO pageDTO = new OrderPageDTO(1, "3");
-        int totalPages = PaginationUtils.getTotalPages(productOrderList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(productOrderList.size(), pageDTO.amount());
         int contentSize = Math.min(productOrderList.size(), pageDTO.amount());
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "order/3")
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
@@ -345,7 +345,7 @@ public class MyPageControllerIT {
     @DisplayName(value = "회원의 관심 상품 목록 조회")
     void getLikeProductList() throws Exception {
         LikePageDTO pageDTO = new LikePageDTO(1);
-        int totalPages = PaginationUtils.getTotalPages(productLikeList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(productLikeList.size(), pageDTO.amount());
         int contentSize = Math.min(productLikeList.size(), pageDTO.amount());
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "like")
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
@@ -392,7 +392,7 @@ public class MyPageControllerIT {
     @DisplayName(value = "회원의 상품 문의 목록 조회")
     void getProductQnAList() throws Exception {
         MyPagePageDTO pageDTO = new MyPagePageDTO(1);
-        int totalPages = PaginationUtils.getTotalPages(allProductQnAList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(allProductQnAList.size(), pageDTO.amount());
         int contentSize = Math.min(allProductQnAList.size(), pageDTO.amount());
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/product")
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
@@ -594,7 +594,7 @@ public class MyPageControllerIT {
     @DisplayName(value = "회원의 문의 목록 조회")
     void getMemberQnA() throws Exception {
         MyPagePageDTO pageDTO = new MyPagePageDTO(1);
-        int totalPages = PaginationUtils.getTotalPages(allMemberQnAList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(allMemberQnAList.size(), pageDTO.amount());
         int contentSize = Math.min(allMemberQnAList.size(), pageDTO.amount());
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/member")
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
@@ -1279,7 +1279,7 @@ public class MyPageControllerIT {
     void getReview() throws Exception {
         MyPagePageDTO pageDTO = new MyPagePageDTO(1);
         int contentSize = Math.min(allReviewList.size(), pageDTO.amount());
-        int totalPages = PaginationUtils.getTotalPages(allReviewList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(allReviewList.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "review")
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)

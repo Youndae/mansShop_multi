@@ -6,7 +6,7 @@ import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.dto.response.PagingListDTO;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.entity.Notification;
-import com.example.modulecommon.utils.PaginationUtils;
+import com.example.modulecommon.utils.TestPaginationUtils;
 import com.example.modulenotification.model.dto.out.NotificationListDTO;
 import com.example.modulenotification.model.page.NotificationPageDTO;
 import com.example.modulenotification.repository.NotificationRepository;
@@ -75,7 +75,7 @@ public class NotificationReadUseCaseIT {
     @DisplayName(value = "회원의 알림 목록 조회")
     void getNotificationList() {
         NotificationPageDTO pageDTO = new NotificationPageDTO(1);
-        int totalPages = PaginationUtils.getTotalPages(memberNotifications.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(memberNotifications.size(), pageDTO.amount());
         int contentSize = Math.min(memberNotifications.size(), pageDTO.amount());
 
         PagingListDTO<NotificationListDTO> result = assertDoesNotThrow(

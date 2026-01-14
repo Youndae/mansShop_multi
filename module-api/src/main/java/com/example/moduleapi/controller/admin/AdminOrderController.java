@@ -7,8 +7,10 @@ import com.example.moduleapi.model.response.PagingElementsResponseDTO;
 import com.example.moduleapi.model.response.PagingResponseDTO;
 import com.example.modulecache.model.cache.CacheRequest;
 import com.example.modulecache.service.FullCountScanCachingService;
+import com.example.modulecommon.model.dto.request.ListRequestDTO;
 import com.example.modulecommon.model.dto.response.PagingListDTO;
 import com.example.modulecommon.model.enumuration.RedisCaching;
+import com.example.modulecommon.utils.PaginationUtils;
 import com.example.moduleorder.model.dto.admin.out.AdminOrderResponseDTO;
 import com.example.moduleorder.model.dto.admin.page.AdminOrderPageDTO;
 import com.example.moduleorder.usecase.admin.AdminOrderReadUseCase;
@@ -20,8 +22,10 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Admin Order Controller")
@@ -68,13 +72,16 @@ public class AdminOrderController {
             )
     })
     @GetMapping("/order/all")
-    public ResponseEntity<PagingResponseDTO<AdminOrderResponseDTO>> getAllOrder(@RequestParam(name = "searchType", required = false) String searchType,
-                                                                                @RequestParam(value = "keyword", required = false) String keyword,
-                                                                                @RequestParam(name = "page", required = false, defaultValue = "1") int page) {
+    public ResponseEntity<PagingResponseDTO<AdminOrderResponseDTO>> getAllOrder(
+            @RequestParam(name = "searchType", required = false) String searchType,
+            @ParameterObject @Validated ListRequestDTO requestDTO) {
 
-        AdminOrderPageDTO pageDTO = new AdminOrderPageDTO(keyword, searchType, page);
+        log.info("AdminOrderController.getAllOrder :: searchType = {}, requestDTO = {}", searchType, requestDTO);
+        PaginationUtils.checkKeywordAndSearchTypeExist(requestDTO.keyword(), searchType);
+
+        AdminOrderPageDTO pageDTO = AdminOrderPageDTO.fromRequestDTO(requestDTO, searchType);
         long totalElements = 0L;
-        if(keyword == null)
+        if(pageDTO.keyword() == null)
             totalElements = fullCountScanCachingService.getFullScanCountCache(RedisCaching.ADMIN_ORDER_COUNT, new CacheRequest<>(pageDTO));
 
         PagingListDTO<AdminOrderResponseDTO> responseDTO = adminOrderReadUseCase.getAdminAllOrderList(pageDTO, totalElements);

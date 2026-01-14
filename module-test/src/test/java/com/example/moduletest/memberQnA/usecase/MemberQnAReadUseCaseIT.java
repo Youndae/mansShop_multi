@@ -8,7 +8,7 @@ import com.example.modulecommon.fixture.QnAClassificationFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.dto.page.MyPagePageDTO;
 import com.example.modulecommon.model.entity.*;
-import com.example.modulecommon.utils.PaginationUtils;
+import com.example.modulecommon.utils.TestPaginationUtils;
 import com.example.modulemypage.model.dto.memberQnA.out.MemberQnADetailResponseDTO;
 import com.example.modulemypage.model.dto.memberQnA.out.MemberQnAListDTO;
 import com.example.modulemypage.model.dto.memberQnA.out.MemberQnAModifyDataDTO;
@@ -131,7 +131,7 @@ public class MemberQnAReadUseCaseIT {
     void getMemberQnAList() {
         List<MemberQnA> fixtureList = getMemberQnAList(member, 0);
         MyPagePageDTO pageDTO = new MyPagePageDTO(1);
-        int totalPages = PaginationUtils.getTotalPages(fixtureList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(fixtureList.size(), pageDTO.amount());
         int contentElements = Math.min(fixtureList.size(), pageDTO.amount());
 
         Page<MemberQnAListDTO> result = assertDoesNotThrow(() -> memberQnAReadUseCase.getMemberQnAList(pageDTO, member.getUserId()));

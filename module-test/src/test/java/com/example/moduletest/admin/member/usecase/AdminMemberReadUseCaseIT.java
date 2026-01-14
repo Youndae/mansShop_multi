@@ -4,7 +4,7 @@ import com.example.modulecommon.fixture.MemberAndAuthFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.entity.Auth;
 import com.example.modulecommon.model.entity.Member;
-import com.example.modulecommon.utils.PaginationUtils;
+import com.example.modulecommon.utils.TestPaginationUtils;
 import com.example.moduletest.ModuleTestApplication;
 import com.example.moduleuser.model.dto.admin.out.AdminMemberDTO;
 import com.example.moduleuser.model.dto.admin.page.AdminMemberPageDTO;
@@ -68,7 +68,7 @@ public class AdminMemberReadUseCaseIT {
     @DisplayName(value = "회원 목록 조회")
     void getMemberList() {
         AdminMemberPageDTO pageDTO = new AdminMemberPageDTO(1);
-        int totalPages = PaginationUtils.getTotalPages(memberList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(memberList.size(), pageDTO.amount());
 
         Page<AdminMemberDTO> result = assertDoesNotThrow(() -> adminMemberReadUseCase.getAdminMemberList(pageDTO));
 

@@ -12,7 +12,7 @@ import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.entity.Auth;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.ErrorCode;
-import com.example.modulecommon.utils.PaginationUtils;
+import com.example.modulecommon.utils.TestPaginationUtils;
 import com.example.moduleconfig.properties.CookieProperties;
 import com.example.moduleconfig.properties.TokenProperties;
 import com.example.moduleuser.model.dto.admin.in.AdminPostPointDTO;
@@ -138,7 +138,7 @@ public class AdminMemberControllerIT {
     void getMemberList() throws Exception {
         AdminMemberPageDTO pageDTOFixture = new AdminMemberPageDTO(null, null, 1);
         int contentSize = Math.min(ALL_MEMBER_COUNT + 1, pageDTOFixture.amount());
-        int totalPages = PaginationUtils.getTotalPages(ALL_MEMBER_COUNT + 1, pageDTOFixture.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(ALL_MEMBER_COUNT + 1, pageDTOFixture.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "member")
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)

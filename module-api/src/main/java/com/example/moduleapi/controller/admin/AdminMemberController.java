@@ -4,16 +4,14 @@ import com.example.moduleapi.annotation.swagger.DefaultApiResponse;
 import com.example.moduleapi.annotation.swagger.SwaggerAuthentication;
 import com.example.moduleapi.mapper.PagingResponseMapper;
 import com.example.moduleapi.model.response.PagingResponseDTO;
-import com.example.moduleuser.model.dto.admin.in.AdminMemberListRequestDTO;
+import com.example.modulecommon.model.dto.request.ListRequestDTO;
+import com.example.modulecommon.utils.PaginationUtils;
 import com.example.moduleuser.model.dto.admin.in.AdminPostPointDTO;
 import com.example.moduleuser.model.dto.admin.out.AdminMemberDTO;
 import com.example.moduleuser.model.dto.admin.page.AdminMemberPageDTO;
 import com.example.moduleuser.usecase.admin.AdminMemberReadUseCase;
 import com.example.moduleuser.usecase.admin.AdminMemberWriteUseCase;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.Parameters;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
@@ -49,9 +47,12 @@ public class AdminMemberController {
     @DefaultApiResponse
     @GetMapping("/member")
     public ResponseEntity<PagingResponseDTO<AdminMemberDTO>> getMember(
-            @ParameterObject @Validated AdminMemberListRequestDTO requestDTO,
-            @RequestParam(name = "searchType", required = false) @Size(min = 2, message = "searchType length min 2") String searchType
+            @ParameterObject @Validated ListRequestDTO requestDTO,
+            @RequestParam(name = "searchType", required = false) String searchType
     ) {
+        log.info("AdminMemberController.getMember :: searchType = {}, requestDTO = {}", searchType, requestDTO);
+        PaginationUtils.checkKeywordAndSearchTypeExist(requestDTO.keyword(), searchType);
+
         AdminMemberPageDTO pageDTO = AdminMemberPageDTO.fromRequestDTO(requestDTO, searchType);
         Page<AdminMemberDTO> responseDTO = adminMemberReadUseCase.getAdminMemberList(pageDTO);
 

@@ -8,7 +8,7 @@ import com.example.modulecommon.fixture.ProductReviewFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.dto.page.MyPagePageDTO;
 import com.example.modulecommon.model.entity.*;
-import com.example.modulecommon.utils.PaginationUtils;
+import com.example.modulecommon.utils.TestPaginationUtils;
 import com.example.moduleproduct.model.dto.productReview.out.MyPagePatchReviewDataDTO;
 import com.example.moduleproduct.model.dto.productReview.out.MyPageReviewDTO;
 import com.example.moduleproduct.repository.classification.ClassificationRepository;
@@ -132,7 +132,7 @@ public class ProductReviewReadUseCaseIT {
     void getReview() {
         List<ProductReview> fixtureList = getMemberProductReviewList(member, 0);
         MyPagePageDTO pageDTO = new MyPagePageDTO(1);
-        int totalPages = PaginationUtils.getTotalPages(fixtureList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(fixtureList.size(), pageDTO.amount());
         int contentSize = Math.min(fixtureList.size(), pageDTO.amount());
 
         Page<MyPageReviewDTO> result = assertDoesNotThrow(() -> productReviewReadUseCase.getMyPageReviewList(pageDTO, member.getUserId()));

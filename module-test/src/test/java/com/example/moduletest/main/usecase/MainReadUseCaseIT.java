@@ -6,7 +6,7 @@ import com.example.modulecommon.model.dto.response.PagingListDTO;
 import com.example.modulecommon.model.entity.Classification;
 import com.example.modulecommon.model.entity.Product;
 import com.example.modulecommon.model.entity.ProductOption;
-import com.example.modulecommon.utils.PaginationUtils;
+import com.example.modulecommon.utils.TestPaginationUtils;
 import com.example.modulecommon.utils.ProductDiscountUtils;
 import com.example.moduleproduct.model.dto.main.out.MainListResponseDTO;
 import com.example.moduleproduct.model.dto.page.MainPageDTO;
@@ -135,7 +135,7 @@ public class MainReadUseCaseIT {
                 .filter(v -> v.getClassification().getId().equals(classificationId))
                 .toList();
         int contentSize = Math.min(fixtureList.size(), pageDTO.amount());
-        int totalPages = PaginationUtils.getTotalPages(fixtureList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(fixtureList.size(), pageDTO.amount());
 
         PagingListDTO<MainListResponseDTO> result = assertDoesNotThrow(() -> mainReadUseCase.getClassificationOrSearchList(pageDTO));
 

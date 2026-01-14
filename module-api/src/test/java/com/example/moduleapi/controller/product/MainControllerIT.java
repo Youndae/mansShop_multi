@@ -8,7 +8,7 @@ import com.example.modulecommon.fixture.ProductFixture;
 import com.example.modulecommon.fixture.ProductOrderFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.entity.*;
-import com.example.modulecommon.utils.PaginationUtils;
+import com.example.modulecommon.utils.TestPaginationUtils;
 import com.example.moduleorder.repository.ProductOrderRepository;
 import com.example.moduleproduct.model.dto.main.out.MainListResponseDTO;
 import com.example.moduleproduct.repository.classification.ClassificationRepository;
@@ -203,7 +203,7 @@ public class MainControllerIT {
                 .filter(v -> v.getClassification().getId().equals(classificationId))
                 .toList();
         int contentSize = Math.min(fixtureList.size(), 12);
-        int totalPages = PaginationUtils.getTotalPages(fixtureList.size(), 12);
+        int totalPages = TestPaginationUtils.getTotalPages(fixtureList.size(), 12);
         MvcResult result = mockMvc.perform(get(URL_PREFIX + classificationId))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -310,7 +310,7 @@ public class MainControllerIT {
         String term = "3";
         int amount = 20;
         int contentSize = Math.min(anonymousProductOrderList.size(), amount);
-        int totalPages = PaginationUtils.getTotalPages(anonymousProductOrderList.size(), amount);
+        int totalPages = TestPaginationUtils.getTotalPages(anonymousProductOrderList.size(), amount);
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "/order/" + term)
                         .param("recipient", fixture.getRecipient())

@@ -2,7 +2,7 @@ package com.example.moduleproduct.usecase.product.admin;
 
 import com.example.modulecommon.model.dto.response.PagingListDTO;
 import com.example.modulecommon.model.entity.Classification;
-import com.example.modulecommon.utils.PaginationUtils;
+import com.example.modulecommon.utils.TestPaginationUtils;
 import com.example.moduleproduct.model.dto.admin.product.business.AdminProductStockDataDTO;
 import com.example.moduleproduct.model.dto.admin.product.out.AdminProductListDTO;
 import com.example.moduleproduct.model.dto.admin.product.out.AdminProductStockDTO;
@@ -51,7 +51,7 @@ public class AdminProductReadUseCaseUnitTest {
                 .toList();
         AdminProductPageDTO pageDTO = new AdminProductPageDTO(1);
         long totalElements = 30L;
-        int totalPages = PaginationUtils.getTotalPages((int) totalElements, pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages((int) totalElements, pageDTO.amount());
         when(productDataService.getAdminProductPageList(any(AdminProductPageDTO.class))).thenReturn(fixtureList);
         when(productDataService.getAdminProductListFullCount(any(AdminProductPageDTO.class))).thenReturn(totalElements);
 
@@ -115,7 +115,7 @@ public class AdminProductReadUseCaseUnitTest {
                 ))
                 .toList();
         long totalElements = 30L;
-        int totalPages = PaginationUtils.getTotalPages((int) totalElements, pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages((int) totalElements, pageDTO.amount());
         List<AdminProductStockDTO> resultFixture = fixtureList.stream()
                 .map(v -> new AdminProductStockDTO(
                         v.productId(),

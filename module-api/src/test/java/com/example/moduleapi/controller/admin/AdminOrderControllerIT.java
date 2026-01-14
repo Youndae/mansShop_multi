@@ -11,7 +11,7 @@ import com.example.modulecommon.fixture.ProductOrderFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.entity.*;
 import com.example.modulecommon.model.enumuration.*;
-import com.example.modulecommon.utils.PaginationUtils;
+import com.example.modulecommon.utils.TestPaginationUtils;
 import com.example.moduleconfig.properties.CookieProperties;
 import com.example.moduleconfig.properties.TokenProperties;
 import com.example.modulenotification.repository.NotificationRepository;
@@ -193,7 +193,7 @@ public class AdminOrderControllerIT {
     void getAllOrder() throws Exception {
         AdminOrderPageDTO pageDTOFixture = new AdminOrderPageDTO(1);
         int contentSize = Math.min(allProductOrderList.size(), pageDTOFixture.amount());
-        int totalPages = PaginationUtils.getTotalPages(allProductOrderList.size(), pageDTOFixture.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(allProductOrderList.size(), pageDTOFixture.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "order/all")
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
@@ -309,7 +309,7 @@ public class AdminOrderControllerIT {
     void getNewOrderList() throws Exception {
         AdminOrderPageDTO pageDTOFixture = new AdminOrderPageDTO(1);
         int contentSize = Math.min(newProductOrderList.size(), pageDTOFixture.amount());
-        int totalPages = PaginationUtils.getTotalPages(newProductOrderList.size(), pageDTOFixture.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(newProductOrderList.size(), pageDTOFixture.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "order/new")
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)

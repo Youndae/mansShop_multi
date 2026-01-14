@@ -1,15 +1,11 @@
 package com.example.moduleuser.model.enumuration;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import com.example.modulecommon.utils.CommonSearchType;
+import com.example.modulecommon.utils.CommonSearchTypeFinder;
+import lombok.AllArgsConstructor;
 
-import java.util.Arrays;
-
-@Schema(description = "검색 타입")
-@Getter
-@RequiredArgsConstructor
-public enum AdminMemberSearchType {
+@AllArgsConstructor
+public enum AdminMemberSearchType implements CommonSearchType {
     USER_ID("userId"),
     USER_NAME("userName"),
     NICKNAME("nickname");
@@ -17,11 +13,11 @@ public enum AdminMemberSearchType {
     private final String value;
 
     public static AdminMemberSearchType from (String value) {
-        return Arrays.stream(values())
-                .filter(v -> v.value.equalsIgnoreCase(value))
-                .findFirst()
-                .orElseThrow(
-                        () -> new IllegalArgumentException("Invalid AdminMemberSearchType : " + value)
-                );
+        return CommonSearchTypeFinder.from(values(), value, AdminMemberSearchType.class);
+    }
+
+    @Override
+    public String value() {
+        return value;
     }
 }

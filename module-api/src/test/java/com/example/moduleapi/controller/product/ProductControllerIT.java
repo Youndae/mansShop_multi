@@ -8,7 +8,7 @@ import com.example.modulecommon.fixture.*;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.entity.*;
 import com.example.modulecommon.model.enumuration.ErrorCode;
-import com.example.modulecommon.utils.PaginationUtils;
+import com.example.modulecommon.utils.TestPaginationUtils;
 import com.example.modulecommon.utils.ProductDiscountUtils;
 import com.example.moduleconfig.properties.CookieProperties;
 import com.example.moduleconfig.properties.TokenProperties;
@@ -245,7 +245,7 @@ public class ProductControllerIT {
                 reviewDTOContentFixture,
                 reviewDTOFixtureList.isEmpty(),
                 1,
-                PaginationUtils.getTotalPages(reviewDTOFixtureList.size(), pageDTO.reviewAmount()),
+                TestPaginationUtils.getTotalPages(reviewDTOFixtureList.size(), pageDTO.reviewAmount()),
                 reviewDTOFixtureList.size()
         );
         List<ProductQnAResponseDTO> productQnADTOFixtureList = allProductQnA.stream()
@@ -272,7 +272,7 @@ public class ProductControllerIT {
                 productQnADTOContentFixture,
                 productQnADTOFixtureList.isEmpty(),
                 1,
-                PaginationUtils.getTotalPages(productQnADTOFixtureList.size(), pageDTO.qnaAmount()),
+                TestPaginationUtils.getTotalPages(productQnADTOFixtureList.size(), pageDTO.qnaAmount()),
                 productQnADTOFixtureList.size()
         );
 

@@ -11,7 +11,7 @@ import com.example.modulecommon.fixture.ProductFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.entity.*;
 import com.example.modulecommon.model.enumuration.ErrorCode;
-import com.example.modulecommon.utils.PaginationUtils;
+import com.example.modulecommon.utils.TestPaginationUtils;
 import com.example.moduleconfig.properties.CookieProperties;
 import com.example.moduleconfig.properties.TokenProperties;
 import com.example.modulefile.service.FileDomainService;
@@ -196,7 +196,7 @@ public class AdminProductControllerIT {
     void getProductList() throws Exception {
         AdminProductPageDTO pageDTOFixture = new AdminProductPageDTO(null, 1);
         int contentSize = Math.min(allProductList.size(), pageDTOFixture.amount());
-        int totalPages = PaginationUtils.getTotalPages(allProductList.size(), pageDTOFixture.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(allProductList.size(), pageDTOFixture.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "product")
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
@@ -222,7 +222,7 @@ public class AdminProductControllerIT {
     void getProductListSearchMultipleResult() throws Exception {
         AdminProductPageDTO pageDTOFixture = new AdminProductPageDTO(null, 1);
         int contentSize = Math.min(allProductList.size(), pageDTOFixture.amount());
-        int totalPages = PaginationUtils.getTotalPages(allProductList.size(), pageDTOFixture.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(allProductList.size(), pageDTOFixture.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "product")
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
@@ -791,7 +791,7 @@ public class AdminProductControllerIT {
     @DisplayName(value = "상품 재고 리스트 조회")
     void getProductStockList() throws Exception {
         AdminProductPageDTO pageDTOFixture = new AdminProductPageDTO(null, 1);
-        int totalPages = PaginationUtils.getTotalPages(allProductList.size(), pageDTOFixture.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(allProductList.size(), pageDTOFixture.amount());
         List<Product> fixture = allProductList.stream()
                 .sorted(
                         Comparator.comparingInt(product ->
@@ -889,7 +889,7 @@ public class AdminProductControllerIT {
                 .filter(v -> v.getProductDiscount() > 0)
                 .toList();
         int contentSize = Math.min(fixtureList.size(), pageDTOFixture.amount());
-        int totalPages = PaginationUtils.getTotalPages(fixtureList.size(), pageDTOFixture.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(fixtureList.size(), pageDTOFixture.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "product/discount")
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)

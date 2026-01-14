@@ -7,7 +7,7 @@ import com.example.modulecommon.fixture.ProductOrderFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.dto.response.PagingListDTO;
 import com.example.modulecommon.model.entity.*;
-import com.example.modulecommon.utils.PaginationUtils;
+import com.example.modulecommon.utils.TestPaginationUtils;
 import com.example.moduleorder.model.dto.admin.out.AdminOrderResponseDTO;
 import com.example.moduleorder.model.dto.admin.page.AdminOrderPageDTO;
 import com.example.moduleorder.repository.ProductOrderRepository;
@@ -98,7 +98,7 @@ public class AdminOrderReadUseCaseIT {
     @DisplayName(value = "전체 주문 목록 조회")
     void getAllOrderList() {
         AdminOrderPageDTO pageDTO = new AdminOrderPageDTO(1);
-        int totalPages = PaginationUtils.getTotalPages(productOrderList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(productOrderList.size(), pageDTO.amount());
 
         PagingListDTO<AdminOrderResponseDTO> result = assertDoesNotThrow(() -> adminOrderReadUseCase.getAdminAllOrderList(pageDTO, productOrderList.size()));
 
@@ -167,7 +167,7 @@ public class AdminOrderReadUseCaseIT {
     @DisplayName(value = "미처리 주문 목록 조회")
     void getNewOrderList() {
         AdminOrderPageDTO pageDTO = new AdminOrderPageDTO(1);
-        int totalPages = PaginationUtils.getTotalPages(productOrderList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(productOrderList.size(), pageDTO.amount());
 
         PagingListDTO<AdminOrderResponseDTO> result = assertDoesNotThrow(
                 () -> adminOrderReadUseCase.getAdminNewOrderList(pageDTO)

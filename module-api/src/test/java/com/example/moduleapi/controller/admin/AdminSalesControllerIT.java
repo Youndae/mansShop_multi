@@ -16,7 +16,7 @@ import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.entity.*;
 import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.modulecommon.model.enumuration.PageAmount;
-import com.example.modulecommon.utils.PaginationUtils;
+import com.example.modulecommon.utils.TestPaginationUtils;
 import com.example.moduleconfig.properties.CookieProperties;
 import com.example.moduleconfig.properties.TokenProperties;
 import com.example.moduleorder.model.dto.admin.out.AdminDailySalesResponseDTO;
@@ -35,7 +35,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -617,7 +616,7 @@ public class AdminSalesControllerIT {
                         && v.getCreatedAt().getMonthValue() == month
                         && v.getCreatedAt().getDayOfMonth() == day)
                 .toList();
-        int totalPages = PaginationUtils.getTotalPages(orderFixtureList.size(), amount);
+        int totalPages = TestPaginationUtils.getTotalPages(orderFixtureList.size(), amount);
         int contentSize = Math.min(orderFixtureList.size(), amount);
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/period/order-list")
@@ -672,7 +671,7 @@ public class AdminSalesControllerIT {
     @DisplayName(value = "상품별 매출 조회")
     void getProductSales() throws Exception {
         AdminSalesPageDTO pageDTO = new AdminSalesPageDTO(null, 1);
-        int totalPages = PaginationUtils.getTotalPages(productList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(productList.size(), pageDTO.amount());
         int contentSize = Math.min(productList.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/product")
@@ -727,7 +726,7 @@ public class AdminSalesControllerIT {
             }
         }
         int contentSize = Math.min(fixtureMap.size(), pageDTO.amount());
-        int totalPages = PaginationUtils.getTotalPages(fixtureMap.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(fixtureMap.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/product")
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
@@ -764,7 +763,7 @@ public class AdminSalesControllerIT {
     void getProductSalesSummaryIsEmpty() throws Exception {
         productSalesSummaryRepository.deleteAll();
         AdminSalesPageDTO pageDTO = new AdminSalesPageDTO(null, 1);
-        int totalPages = PaginationUtils.getTotalPages(productList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(productList.size(), pageDTO.amount());
         int contentSize = Math.min(productList.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/product")

@@ -13,7 +13,7 @@ import com.example.modulecommon.model.dto.qna.in.QnAReplyPatchDTO;
 import com.example.modulecommon.model.dto.qna.out.QnADetailReplyDTO;
 import com.example.modulecommon.model.entity.*;
 import com.example.modulecommon.model.enumuration.*;
-import com.example.modulecommon.utils.PaginationUtils;
+import com.example.modulecommon.utils.TestPaginationUtils;
 import com.example.moduleconfig.properties.CookieProperties;
 import com.example.moduleconfig.properties.TokenProperties;
 import com.example.modulemypage.model.dto.memberQnA.out.MemberQnADetailResponseDTO;
@@ -252,7 +252,7 @@ public class AdminQnAControllerIT {
                 .limit(pageDTO.amount())
                 .toList();
         int contentSize = Math.min(fixtureList.size(), pageDTO.amount());
-        int totalPages = PaginationUtils.getTotalPages(allProductQnAList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(allProductQnAList.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/product")
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
@@ -286,7 +286,7 @@ public class AdminQnAControllerIT {
                 .limit(pageDTO.amount())
                 .toList();
         int contentSize = Math.min(fixtureList.size(), pageDTO.amount());
-        int totalPages = PaginationUtils.getTotalPages(newProductQnAList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(newProductQnAList.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/product")
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
@@ -324,7 +324,7 @@ public class AdminQnAControllerIT {
                 .toList();
         List<ProductQnA> fixtureContentList = fixtureList.stream().limit(pageDTO.amount()).toList();
         int contentSize = Math.min(fixtureContentList.size(), pageDTO.amount());
-        int totalPages = PaginationUtils.getTotalPages(fixtureList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(fixtureList.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/product")
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
@@ -639,7 +639,7 @@ public class AdminQnAControllerIT {
                 .limit(pageDTO.amount())
                 .toList();
         int contentSize = Math.min(fixtureList.size(), pageDTO.amount());
-        int totalPages = PaginationUtils.getTotalPages(allMemberQnAList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(allMemberQnAList.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/member")
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
@@ -673,7 +673,7 @@ public class AdminQnAControllerIT {
                 .limit(pageDTO.amount())
                 .toList();
         int contentSize = Math.min(fixtureList.size(), pageDTO.amount());
-        int totalPages = PaginationUtils.getTotalPages(newMemberQnAList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(newMemberQnAList.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/member")
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
@@ -711,7 +711,7 @@ public class AdminQnAControllerIT {
                 .toList();
         List<MemberQnA> fixtureContentList = fixtureList.stream().limit(pageDTO.amount()).toList();
         int contentSize = Math.min(fixtureContentList.size(), pageDTO.amount());
-        int totalPages = PaginationUtils.getTotalPages(fixtureList.size(), pageDTO.amount());
+        int totalPages = TestPaginationUtils.getTotalPages(fixtureList.size(), pageDTO.amount());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/member")
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
