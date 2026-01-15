@@ -5,6 +5,8 @@ import com.example.moduleadmin.repository.PeriodSalesSummaryRepository;
 import com.example.moduleadmin.repository.ProductSalesSummaryRepository;
 import com.example.moduleapi.ModuleApiApplication;
 import com.example.moduleapi.config.exception.ExceptionEntity;
+import com.example.moduleapi.config.exception.ValidationError;
+import com.example.moduleapi.config.exception.ValidationExceptionEntity;
 import com.example.moduleapi.fixture.TokenFixture;
 import com.example.modulecart.model.dto.business.CartMemberDTO;
 import com.example.modulecart.repository.CartRepository;
@@ -14,6 +16,7 @@ import com.example.modulecommon.fixture.MemberAndAuthFixture;
 import com.example.modulecommon.fixture.ProductFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.entity.*;
+import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.moduleconfig.config.rabbitMQ.RabbitMQPrefix;
 import com.example.moduleconfig.properties.CookieProperties;
 import com.example.moduleconfig.properties.RabbitMQProperties;
@@ -54,10 +57,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static org.awaitility.Awaitility.await;
@@ -393,18 +393,25 @@ public class AdminFailedDataControllerIT {
                 .andExpect(status().isBadRequest())
                 .andReturn();
 
-        Exception ex = result.getResolvedException();
-
         String content = result.getResponse().getContentAsString();
-        List<ExceptionEntity> response = om.readValue(
+        ValidationExceptionEntity response = om.readValue(
                 content,
                 new TypeReference<>() {}
         );
 
-        assertFalse(response.isEmpty());
-        assertEquals(1, response.size());
-        assertEquals(400, response.get(0).errorCode());
-        assertEquals("queueName is Not Blank", response.get(0).errorMessage());
+        ErrorCode errorCode = ErrorCode.BAD_REQUEST;
+
+        assertNotNull(response);
+        assertEquals(errorCode.getHttpStatus().value(), response.errorCode());
+        assertEquals(errorCode.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("queueName", responseObj.field());
+        assertEquals("NotBlank", responseObj.constraint());
     }
 
     @Test
@@ -425,18 +432,25 @@ public class AdminFailedDataControllerIT {
                 .andExpect(status().isBadRequest())
                 .andReturn();
 
-        Exception ex = result.getResolvedException();
-
         String content = result.getResponse().getContentAsString();
-        List<ExceptionEntity> response = om.readValue(
+        ValidationExceptionEntity response = om.readValue(
                 content,
                 new TypeReference<>() {}
         );
 
-        assertFalse(response.isEmpty());
-        assertEquals(1, response.size());
-        assertEquals(400, response.get(0).errorCode());
-        assertEquals("queueName is Not Blank", response.get(0).errorMessage());
+        ErrorCode errorCode = ErrorCode.BAD_REQUEST;
+
+        assertNotNull(response);
+        assertEquals(errorCode.getHttpStatus().value(), response.errorCode());
+        assertEquals(errorCode.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("queueName", responseObj.field());
+        assertEquals("NotBlank", responseObj.constraint());
     }
 
     @Test
@@ -457,18 +471,25 @@ public class AdminFailedDataControllerIT {
                 .andExpect(status().isBadRequest())
                 .andReturn();
 
-        Exception ex = result.getResolvedException();
-
         String content = result.getResponse().getContentAsString();
-        List<ExceptionEntity> response = om.readValue(
+        ValidationExceptionEntity response = om.readValue(
                 content,
                 new TypeReference<>() {}
         );
 
-        assertFalse(response.isEmpty());
-        assertEquals(1, response.size());
-        assertEquals(400, response.get(0).errorCode());
-        assertEquals("The minimum value for message Count is 1", response.get(0).errorMessage());
+        ErrorCode errorCode = ErrorCode.BAD_REQUEST;
+
+        assertNotNull(response);
+        assertEquals(errorCode.getHttpStatus().value(), response.errorCode());
+        assertEquals(errorCode.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("messageCount", responseObj.field());
+        assertEquals("Min", responseObj.constraint());
     }
 
     @Test
@@ -490,25 +511,29 @@ public class AdminFailedDataControllerIT {
                 .andReturn();
 
         String content = result.getResponse().getContentAsString();
-
-        System.out.println("content : " +  content);
-
-        List<ExceptionEntity> response = om.readValue(
+        ValidationExceptionEntity response = om.readValue(
                 content,
                 new TypeReference<>() {}
         );
 
-        String[] messageArr = {"The minimum value for message Count is 1", "queueName is Not Blank"};
+        ErrorCode errorCode = ErrorCode.BAD_REQUEST;
 
-        assertFalse(response.isEmpty());
-        assertEquals(2, response.size());
+        assertNotNull(response);
+        assertEquals(errorCode.getHttpStatus().value(), response.errorCode());
+        assertEquals(errorCode.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
 
-        for(int i = 0; i < messageArr.length; i++) {
-            ExceptionEntity responseEntity = response.get(i);
-            String message = messageArr[i];
+        assertEquals(2, response.errors().size());
 
-            assertEquals(400, responseEntity.errorCode());
-            assertEquals(message, responseEntity.errorMessage());
-        }
+        Map<String, String> validationMap = new HashMap<>();
+        validationMap.put("queueName", "NotBlank");
+        validationMap.put("messageCount", "Min");
+
+        response.errors().forEach(v -> {
+            String constraint = validationMap.getOrDefault(v.field(), null);
+
+            assertNotNull(constraint);
+            assertEquals(constraint, v.constraint());
+        });
     }
 }

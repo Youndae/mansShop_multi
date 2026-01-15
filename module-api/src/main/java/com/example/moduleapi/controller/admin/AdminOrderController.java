@@ -20,12 +20,13 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Admin Order Controller")
@@ -46,8 +47,7 @@ public class AdminOrderController {
     /**
      *
      * @param searchType
-     * @param keyword
-     * @param page
+     * @param requestDTO
      *
      * 모든 주문내역 리스트
      */
@@ -74,7 +74,7 @@ public class AdminOrderController {
     @GetMapping("/order/all")
     public ResponseEntity<PagingResponseDTO<AdminOrderResponseDTO>> getAllOrder(
             @RequestParam(name = "searchType", required = false) String searchType,
-            @ParameterObject @Validated ListRequestDTO requestDTO) {
+            @ParameterObject @Valid ListRequestDTO requestDTO) {
 
         log.info("AdminOrderController.getAllOrder :: searchType = {}, requestDTO = {}", searchType, requestDTO);
         PaginationUtils.checkKeywordAndSearchTypeExist(requestDTO.keyword(), searchType);
@@ -92,8 +92,7 @@ public class AdminOrderController {
     /**
      *
      * @param searchType
-     * @param keyword
-     * @param page
+     * @param requestDTO
      *
      * 미처리 주문 내역 리스트
      */
@@ -118,11 +117,14 @@ public class AdminOrderController {
             )
     })
     @GetMapping("/order/new")
-    public ResponseEntity<PagingElementsResponseDTO<AdminOrderResponseDTO>> getNewOrder(@RequestParam(name = "searchType", required = false) String searchType,
-                                                                                        @RequestParam(name = "keyword", required = false) String keyword,
-                                                                                        @RequestParam(name = "page", required = false, defaultValue = "1") int page) {
+    public ResponseEntity<PagingElementsResponseDTO<AdminOrderResponseDTO>> getNewOrder(
+            @RequestParam(name = "searchType", required = false) String searchType,
+            @ParameterObject @Valid ListRequestDTO requestDTO) {
 
-        AdminOrderPageDTO pageDTO = new AdminOrderPageDTO(keyword, searchType, page);
+        log.info("AdminOrderController.getNewOrder :: searchType = {}, requestDTO = {}", searchType, requestDTO);
+        PaginationUtils.checkKeywordAndSearchTypeExist(requestDTO.keyword(), searchType);
+
+        AdminOrderPageDTO pageDTO = AdminOrderPageDTO.fromRequestDTO(requestDTO, searchType);
         PagingListDTO<AdminOrderResponseDTO> responseDTO = adminOrderReadUseCase.getAdminNewOrderList(pageDTO);
 
         return pagingResponseMapper.toPagingElementsResponse(responseDTO);
@@ -146,7 +148,7 @@ public class AdminOrderController {
             in = ParameterIn.PATH
     )
     @PatchMapping("/order/{orderId}")
-    public ResponseEntity<Void> patchOrder(@PathVariable(name = "orderId") long orderId) {
+    public ResponseEntity<Void> patchOrder(@PathVariable(name = "orderId") @Min(value = 1) long orderId) {
         adminOrderWriteUseCase.orderPreparation(orderId);
 
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();

@@ -2,6 +2,8 @@ package com.example.moduleapi.controller.admin;
 
 import com.example.moduleapi.ModuleApiApplication;
 import com.example.moduleapi.config.exception.ExceptionEntity;
+import com.example.moduleapi.config.exception.ValidationError;
+import com.example.moduleapi.config.exception.ValidationExceptionEntity;
 import com.example.moduleapi.fixture.TokenFixture;
 import com.example.moduleapi.model.response.PagingResponseDTO;
 import com.example.modulecommon.fixture.ClassificationFixture;
@@ -44,8 +46,10 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.filter.CharacterEncodingFilter;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -305,6 +309,136 @@ public class AdminOrderControllerIT {
     }
 
     @Test
+    @DisplayName(value = "전체 주문 목록 조회. 페이지값이 0으로 전달된 경우")
+    void getAllOrderValidationPageZero() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "order/all")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("page", "0")
+                )
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        ErrorCode errorCode = ErrorCode.BAD_REQUEST;
+
+        assertNotNull(response);
+        assertEquals(errorCode.getHttpStatus().value(), response.errorCode());
+        assertEquals(errorCode.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("page", responseObj.field());
+        assertEquals("Min", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "전체 주문 목록 조회. 검색어가 한글자인 경우")
+    void getAllOrderValidationKeywordLength1() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "order/all")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("keyword", "a")
+                        .param("searchType", "recipient")
+                )
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        ErrorCode errorCode = ErrorCode.BAD_REQUEST;
+
+        assertNotNull(response);
+        assertEquals(errorCode.getHttpStatus().value(), response.errorCode());
+        assertEquals(errorCode.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("keyword", responseObj.field());
+        assertEquals("Size", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "전체 주문 목록 조회. searchType이 유효하지 않은 경우")
+    void getAllOrderValidationWrongSearchType() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "order/all")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("keyword", "tester")
+                        .param("searchType", "reci")
+                )
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        ErrorCode errorCode = ErrorCode.BAD_REQUEST;
+
+        assertNotNull(response);
+        assertEquals(errorCode.getHttpStatus().value(), response.errorCode());
+        assertEquals(errorCode.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "전체 주문 목록 조회. 페이지 값이 0, 검색어가 한글자인 경우")
+    void getAllOrderValidationPageZeroAndKeywordLength1() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "order/all")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("page", "0")
+                        .param("keyword", "a")
+                        .param("searchType", "recipient")
+                )
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        ErrorCode errorCode = ErrorCode.BAD_REQUEST;
+
+        assertNotNull(response);
+        assertEquals(errorCode.getHttpStatus().value(), response.errorCode());
+        assertEquals(errorCode.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(2, response.errors().size());
+
+        Map<String, String> validationMap = new HashMap<>();
+        validationMap.put("page", "Min");
+        validationMap.put("keyword", "Size");
+
+        response.errors().forEach(v -> {
+            String constraint = validationMap.getOrDefault(v.field(), null);
+
+            assertNotNull(constraint);
+            assertEquals(constraint, v.constraint());
+        });
+    }
+
+    @Test
     @DisplayName(value = "미처리 주문 목록 조회")
     void getNewOrderList() throws Exception {
         AdminOrderPageDTO pageDTOFixture = new AdminOrderPageDTO(1);
@@ -425,6 +559,136 @@ public class AdminOrderControllerIT {
     }
 
     @Test
+    @DisplayName(value = "미처리 주문 목록 조회. 페이지값이 0으로 전달된 경우")
+    void getNewOrderValidationPageZero() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "order/new")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("page", "0")
+                )
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        ErrorCode errorCode = ErrorCode.BAD_REQUEST;
+
+        assertNotNull(response);
+        assertEquals(errorCode.getHttpStatus().value(), response.errorCode());
+        assertEquals(errorCode.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("page", responseObj.field());
+        assertEquals("Min", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "미처리 주문 목록 조회. 검색어가 한글자인 경우")
+    void getNewOrderValidationKeywordLength1() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "order/new")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("keyword", "a")
+                        .param("searchType", "recipient")
+                )
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        ErrorCode errorCode = ErrorCode.BAD_REQUEST;
+
+        assertNotNull(response);
+        assertEquals(errorCode.getHttpStatus().value(), response.errorCode());
+        assertEquals(errorCode.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("keyword", responseObj.field());
+        assertEquals("Size", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "미처리 주문 목록 조회. searchType이 유효하지 않은 경우")
+    void getNewOrderValidationWrongSearchType() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "order/new")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("keyword", "tester")
+                        .param("searchType", "reci")
+                )
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        ErrorCode errorCode = ErrorCode.BAD_REQUEST;
+
+        assertNotNull(response);
+        assertEquals(errorCode.getHttpStatus().value(), response.errorCode());
+        assertEquals(errorCode.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "미처리 주문 목록 조회. 페이지 값이 0, 검색어가 한글자인 경우")
+    void getNewOrderValidationPageZeroAndKeywordLength1() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "order/new")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("page", "0")
+                        .param("keyword", "a")
+                        .param("searchType", "recipient")
+                )
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        ErrorCode errorCode = ErrorCode.BAD_REQUEST;
+
+        assertNotNull(response);
+        assertEquals(errorCode.getHttpStatus().value(), response.errorCode());
+        assertEquals(errorCode.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(2, response.errors().size());
+
+        Map<String, String> validationMap = new HashMap<>();
+        validationMap.put("page", "Min");
+        validationMap.put("keyword", "Size");
+
+        response.errors().forEach(v -> {
+            String constraint = validationMap.getOrDefault(v.field(), null);
+
+            assertNotNull(constraint);
+            assertEquals(constraint, v.constraint());
+        });
+    }
+
+    @Test
     @DisplayName(value = "주문 확인 처리")
     void patchOrderStatus() throws Exception {
         ProductOrder fixture = newProductOrderList.get(0);
@@ -459,7 +723,9 @@ public class AdminOrderControllerIT {
     @Test
     @DisplayName(value = "주문 확인 처리. 주문 아이디가 잘못된 경우")
     void patchOrderStatusWrongId() throws Exception {
-        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "order/0")
+        long wrongOrderId = allProductOrderList.get(0).getId() - 100L;
+
+        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "order/" + wrongOrderId)
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
                         .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
@@ -473,5 +739,30 @@ public class AdminOrderControllerIT {
 
         assertNotNull(response);
         assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "주문 확인 처리. 주문 아이디가 0인 경우")
+    void patchOrderStatusValidationOrderIdZero() throws Exception {
+        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "order/0")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        assertEquals(HandlerMethodValidationException.class.getSimpleName(), result.getResolvedException().getClass().getSimpleName());
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        ErrorCode errorCode = ErrorCode.BAD_REQUEST;
+
+        assertNotNull(response);
+        assertEquals(errorCode.getHttpStatus().value(), response.errorCode());
+        assertEquals(errorCode.getMessage(), response.errorMessage());
     }
 }

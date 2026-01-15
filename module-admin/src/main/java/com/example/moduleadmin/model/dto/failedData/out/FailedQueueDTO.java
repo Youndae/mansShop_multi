@@ -10,7 +10,6 @@ public record FailedQueueDTO(
         @Schema(name = "queueName", description = "DLQ 이름")
         String queueName,
 
-        @NotNull
         @Min(value = 1, message = "The minimum value for message Count is 1")
         @Schema(name = "messageCount", description = "실패한 메시지 개수")
         int messageCount
