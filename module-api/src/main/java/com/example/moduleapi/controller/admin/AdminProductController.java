@@ -5,10 +5,9 @@ import com.example.moduleapi.annotation.swagger.SwaggerAuthentication;
 import com.example.moduleapi.mapper.PagingResponseMapper;
 import com.example.moduleapi.model.response.PagingResponseDTO;
 import com.example.moduleapi.model.response.ResponseIdDTO;
+import com.example.modulecommon.model.dto.request.ListRequestDTO;
 import com.example.modulecommon.model.dto.response.PagingListDTO;
-import com.example.moduleproduct.model.dto.admin.product.in.AdminDiscountPatchDTO;
-import com.example.moduleproduct.model.dto.admin.product.in.AdminProductImageDTO;
-import com.example.moduleproduct.model.dto.admin.product.in.AdminProductPatchDTO;
+import com.example.moduleproduct.model.dto.admin.product.in.*;
 import com.example.moduleproduct.model.dto.admin.product.out.*;
 import com.example.moduleproduct.model.dto.page.AdminProductPageDTO;
 import com.example.moduleproduct.usecase.admin.product.AdminProductReadUseCase;
@@ -18,8 +17,13 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.validator.constraints.Length;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -42,8 +46,7 @@ public class AdminProductController {
 
     /**
      *
-     * @param keyword
-     * @param page
+     * @param requestDTO
      *
      * 관리자 상품 목록 리스트 조회
      */
@@ -63,9 +66,10 @@ public class AdminProductController {
             )
     })
     @GetMapping("/product")
-    public ResponseEntity<PagingResponseDTO<AdminProductListDTO>> getProductList(@RequestParam(name = "keyword", required = false) String keyword,
-                                                                                 @RequestParam(name = "page", required = false, defaultValue = "1") int page){
-        PagingListDTO<AdminProductListDTO> responseDTO = adminProductReadUseCase.getProductList(new AdminProductPageDTO(keyword, page));
+    public ResponseEntity<PagingResponseDTO<AdminProductListDTO>> getProductList(@ParameterObject @Valid ListRequestDTO requestDTO){
+        AdminProductPageDTO pageDTO = AdminProductPageDTO.fromRequestDTO(requestDTO);
+        System.out.println("pageDTO : " + pageDTO);
+        PagingListDTO<AdminProductListDTO> responseDTO = adminProductReadUseCase.getProductList(pageDTO);
 
         return pagingResponseMapper.toPagingResponse(responseDTO);
     }
@@ -102,7 +106,7 @@ public class AdminProductController {
             in = ParameterIn.PATH
     )
     @GetMapping("/product/detail/{productId}")
-    public ResponseEntity<AdminProductDetailDTO> getProductDetail(@PathVariable(name = "productId") String productId){
+    public ResponseEntity<AdminProductDetailDTO> getProductDetail(@PathVariable(name = "productId") @Size(min = 14) String productId){
         AdminProductDetailDTO responseDTO = adminProductReadUseCase.getProductDetailData(productId);
 
         return ResponseEntity.ok(responseDTO);
@@ -123,8 +127,9 @@ public class AdminProductController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PostMapping(value = "/product", consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})
-    public ResponseEntity<ResponseIdDTO<String>> postProduct(@ModelAttribute AdminProductPatchDTO postDTO,
-                                                             @ModelAttribute AdminProductImageDTO imageDTO) {
+    public ResponseEntity<ResponseIdDTO<String>> postProduct(
+            @Valid @ModelAttribute AdminProductPostDTO postDTO,
+            @Valid @ModelAttribute AdminProductImageDTO imageDTO) {
         ResponseIdDTO<String> responseDTO = new ResponseIdDTO<>(adminProductWriteUseCase.postProduct(postDTO, imageDTO));
 
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -147,7 +152,7 @@ public class AdminProductController {
             in = ParameterIn.PATH
     )
     @GetMapping("/product/patch/{productId}")
-    public ResponseEntity<AdminProductPatchDataDTO> getPatchProductData(@PathVariable(name = "productId") String productId) {
+    public ResponseEntity<AdminProductPatchDataDTO> getPatchProductData(@PathVariable(name = "productId") @Size(min = 14) String productId) {
 
         AdminProductPatchDataDTO responseDTO = adminProductReadUseCase.getPatchProductData(productId);
 
@@ -179,10 +184,10 @@ public class AdminProductController {
             )
     })
     @PatchMapping(value = "/product/{productId}", consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})
-    public ResponseEntity<ResponseIdDTO<String>> patchProduct(@PathVariable(name = "productId") String productId,
+    public ResponseEntity<ResponseIdDTO<String>> patchProduct(@PathVariable(name = "productId") @Size(min = 14) String productId,
                                                               @RequestPart(value = "deleteOptionList", required = false) List<Long> deleteOptionList,
-                                                              @ModelAttribute AdminProductPatchDTO patchDTO,
-                                                              @ModelAttribute AdminProductImageDTO imageDTO) {
+                                                              @Valid @ModelAttribute AdminProductPatchDTO patchDTO,
+                                                              @Valid @ModelAttribute AdminProductImagePatchDTO imageDTO) {
         ResponseIdDTO<String> responseDTO = new ResponseIdDTO<>(
                 adminProductWriteUseCase.patchProduct(productId, deleteOptionList, patchDTO, imageDTO)
         );
@@ -217,10 +222,9 @@ public class AdminProductController {
             )
     })
     @GetMapping("/product/stock")
-    public ResponseEntity<PagingResponseDTO<AdminProductStockDTO>> getProductStock(@RequestParam(name = "keyword", required = false) String keyword,
-                                                                                   @RequestParam(name = "page", required = false, defaultValue = "1") int page) {
+    public ResponseEntity<PagingResponseDTO<AdminProductStockDTO>> getProductStock(@ParameterObject @Valid ListRequestDTO requestDTO) {
 
-        AdminProductPageDTO pageDTO = new AdminProductPageDTO(keyword, page);
+        AdminProductPageDTO pageDTO = AdminProductPageDTO.fromRequestDTO(requestDTO);
         PagingListDTO<AdminProductStockDTO> responseDTO = adminProductReadUseCase.getProductStockList(pageDTO);
 
         return pagingResponseMapper.toPagingResponse(responseDTO);
@@ -249,10 +253,9 @@ public class AdminProductController {
             )
     })
     @GetMapping("/product/discount")
-    public ResponseEntity<PagingResponseDTO<AdminDiscountResponseDTO>> getDiscountProductList(@RequestParam(name = "keyword", required = false) String keyword,
-                                                                                              @RequestParam(name = "page", required = false, defaultValue = "1") int page) {
+    public ResponseEntity<PagingResponseDTO<AdminDiscountResponseDTO>> getDiscountProductList(@ParameterObject @Valid ListRequestDTO requestDTO) {
 
-        AdminProductPageDTO pageDTO = new AdminProductPageDTO(keyword, page);
+        AdminProductPageDTO pageDTO = AdminProductPageDTO.fromRequestDTO(requestDTO);
 
         PagingListDTO<AdminDiscountResponseDTO> responseDTO = adminProductReadUseCase.getDiscountProductList(pageDTO);
 
@@ -276,7 +279,7 @@ public class AdminProductController {
             in = ParameterIn.PATH
     )
     @GetMapping("/product/discount/select/{classification}")
-    public ResponseEntity<List<AdminDiscountProductDTO>> getDiscountProductSelectList(@PathVariable(name = "classification") String classification) {
+    public ResponseEntity<List<AdminDiscountProductDTO>> getDiscountProductSelectList(@PathVariable(name = "classification") @Length(min = 2) String classification) {
 
         List<AdminDiscountProductDTO> responseDTO = adminProductReadUseCase.getSelectDiscountProductList(classification);
 

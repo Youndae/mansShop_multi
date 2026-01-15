@@ -63,9 +63,12 @@ public class ProductDomainService {
         return thumbnail;
     }
 
-    public List<String> saveProductImage(Product product, AdminProductImageDTO imageDTO) throws Exception {
-        List<String> thumbnails = saveThumbnail(product, imageDTO.getThumbnail());
-        List<String> infoImages = saveInfoImage(product, imageDTO.getInfoImage());
+    public List<String> saveProductImage(
+                Product product,
+                List<MultipartFile> thumbnailList,
+                List<MultipartFile> infoImageList) throws Exception {
+        List<String> thumbnails = saveThumbnail(product, thumbnailList);
+        List<String> infoImages = saveInfoImage(product, infoImageList);
 
         thumbnails.addAll(infoImages);
 
@@ -84,7 +87,7 @@ public class ProductDomainService {
     private List<String> saveThumbnail(Product product, List<MultipartFile> imageList) throws Exception{
         List<String> thumbnailList = new ArrayList<>();
 
-        if(imageList != null){
+        if(imageList != null && !imageList.isEmpty()){
             for(MultipartFile image : imageList){
                 String saveName = fileFacade.imageInsert(image);
                 thumbnailList.add(saveName);
@@ -112,7 +115,7 @@ public class ProductDomainService {
     private List<String> saveInfoImage(Product product, List<MultipartFile> imageList) throws Exception{
         List<String> infoImages = new ArrayList<>();
 
-        if(imageList != null) {
+        if(imageList != null && !imageList.isEmpty()) {
             for(MultipartFile image : imageList) {
                 String saveName = fileFacade.imageInsert(image);
                 infoImages.add(saveName);
@@ -141,6 +144,12 @@ public class ProductDomainService {
             long dtoOptionId = dto.getOptionId();
             boolean patchStatus = true;
 
+            if(dtoOptionId < 0)
+                throw new IllegalArgumentException("AdminProductWriteUseCase.postProduct :: addOptionId is Less Then Zero");
+
+            if(dto.getOptionStock() < 0)
+                throw new IllegalArgumentException("AdminProductWriteUseCase.postProduct :: addOptionStock is Less Then Zero");
+
             for(int j = 0; j < optionEntities.size(); j++) {
                 ProductOption option = optionEntities.get(j);
 
@@ -156,7 +165,7 @@ public class ProductDomainService {
                 }
             }
 
-            if(patchStatus)
+            if(patchStatus && dtoOptionId == 0)
                 product.addProductOption(dto.toEntity());
         }
     }

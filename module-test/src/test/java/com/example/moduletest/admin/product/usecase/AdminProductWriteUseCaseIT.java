@@ -5,10 +5,7 @@ import com.example.modulecommon.fixture.ProductFixture;
 import com.example.modulecommon.model.entity.*;
 import com.example.modulefile.service.FileDomainService;
 import com.example.modulefile.service.FileService;
-import com.example.moduleproduct.model.dto.admin.product.in.AdminDiscountPatchDTO;
-import com.example.moduleproduct.model.dto.admin.product.in.AdminProductImageDTO;
-import com.example.moduleproduct.model.dto.admin.product.in.AdminProductPatchDTO;
-import com.example.moduleproduct.model.dto.admin.product.in.PatchOptionDTO;
+import com.example.moduleproduct.model.dto.admin.product.in.*;
 import com.example.moduleproduct.repository.classification.ClassificationRepository;
 import com.example.moduleproduct.repository.product.ProductRepository;
 import com.example.moduleproduct.repository.productInfoImage.ProductInfoImageRepository;
@@ -138,7 +135,7 @@ public class AdminProductWriteUseCaseIT {
                         true
                 ))
                 .toList();
-        AdminProductPatchDTO patchDTO = new AdminProductPatchDTO(
+        AdminProductPostDTO postDTO = new AdminProductPostDTO(
                 "postProduct",
                 "TOP",
                 20000,
@@ -151,30 +148,27 @@ public class AdminProductWriteUseCaseIT {
         List<MultipartFile> infoImage = new ArrayList<>(createMockMultipartFileList("info", 3));
         AdminProductImageDTO imageDTO = new AdminProductImageDTO(
                 firstThumbnail,
-                null,
                 thumbnail,
-                null,
-                infoImage,
-                null
+                infoImage
         );
 
         given(fileDomainService.setImageSaveName(any(MultipartFile.class)))
                 .willReturn("saved-first-thumb.jpg");
         willDoNothing().given(fileService).imageInsert(any(MultipartFile.class), anyString());
 
-        String result = assertDoesNotThrow(() -> adminProductWriteUseCase.postProduct(patchDTO, imageDTO));
+        String result = assertDoesNotThrow(() -> adminProductWriteUseCase.postProduct(postDTO, imageDTO));
 
         assertNotNull(result);
 
         Product saveProduct = productRepository.findById(result).orElse(null);
 
         assertNotNull(saveProduct);
-        assertEquals(patchDTO.getProductName(), saveProduct.getProductName());
-        assertEquals(patchDTO.getClassification(), saveProduct.getClassification().getId());
-        assertEquals(patchDTO.getPrice(), saveProduct.getProductPrice());
-        assertEquals(patchDTO.getIsOpen(), saveProduct.isOpen());
-        assertEquals(patchDTO.getDiscount(), saveProduct.getProductDiscount());
-        assertEquals(patchDTO.getOptionList().size(), saveProduct.getProductOptions().size());
+        assertEquals(postDTO.getProductName(), saveProduct.getProductName());
+        assertEquals(postDTO.getClassification(), saveProduct.getClassification().getId());
+        assertEquals(postDTO.getPrice(), saveProduct.getProductPrice());
+        assertEquals(postDTO.getIsOpen(), saveProduct.isOpen());
+        assertEquals(postDTO.getDiscount(), saveProduct.getProductDiscount());
+        assertEquals(postDTO.getOptionList().size(), saveProduct.getProductOptions().size());
         assertEquals(imageDTO.getThumbnail().size(), saveProduct.getProductThumbnails().size());
         assertEquals(imageDTO.getInfoImage().size(), saveProduct.getProductInfoImages().size());
     }
@@ -191,7 +185,7 @@ public class AdminProductWriteUseCaseIT {
                         true
                 ))
                 .toList();
-        AdminProductPatchDTO patchDTO = new AdminProductPatchDTO(
+        AdminProductPostDTO postDTO = new AdminProductPostDTO(
                 "postProduct",
                 "TOP",
                 20000,
@@ -203,16 +197,13 @@ public class AdminProductWriteUseCaseIT {
         List<MultipartFile> infoImage = new ArrayList<>(createMockMultipartFileList("info", 3));
         AdminProductImageDTO imageDTO = new AdminProductImageDTO(
                 null,
-                null,
                 thumbnail,
-                null,
-                infoImage,
-                null
+                infoImage
         );
 
         assertThrows(
                 IllegalArgumentException.class,
-                () -> adminProductWriteUseCase.postProduct(patchDTO, imageDTO)
+                () -> adminProductWriteUseCase.postProduct(postDTO, imageDTO)
         );
 
 
@@ -244,7 +235,7 @@ public class AdminProductWriteUseCaseIT {
         MockMultipartFile firstThumbnail = createMockMultipartFile("firstThumbnail", "firstThumb");
         List<MultipartFile> thumbnail = new ArrayList<>(createMockMultipartFileList("thumbnail", 3));
         List<MultipartFile> infoImage = new ArrayList<>(createMockMultipartFileList("info", 3));
-        AdminProductImageDTO imageDTO = new AdminProductImageDTO(
+        AdminProductImagePatchDTO imageDTO = new AdminProductImagePatchDTO(
                 firstThumbnail,
                 "deleteFirstThumbnailName",
                 thumbnail,
@@ -293,7 +284,7 @@ public class AdminProductWriteUseCaseIT {
         MockMultipartFile firstThumbnail = createMockMultipartFile("firstThumbnail", "firstThumb");
         List<MultipartFile> thumbnail = new ArrayList<>(createMockMultipartFileList("thumbnail", 3));
         List<MultipartFile> infoImage = new ArrayList<>(createMockMultipartFileList("info", 3));
-        AdminProductImageDTO imageDTO = new AdminProductImageDTO(
+        AdminProductImagePatchDTO imageDTO = new AdminProductImagePatchDTO(
                 firstThumbnail,
                 null,
                 thumbnail,
@@ -341,7 +332,7 @@ public class AdminProductWriteUseCaseIT {
 
         List<MultipartFile> thumbnail = new ArrayList<>(createMockMultipartFileList("thumbnail", 3));
         List<MultipartFile> infoImage = new ArrayList<>(createMockMultipartFileList("info", 3));
-        AdminProductImageDTO imageDTO = new AdminProductImageDTO(
+        AdminProductImagePatchDTO imageDTO = new AdminProductImagePatchDTO(
                 null,
                 "deleteFirstThumbnailName",
                 thumbnail,
@@ -390,7 +381,7 @@ public class AdminProductWriteUseCaseIT {
         MockMultipartFile firstThumbnail = createMockMultipartFile("firstThumbnail", "firstThumb");
         List<MultipartFile> thumbnail = new ArrayList<>(createMockMultipartFileList("thumbnail", 3));
         List<MultipartFile> infoImage = new ArrayList<>(createMockMultipartFileList("info", 3));
-        AdminProductImageDTO imageDTO = new AdminProductImageDTO(
+        AdminProductImagePatchDTO imageDTO = new AdminProductImagePatchDTO(
                 firstThumbnail,
                 "deleteFirstThumbnailName",
                 thumbnail,
@@ -434,7 +425,7 @@ public class AdminProductWriteUseCaseIT {
         MockMultipartFile firstThumbnail = createMockMultipartFile("firstThumbnail", "firstThumb");
         List<MultipartFile> thumbnail = new ArrayList<>(createMockMultipartFileList("thumbnail", 3));
         List<MultipartFile> infoImage = new ArrayList<>(createMockMultipartFileList("info", 3));
-        AdminProductImageDTO imageDTO = new AdminProductImageDTO(
+        AdminProductImagePatchDTO imageDTO = new AdminProductImagePatchDTO(
                 firstThumbnail,
                 "deleteFirstThumbnailName",
                 thumbnail,

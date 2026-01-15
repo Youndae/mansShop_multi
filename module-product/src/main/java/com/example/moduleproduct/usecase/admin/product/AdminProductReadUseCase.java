@@ -1,9 +1,11 @@
 package com.example.moduleproduct.usecase.admin.product;
 
+import com.example.modulecommon.customException.CustomNotFoundException;
 import com.example.modulecommon.model.dto.response.PagingListDTO;
 import com.example.modulecommon.model.dto.response.PagingMappingDTO;
 import com.example.modulecommon.model.entity.Classification;
 import com.example.modulecommon.model.entity.Product;
+import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.moduleproduct.model.dto.admin.product.business.AdminOptionStockDTO;
 import com.example.moduleproduct.model.dto.admin.product.business.AdminProductStockDataDTO;
 import com.example.moduleproduct.model.dto.admin.product.out.*;
@@ -92,6 +94,13 @@ public class AdminProductReadUseCase {
     }
 
     public List<AdminDiscountProductDTO> getSelectDiscountProductList(String classificationId) {
-        return productDataService.getProductListByClassificationId(classificationId);
+        List<AdminDiscountProductDTO> list = productDataService.getProductListByClassificationId(classificationId);
+
+        if(list.isEmpty()){
+            log.warn("AdminProductReadUseCase.getSelectDiscountProductList :: List result is empty. Request ClassificationId = {}", classificationId);
+            throw new CustomNotFoundException(ErrorCode.BAD_REQUEST, "AdminProductReadUseCase.getSelectDiscountProductList :: NotFound");
+        }
+
+        return list;
     }
 }

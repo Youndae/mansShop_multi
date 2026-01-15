@@ -4,10 +4,7 @@ import com.example.modulecommon.fixture.ProductFixture;
 import com.example.modulecommon.model.entity.Classification;
 import com.example.modulecommon.model.entity.Product;
 import com.example.modulecommon.model.enumuration.Result;
-import com.example.moduleproduct.model.dto.admin.product.in.AdminDiscountPatchDTO;
-import com.example.moduleproduct.model.dto.admin.product.in.AdminProductImageDTO;
-import com.example.moduleproduct.model.dto.admin.product.in.AdminProductPatchDTO;
-import com.example.moduleproduct.model.dto.admin.product.in.PatchOptionDTO;
+import com.example.moduleproduct.model.dto.admin.product.in.*;
 import com.example.moduleproduct.service.product.ProductDataService;
 import com.example.moduleproduct.service.product.ProductDomainService;
 import com.example.moduleproduct.usecase.admin.product.AdminProductWriteUseCase;
@@ -62,7 +59,7 @@ public class AdminProductWriteUseCaseUnitTest {
                 .stream()
                 .map(v -> new PatchOptionDTO(0L, v.getSize(), v.getColor(), v.getStock(), v.isOpen()))
                 .toList();
-        AdminProductPatchDTO postDTO = new AdminProductPatchDTO(
+        AdminProductPostDTO postDTO = new AdminProductPostDTO(
                 product.getProductName(),
                 product.getClassification().getId(),
                 product.getProductPrice(),
@@ -72,16 +69,13 @@ public class AdminProductWriteUseCaseUnitTest {
         );
         AdminProductImageDTO imageDTO = new AdminProductImageDTO(
                 firstThumb,
-                null,
                 thumbnails,
-                null,
-                infoImages,
-                null
+                infoImages
         );
         List<String> saveImages = new ArrayList<>(List.of("thumbnailName", "infoImageName"));
 
         when(productDomainService.setProductFirstThumbnail(any(Product.class), any(MockMultipartFile.class))).thenReturn("firstThumbnailName");
-        when(productDomainService.saveProductImage(any(Product.class), any(AdminProductImageDTO.class))).thenReturn(saveImages);
+        when(productDomainService.saveProductImage(any(Product.class), anyList(), anyList())).thenReturn(saveImages);
         when(productDataService.saveProductAndReturnId(any(Product.class))).thenReturn(product.getId());
         doNothing().when(productDataService).saveProductOptions(anyList());
         doNothing().when(productDataService).saveProductThumbnails(anyList());
@@ -113,7 +107,7 @@ public class AdminProductWriteUseCaseUnitTest {
                 .stream()
                 .map(v -> new PatchOptionDTO(0L, v.getSize(), v.getColor(), v.getStock(), v.isOpen()))
                 .toList();
-        AdminProductPatchDTO postDTO = new AdminProductPatchDTO(
+        AdminProductPostDTO postDTO = new AdminProductPostDTO(
                 product.getProductName(),
                 product.getClassification().getId(),
                 product.getProductPrice(),
@@ -123,11 +117,8 @@ public class AdminProductWriteUseCaseUnitTest {
         );
         AdminProductImageDTO imageDTO = new AdminProductImageDTO(
                 null,
-                null,
                 thumbnails,
-                null,
-                infoImages,
-                null
+                infoImages
         );
 
         when(productDomainService.setProductFirstThumbnail(any(Product.class), any(MockMultipartFile.class))).thenReturn(null);
@@ -135,7 +126,7 @@ public class AdminProductWriteUseCaseUnitTest {
 
         assertThrows(IllegalArgumentException.class, () -> adminProductWriteUseCase.postProduct(postDTO, imageDTO));
 
-        verify(productDomainService, never()).saveProductImage(any(Product.class), any(AdminProductImageDTO.class));
+        verify(productDomainService, never()).saveProductImage(any(Product.class), anyList(), anyList());
         verify(productDataService, never()).saveProductAndReturnId(any(Product.class));
         verify(productDataService, never()).saveProductOptions(anyList());
         verify(productDataService, never()).saveProductThumbnails(anyList());
@@ -161,7 +152,7 @@ public class AdminProductWriteUseCaseUnitTest {
                 .stream()
                 .map(v -> new PatchOptionDTO(0L, v.getSize(), v.getColor(), v.getStock(), v.isOpen()))
                 .toList();
-        AdminProductPatchDTO postDTO = new AdminProductPatchDTO(
+        AdminProductPostDTO postDTO = new AdminProductPostDTO(
                 product.getProductName(),
                 product.getClassification().getId(),
                 product.getProductPrice(),
@@ -171,16 +162,13 @@ public class AdminProductWriteUseCaseUnitTest {
         );
         AdminProductImageDTO imageDTO = new AdminProductImageDTO(
                 firstThumb,
-                null,
                 thumbnails,
-                null,
-                infoImages,
-                null
+                infoImages
         );
         List<String> saveImages = new ArrayList<>(List.of("thumbnailName", "infoImageName"));
 
         when(productDomainService.setProductFirstThumbnail(any(Product.class), any(MockMultipartFile.class))).thenReturn("firstThumbnailName");
-        when(productDomainService.saveProductImage(any(Product.class), any(AdminProductImageDTO.class))).thenReturn(saveImages);
+        when(productDomainService.saveProductImage(any(Product.class), anyList(), anyList())).thenReturn(saveImages);
         when(productDataService.saveProductAndReturnId(any(Product.class))).thenThrow(new RuntimeException());
         doNothing().when(productDomainService).deleteImages(anyList());
 
@@ -208,7 +196,7 @@ public class AdminProductWriteUseCaseUnitTest {
                 product.getProductDiscount(),
                 optionDTOList
         );
-        AdminProductImageDTO imageDTO = new AdminProductImageDTO(
+        AdminProductImagePatchDTO imageDTO = new AdminProductImagePatchDTO(
                 null,
                 null,
                 null,
@@ -220,7 +208,7 @@ public class AdminProductWriteUseCaseUnitTest {
 
         when(productDataService.getProductByIdOrElseIllegal(any())).thenReturn(product);
         doNothing().when(productDomainService).setPatchProductOptionData(any(Product.class), any(AdminProductPatchDTO.class));
-        when(productDomainService.saveProductImage(any(Product.class), any(AdminProductImageDTO.class))).thenReturn(Collections.emptyList());
+        when(productDomainService.saveProductImage(any(Product.class), isNull(), isNull())).thenReturn(Collections.emptyList());
         when(productDomainService.setProductFirstThumbnail(any(Product.class), any())).thenReturn(null);
         doNothing().when(productDataService).saveProductOptions(anyList());
         doNothing().when(productDataService).saveProductThumbnails(anyList());
@@ -266,7 +254,7 @@ public class AdminProductWriteUseCaseUnitTest {
                 product.getProductDiscount(),
                 optionDTOList
         );
-        AdminProductImageDTO imageDTO = new AdminProductImageDTO(
+        AdminProductImagePatchDTO imageDTO = new AdminProductImagePatchDTO(
                 firstThumb,
                 "deleteThumbnail",
                 thumbnails,
@@ -280,7 +268,7 @@ public class AdminProductWriteUseCaseUnitTest {
 
         when(productDataService.getProductByIdOrElseIllegal(any())).thenReturn(product);
         doNothing().when(productDomainService).setPatchProductOptionData(any(Product.class), any(AdminProductPatchDTO.class));
-        when(productDomainService.saveProductImage(any(Product.class), any(AdminProductImageDTO.class))).thenReturn(saveImages);
+        when(productDomainService.saveProductImage(any(Product.class), anyList(), anyList())).thenReturn(saveImages);
         when(productDomainService.setProductFirstThumbnail(any(Product.class), any())).thenReturn("newFirstThumb");
         doNothing().when(productDataService).saveProductOptions(anyList());
         doNothing().when(productDataService).saveProductThumbnails(anyList());
@@ -316,7 +304,7 @@ public class AdminProductWriteUseCaseUnitTest {
                 product.getProductDiscount(),
                 optionDTOList
         );
-        AdminProductImageDTO imageDTO = new AdminProductImageDTO(
+        AdminProductImagePatchDTO imageDTO = new AdminProductImagePatchDTO(
                 null,
                 null,
                 null,
@@ -329,7 +317,7 @@ public class AdminProductWriteUseCaseUnitTest {
         when(productDataService.getProductByIdOrElseIllegal(any())).thenReturn(product);
         when(productDataService.getClassificationByIdOrElseIllegal(any())).thenReturn(newClassification);
         doNothing().when(productDomainService).setPatchProductOptionData(any(Product.class), any(AdminProductPatchDTO.class));
-        when(productDomainService.saveProductImage(any(Product.class), any(AdminProductImageDTO.class))).thenReturn(Collections.emptyList());
+        when(productDomainService.saveProductImage(any(Product.class), isNull(), isNull())).thenReturn(Collections.emptyList());
         when(productDomainService.setProductFirstThumbnail(any(Product.class), any())).thenReturn(null);
         doNothing().when(productDataService).saveProductOptions(anyList());
         doNothing().when(productDataService).saveProductThumbnails(anyList());
@@ -363,7 +351,7 @@ public class AdminProductWriteUseCaseUnitTest {
                 product.getProductDiscount(),
                 optionDTOList
         );
-        AdminProductImageDTO imageDTO = new AdminProductImageDTO(
+        AdminProductImagePatchDTO imageDTO = new AdminProductImagePatchDTO(
                 null,
                 null,
                 null,
@@ -381,7 +369,7 @@ public class AdminProductWriteUseCaseUnitTest {
         );
 
         verify(productDomainService, never()).setPatchProductOptionData(any(Product.class), any(AdminProductPatchDTO.class));
-        verify(productDomainService, never()).saveProductImage(any(Product.class), any(AdminProductImageDTO.class));
+        verify(productDomainService, never()).saveProductImage(any(Product.class), anyList(), anyList());
         verify(productDomainService, never()).setProductFirstThumbnail(any(Product.class), any());
         verify(productDataService, never()).saveProductOptions(anyList());
         verify(productDataService, never()).saveProductThumbnails(anyList());
@@ -410,7 +398,7 @@ public class AdminProductWriteUseCaseUnitTest {
                 product.getProductDiscount(),
                 optionDTOList
         );
-        AdminProductImageDTO imageDTO = new AdminProductImageDTO(
+        AdminProductImagePatchDTO imageDTO = new AdminProductImagePatchDTO(
                 null,
                 null,
                 null,
@@ -429,7 +417,7 @@ public class AdminProductWriteUseCaseUnitTest {
         );
 
         verify(productDomainService, never()).setPatchProductOptionData(any(Product.class), any(AdminProductPatchDTO.class));
-        verify(productDomainService, never()).saveProductImage(any(Product.class), any(AdminProductImageDTO.class));
+        verify(productDomainService, never()).saveProductImage(any(Product.class), anyList(), anyList());
         verify(productDomainService, never()).setProductFirstThumbnail(any(Product.class), any());
         verify(productDataService, never()).saveProductOptions(anyList());
         verify(productDataService, never()).saveProductThumbnails(anyList());
@@ -458,7 +446,7 @@ public class AdminProductWriteUseCaseUnitTest {
                 product.getProductDiscount(),
                 optionDTOList
         );
-        AdminProductImageDTO imageDTO = new AdminProductImageDTO(
+        AdminProductImagePatchDTO imageDTO = new AdminProductImagePatchDTO(
                 firstThumb,
                 null,
                 null,
@@ -470,7 +458,7 @@ public class AdminProductWriteUseCaseUnitTest {
 
         when(productDataService.getProductByIdOrElseIllegal(any())).thenReturn(product);
         doNothing().when(productDomainService).setPatchProductOptionData(any(Product.class), any(AdminProductPatchDTO.class));
-        when(productDomainService.saveProductImage(any(Product.class), any(AdminProductImageDTO.class))).thenReturn(Collections.emptyList());
+        when(productDomainService.saveProductImage(any(Product.class), anyList(), anyList())).thenReturn(Collections.emptyList());
         doNothing().when(productDomainService).deleteImages(anyList());
 
         assertThrows(
@@ -505,7 +493,7 @@ public class AdminProductWriteUseCaseUnitTest {
                 product.getProductDiscount(),
                 optionDTOList
         );
-        AdminProductImageDTO imageDTO = new AdminProductImageDTO(
+        AdminProductImagePatchDTO imageDTO = new AdminProductImagePatchDTO(
                 null,
                 "originFirstThumb",
                 null,
@@ -517,7 +505,7 @@ public class AdminProductWriteUseCaseUnitTest {
 
         when(productDataService.getProductByIdOrElseIllegal(any())).thenReturn(product);
         doNothing().when(productDomainService).setPatchProductOptionData(any(Product.class), any(AdminProductPatchDTO.class));
-        when(productDomainService.saveProductImage(any(Product.class), any(AdminProductImageDTO.class))).thenReturn(Collections.emptyList());
+        when(productDomainService.saveProductImage(any(Product.class), anyList(), anyList())).thenReturn(Collections.emptyList());
         doNothing().when(productDomainService).deleteImages(anyList());
 
         assertThrows(

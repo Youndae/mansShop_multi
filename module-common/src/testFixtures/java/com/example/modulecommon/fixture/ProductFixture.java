@@ -2,8 +2,10 @@ package com.example.modulecommon.fixture;
 
 import com.example.modulecommon.model.entity.*;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class ProductFixture {
 
@@ -21,8 +23,17 @@ public class ProductFixture {
     }
 
     private static Product createProduct(int i, Classification classification) {
+        StringBuffer sb = new StringBuffer();
         return Product.builder()
-                .id("testProduct" + i)
+                .id(
+                        sb.append(classification)
+                                .append(
+                                        new SimpleDateFormat("yyyyMMddHHmmssSSS").format(System.currentTimeMillis())
+                                )
+                                .append(String.format("%06d", new Random().nextInt(100000)))
+                                .append(i)
+                                .toString()
+                )
                 .classification(classification)
                 .productName("testProduct" + i + "Name")
                 .productPrice(i * 1000)
