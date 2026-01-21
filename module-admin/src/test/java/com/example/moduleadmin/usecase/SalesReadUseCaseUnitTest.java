@@ -1,6 +1,7 @@
 package com.example.moduleadmin.usecase;
 
 import com.example.moduleadmin.model.dto.sales.business.AdminProductSalesDTO;
+import com.example.moduleadmin.model.dto.sales.in.SalesYearMonthClassificationDTO;
 import com.example.moduleadmin.model.dto.sales.out.AdminClassificationSalesResponseDTO;
 import com.example.moduleadmin.model.dto.sales.out.AdminPeriodClassificationDTO;
 import com.example.moduleadmin.model.dto.sales.out.AdminPeriodMonthDetailResponseDTO;
@@ -18,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -40,12 +42,11 @@ public class SalesReadUseCaseUnitTest {
     @Test
     @DisplayName(value = "월 매출 상세 조회. 월 매출이 없는 경우")
     void getPeriodSalesDetailByYearMonth() {
-
-        when(periodSalesDomainService.getStartDateByTermStr(any())).thenReturn(LocalDate.of(2025, 1, 1));
+        YearMonth term = YearMonth.of(2025, 1);
         when(periodSalesDataService.getPeriodStatistics(any(LocalDate.class), any(LocalDate.class))).thenReturn(null);
 
         AdminPeriodMonthDetailResponseDTO result = assertDoesNotThrow(
-                () -> salesReadUseCase.getPeriodSalesDetailByYearMonth("2025-01")
+                () -> salesReadUseCase.getPeriodSalesDetailByYearMonth(term)
         );
 
         verify(productSalesDataService, never()).getPeriodBest5Product(any(LocalDate.class), any(LocalDate.class));
@@ -69,12 +70,14 @@ public class SalesReadUseCaseUnitTest {
     @Test
     @DisplayName(value = "선택한 상품 분류의 월 매출 조회. 월 매출이 없는 경우")
     void getSalesByClassification() {
-        when(periodSalesDomainService.getStartDateByTermStr(any())).thenReturn(LocalDate.of(2025, 1, 1));
+        YearMonth term = YearMonth.of(2025, 1);
+        String classificationId = "OUTER";
+        SalesYearMonthClassificationDTO fixture = new SalesYearMonthClassificationDTO(term, classificationId);
         when(productSalesDataService.getPeriodClassificationSalesByClassificationId(any(LocalDate.class), any(LocalDate.class), any()))
                 .thenReturn(null);
 
         AdminClassificationSalesResponseDTO result = assertDoesNotThrow(
-                () -> salesReadUseCase.getSalesByClassification("2025-01", "OUTER")
+                () -> salesReadUseCase.getSalesByClassification(fixture)
         );
 
         verify(productSalesDataService, never())
@@ -90,11 +93,11 @@ public class SalesReadUseCaseUnitTest {
     @Test
     @DisplayName(value = "선택 일자의 매출 조회. 매출이 없는 경우")
     void getSalesByDay() {
-        when(periodSalesDomainService.getStartDateByTermStr(any())).thenReturn(LocalDate.of(2025, 1, 1));
+        LocalDate term = LocalDate.of(2025, 1, 1);
         when(periodSalesDataService.getDailySalesList(any(LocalDate.class))).thenReturn(null);
 
         AdminPeriodSalesResponseDTO<AdminPeriodClassificationDTO> result = assertDoesNotThrow(
-                () -> salesReadUseCase.getSalesByDay("2025-01-01")
+                () -> salesReadUseCase.getSalesByDay(term)
         );
 
         verify(productSalesDataService, never())

@@ -8,6 +8,8 @@ import com.example.moduleadmin.repository.PeriodSalesSummaryRepository;
 import com.example.moduleadmin.repository.ProductSalesSummaryRepository;
 import com.example.moduleapi.ModuleApiApplication;
 import com.example.moduleapi.config.exception.ExceptionEntity;
+import com.example.moduleapi.config.exception.ValidationError;
+import com.example.moduleapi.config.exception.ValidationExceptionEntity;
 import com.example.moduleapi.fixture.TokenFixture;
 import com.example.moduleapi.model.response.PagingElementsResponseDTO;
 import com.example.moduleapi.model.response.PagingResponseDTO;
@@ -135,6 +137,8 @@ public class AdminSalesControllerIT {
     private static final String TERM = "2024-01-01";
 
     private static final String URL_PREFIX = "/api/admin/";
+
+    private static final ErrorCode BAD_REQUEST_ERROR_CODE = ErrorCode.BAD_REQUEST;
 
     @BeforeEach
     void init() {
@@ -327,10 +331,11 @@ public class AdminSalesControllerIT {
             }
         }
 
-        MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/period/detail/" + TERM_MONTH)
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/period/detail")
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
                         .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
-                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("term", TERM_MONTH))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -380,10 +385,11 @@ public class AdminSalesControllerIT {
         LocalDate term = LocalDate.of(year, month, 1);
         int lastDay = YearMonth.from(term).lengthOfMonth();
 
-        MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/period/detail/" + emptyTerm)
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/period/detail")
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
                         .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
-                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("term", emptyTerm))
                 .andExpect(status().isOk())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
@@ -416,6 +422,36 @@ public class AdminSalesControllerIT {
             assertEquals(0, daily.salesQuantity());
             assertEquals(0, daily.orderQuantity());
         }
+    }
+
+    @Test
+    @DisplayName(value = "월 매출 조회. YYYY-MM-DD 구조로 잘못 보내는 경우")
+    void getPeriodSalesDetailValidationWrongTermFormat() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/period/detail")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("term", TERM))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("term", responseObj.field());
+        assertEquals("typeMismatch", responseObj.constraint());
     }
 
     @Test
@@ -505,6 +541,159 @@ public class AdminSalesControllerIT {
             assertEquals(0, resultDTO.productSales());
             assertEquals(0, resultDTO.productSalesQuantity());
         }
+    }
+
+    @Test
+    @DisplayName(value = "선택한 상품 분류의 월 매출 조회. YYYY-MM-DD 구조로 term을 잘못 보낸 경우")
+    void getSalesByClassificationValidationWrongTermFormat() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/period/detail/classification")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("term", TERM)
+                        .param("classification", "abc"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("term", responseObj.field());
+        assertEquals("typeMismatch", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "선택한 상품 분류의 월 매출 조회. 상품 분류가 Null인 경우")
+    void getSalesByClassificationValidationClassificationIsNull() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/period/detail/classification")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("term", TERM_MONTH))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("classification", responseObj.field());
+        assertEquals("NotBlank", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "선택한 상품 분류의 월 매출 조회. 상품 분류가 Blank인 경우")
+    void getSalesByClassificationValidationClassificationIsBlank() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/period/detail/classification")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("term", TERM_MONTH)
+                        .param("classification", ""))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(2, response.errors().size());
+
+        List<String> validationConstraintList = List.of("NotBlank", "Size");
+
+        response.errors().forEach(v -> {
+            assertEquals("classification", v.field());
+            assertTrue(validationConstraintList.contains(v.constraint()));
+        });
+    }
+
+    @Test
+    @DisplayName(value = "선택한 상품 분류의 월 매출 조회. 상품 분류가 한글자인 경우")
+    void getSalesByClassificationValidationClassificationLength1() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/period/detail/classification")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("term", TERM_MONTH)
+                        .param("classification", "a"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("classification", responseObj.field());
+        assertEquals("Size", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "선택한 상품 분류의 월 매출 조회. term 구조가 YYYY-MM-DD, 상품 분류가 Blank인 경우")
+    void getSalesByClassificationValidationWrongTermFomatAndClassificationIsBlank() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/period/detail/classification")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("term", TERM)
+                        .param("classification", ""))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        // term의 경우 DateTimeFormat이므로 MethodArgumentNotValidException이 발생할지언정
+        // 다른 필드 검증까지 수행하지 않음.
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("term", responseObj.field());
+        assertEquals("typeMismatch", responseObj.constraint());
     }
 
     @Test
@@ -603,6 +792,35 @@ public class AdminSalesControllerIT {
     }
 
     @Test
+    @DisplayName(value = "일 매출 조회. term 구조를 YYYY-MM으로 잘못보낸 경우")
+    void getSalesByDayValidationWrongTermFormat() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/period/detail/day")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("term", TERM_MONTH))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("term", responseObj.field());
+        assertEquals("typeMismatch", responseObj.constraint());
+    }
+
+    @Test
     @DisplayName(value = "선택 일자의 모든 주문 목록 조회")
     void getOrderListByDay() throws Exception {
         LocalDate orderTerm = LocalDate.now().minusDays(1);
@@ -665,6 +883,124 @@ public class AdminSalesControllerIT {
         assertEquals(0, response.totalElements());
         assertEquals(0, response.totalPages());
         assertTrue(response.empty());
+    }
+
+    @Test
+    @DisplayName(value = "선택 일자의 모든 주문 목록 조회. term을 YYYY-MM 구조로 잘못 보낸 경우")
+    void getOrderListByDayValidationWrongTermFormat() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/period/order-list")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("term", TERM_MONTH)
+                        .param("page", "1"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("term", responseObj.field());
+        assertEquals("typeMismatch", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "선택 일자의 모든 주문 목록 조회. 페이지값이 1보다 작은 경우")
+    void getOrderListByDayValidationPageZero() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/period/order-list")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("term", TERM)
+                        .param("page", "0"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("page", responseObj.field());
+        assertEquals("Min", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "선택 일자의 모든 주문 목록 조회. 페이지값이 null인 경우")
+    void getOrderListByDayValidationPageIsNull() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/period/order-list")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("term", TERM))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("page", responseObj.field());
+        assertEquals("NotNull", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "선택 일자의 모든 주문 목록 조회. term을 YYYY-MM, 페이지값이 null인 경우")
+    void getOrderListByDayValidationWrongTermFormatAndPageIsNull() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/period/order-list")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("term", TERM_MONTH))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("term", responseObj.field());
+        assertEquals("typeMismatch", responseObj.constraint());
     }
 
     @Test
@@ -814,6 +1150,100 @@ public class AdminSalesControllerIT {
     }
 
     @Test
+    @DisplayName(value = "상품별 매출 조회. 페이지값이 1보다 작은 경우")
+    void getProductSalesSummaryValidationPageZero() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/product")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("page", "0"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("page", responseObj.field());
+        assertEquals("Min", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "상품별 매출 조회. 검색어가 한글자인 경우")
+    void getProductSalesSummaryValidationKeywordLength1() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/product")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("keyword", "a"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("keyword", responseObj.field());
+        assertEquals("Size", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "상품별 매출 조회. 페이지값이 0, 검색어가 한글자인 경우")
+    void getProductSalesSummaryValidationPageZeroAndKeywordLength1() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "sales/product")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("page", "0")
+                        .param("keyword", "a"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(2, response.errors().size());
+
+        Map<String, String> validationMap = new HashMap<>();
+        validationMap.put("page", "Min");
+        validationMap.put("keyword", "Size");
+
+        response.errors().forEach(v -> {
+            String constraint = validationMap.getOrDefault(v.field(), null);
+
+            assertNotNull(constraint);
+            assertEquals(constraint, v.constraint());
+        });
+    }
+
+    @Test
     @DisplayName(value = "선택 상품의 매출 상세 내역 조회")
     void getProductSalesDetail() throws Exception {
         Product fixture = productList.get(0);
@@ -943,7 +1373,18 @@ public class AdminSalesControllerIT {
         }
 
         assertFalse(response.optionYearSales().isEmpty());
-        assertEquals(optionThisYearMap.size(), response.optionYearSales().size());
+
+        /*
+            TestFixture 생성 시 테스트 동작일에 해당하는 월 매출 데이터가 생성되지 않기 때문에
+            YYYY-01 에 테스트가 수행되는 경우 올해의 옵션별 매출 데이터 FixtureMap이 isEmpty()가 됨.
+            Fixture 생성 로직을 수정할까 했지만 1월 1일에 매출이 전혀 없는 상태로 테스트가 동작하는 경우에도 통과하는 테스트 작성이 되어야 할 것으로 판단.
+
+            해결책으로 상품별 옵션 개수는 동일하다는 조건이 있으므로 TotalMap의 size와 비교하는 것으로 문제를 해결.
+         */
+        if(optionThisYearMap.isEmpty())
+            assertEquals(optionTotalMap.size(), response.optionYearSales().size());
+        else
+            assertEquals(optionThisYearMap.size(), response.optionYearSales().size());
 
         for(int i = 0; i < response.optionYearSales().size(); i++) {
             AdminProductSalesOptionDTO resultList = response.optionYearSales().get(i);

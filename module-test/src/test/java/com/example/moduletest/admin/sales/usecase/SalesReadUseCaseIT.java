@@ -4,6 +4,7 @@ import com.example.moduleadmin.model.dto.page.AdminSalesPageDTO;
 import com.example.moduleadmin.model.dto.sales.business.AdminBestSalesProductDTO;
 import com.example.moduleadmin.model.dto.sales.business.AdminClassificationSalesProductListDTO;
 import com.example.moduleadmin.model.dto.sales.business.AdminProductSalesOptionDTO;
+import com.example.moduleadmin.model.dto.sales.in.SalesYearMonthClassificationDTO;
 import com.example.moduleadmin.model.dto.sales.out.*;
 import com.example.moduleadmin.repository.PeriodSalesSummaryRepository;
 import com.example.moduleadmin.repository.ProductSalesSummaryRepository;
@@ -192,7 +193,8 @@ public class SalesReadUseCaseIT {
         String[] termSplit = TERM_MONTH.split("-");
         int year = Integer.parseInt(termSplit[0]);
         int month = Integer.parseInt(termSplit[1]);
-        LocalDate term = LocalDate.of(year, month, 1);
+        YearMonth termFixture = YearMonth.of(year, month);
+        LocalDate term = termFixture.atDay(1);
         int lastDay = YearMonth.from(term).lengthOfMonth();
         Map<String, AdminBestSalesProductDTO> bestMap = new HashMap<>();
 
@@ -270,7 +272,7 @@ public class SalesReadUseCaseIT {
         }
 
         AdminPeriodMonthDetailResponseDTO result = assertDoesNotThrow(
-                () -> salesReadeUseCase.getPeriodSalesDetailByYearMonth(TERM_MONTH)
+                () -> salesReadeUseCase.getPeriodSalesDetailByYearMonth(termFixture)
         );
 
         assertNotNull(result);
@@ -311,11 +313,12 @@ public class SalesReadUseCaseIT {
         String[] termSplit = emptyTerm.split("-");
         int year = Integer.parseInt(termSplit[0]);
         int month = Integer.parseInt(termSplit[1]);
-        LocalDate term = LocalDate.of(year, month, 1);
+        YearMonth termFixture = YearMonth.of(year, month);
+        LocalDate term = termFixture.atDay( 1);
         int lastDay = YearMonth.from(term).lengthOfMonth();
 
         AdminPeriodMonthDetailResponseDTO result = assertDoesNotThrow(
-                () -> salesReadeUseCase.getPeriodSalesDetailByYearMonth(emptyTerm)
+                () -> salesReadeUseCase.getPeriodSalesDetailByYearMonth(termFixture)
         );
 
         assertNotNull(result);
@@ -350,7 +353,9 @@ public class SalesReadUseCaseIT {
         String[] termSplit = TERM_MONTH.split("-");
         int year = Integer.parseInt(termSplit[0]);
         int month = Integer.parseInt(termSplit[1]);
+        YearMonth term = YearMonth.of(year, month);
         String classification = classificationList.get(0).getId();
+        SalesYearMonthClassificationDTO fixtureDTO = new SalesYearMonthClassificationDTO(term, classification);
         long totalSales = 0L;
         long totalSalesQuantity = 0L;
         List<AdminClassificationSalesProductListDTO> productListDTO = new ArrayList<>();
@@ -374,7 +379,7 @@ public class SalesReadUseCaseIT {
         }
 
         AdminClassificationSalesResponseDTO result = assertDoesNotThrow(
-                () -> salesReadeUseCase.getSalesByClassification(TERM_MONTH, classification)
+                () -> salesReadeUseCase.getSalesByClassification(fixtureDTO)
         );
 
         assertNotNull(result);
@@ -389,14 +394,19 @@ public class SalesReadUseCaseIT {
     @DisplayName(value = "선택 상품 분류의 월 매출 내역 조회. 데이터가 없는 경우")
     void getSalesByClassificationEmpty() {
         productSalesSummaryRepository.deleteAll();
+        String[] termSplit = TERM_MONTH.split("-");
+        int year = Integer.parseInt(termSplit[0]);
+        int month = Integer.parseInt(termSplit[1]);
+        YearMonth term = YearMonth.of(year, month);
         String classification = classificationList.get(0).getId();
+        SalesYearMonthClassificationDTO fixtureDTO = new SalesYearMonthClassificationDTO(term, classification);
         int productSize = productOptionList.stream()
                 .filter(v -> v.getProduct().getClassification().getId().equals(classification))
                 .toList()
                 .size();
 
         AdminClassificationSalesResponseDTO result = assertDoesNotThrow(
-                () -> salesReadeUseCase.getSalesByClassification(TERM_MONTH, classification)
+                () -> salesReadeUseCase.getSalesByClassification(fixtureDTO)
         );
 
         assertNotNull(result);
@@ -421,6 +431,7 @@ public class SalesReadUseCaseIT {
         int year = termSplit[0];
         int month = termSplit[1];
         int day = termSplit[2];
+        LocalDate term = LocalDate.of(year, month, day);
         long totalSales = 0L;
         long totalSalesQuantity = 0L;
         long totalOrderQuantity = 0L;
@@ -457,7 +468,7 @@ public class SalesReadUseCaseIT {
         }
 
         AdminPeriodSalesResponseDTO<AdminPeriodClassificationDTO> result = assertDoesNotThrow(
-                () -> salesReadeUseCase.getSalesByDay(TERM)
+                () -> salesReadeUseCase.getSalesByDay(term)
         );
 
         assertNotNull(result);
@@ -478,8 +489,9 @@ public class SalesReadUseCaseIT {
     @Test
     @DisplayName(value = "일 매출 조회. 데이터가 없는 경우")
     void getSalesByDayEmpty() {
+        LocalDate term = LocalDate.EPOCH;
         AdminPeriodSalesResponseDTO<AdminPeriodClassificationDTO> result = assertDoesNotThrow(
-                () -> salesReadeUseCase.getSalesByDay("1900-01-01")
+                () -> salesReadeUseCase.getSalesByDay(term)
         );
 
         assertNotNull(result);
@@ -557,6 +569,7 @@ public class SalesReadUseCaseIT {
         Map<Integer, AdminPeriodSalesListDTO> monthSalesMap = new HashMap<>();
         Map<Long, AdminProductSalesOptionDTO> optionThisYearMap = new HashMap<>();
         Map<Long, AdminProductSalesOptionDTO> optionLastYearMap = new HashMap<>();
+
         for(ProductSalesSummary summary : productSalesSummaryList) {
             if(summary.getProduct().getId().equals(product.getId())) {
                 totalSales += summary.getSales();
@@ -662,7 +675,18 @@ public class SalesReadUseCaseIT {
         }
 
         assertFalse(result.optionYearSales().isEmpty());
-        assertEquals(optionThisYearMap.size(), result.optionYearSales().size());
+
+        /*
+            TestFixture 생성 시 테스트 동작일에 해당하는 월 매출 데이터가 생성되지 않기 때문에
+            YYYY-01 에 테스트가 수행되는 경우 올해의 옵션별 매출 데이터 FixtureMap이 isEmpty()가 됨.
+            Fixture 생성 로직을 수정할까 했지만 1월 1일에 매출이 전혀 없는 상태로 테스트가 동작하는 경우에도 통과하는 테스트 작성이 되어야 할 것으로 판단.
+
+            해결책으로 상품별 옵션 개수는 동일하다는 조건이 있으므로 TotalMap의 size와 비교하는 것으로 문제를 해결.
+         */
+        if(optionThisYearMap.isEmpty())
+            assertEquals(optionTotalMap.size(), result.optionYearSales().size());
+        else
+            assertEquals(optionThisYearMap.size(), result.optionYearSales().size());
 
         for(int i = 0; i < result.optionYearSales().size(); i++) {
             AdminProductSalesOptionDTO resultList = result.optionYearSales().get(i);

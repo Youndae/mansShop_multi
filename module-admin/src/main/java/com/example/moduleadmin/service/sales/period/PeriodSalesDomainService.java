@@ -47,17 +47,6 @@ public class PeriodSalesDomainService {
         );
     }
 
-    public LocalDate getStartDateByTermStr(String term) {
-        int[] termSplitArray = Arrays.stream(term.split("-")).mapToInt(Integer::parseInt).toArray();
-
-        if(termSplitArray.length == 2)
-            return LocalDate.of(termSplitArray[0], termSplitArray[1], 1);
-        else if(termSplitArray.length == 3)
-            return LocalDate.of(termSplitArray[0], termSplitArray[1], termSplitArray[2]);
-
-        throw new IllegalArgumentException("Wrong Term String");
-    }
-
     public List<AdminPeriodSalesListDTO> completeDailySalesList(LocalDate startDate, List<AdminPeriodSalesListDTO> dailySalesList) {
         int lastDay = YearMonth.from(startDate).lengthOfMonth();
 

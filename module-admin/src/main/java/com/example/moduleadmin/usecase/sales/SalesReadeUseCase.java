@@ -2,6 +2,7 @@ package com.example.moduleadmin.usecase.sales;
 
 import com.example.moduleadmin.model.dto.page.AdminSalesPageDTO;
 import com.example.moduleadmin.model.dto.sales.business.*;
+import com.example.moduleadmin.model.dto.sales.in.SalesYearMonthClassificationDTO;
 import com.example.moduleadmin.model.dto.sales.out.*;
 import com.example.moduleadmin.service.sales.period.PeriodSalesDataService;
 import com.example.moduleadmin.service.sales.period.PeriodSalesDomainService;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.Collections;
 import java.util.List;
 
@@ -35,8 +37,11 @@ public class SalesReadeUseCase {
         return periodSalesDomainService.createAdminPeriodSalesResponseDTO(selectList);
     }
 
-    public AdminPeriodMonthDetailResponseDTO getPeriodSalesDetailByYearMonth(String term) {
-        LocalDate startDate = periodSalesDomainService.getStartDateByTermStr(term);
+    public AdminPeriodMonthDetailResponseDTO getPeriodSalesDetailByYearMonth(YearMonth term) {
+//        LocalDate startDate = periodSalesDomainService.getStartDateByTermStr(term);
+//        LocalDate endDate = startDate.plusMonths(1);
+
+        LocalDate startDate = term.atDay(1);
         LocalDate endDate = startDate.plusMonths(1);
         AdminPeriodSalesStatisticsDTO monthStatistics = periodSalesDataService.getPeriodStatistics(startDate, endDate);
 
@@ -70,29 +75,28 @@ public class SalesReadeUseCase {
         );
     }
 
-    public AdminClassificationSalesResponseDTO getSalesByClassification(String term, String classificationId) {
-        LocalDate startDate = periodSalesDomainService.getStartDateByTermStr(term);
+    public AdminClassificationSalesResponseDTO getSalesByClassification(SalesYearMonthClassificationDTO dto) {
+        LocalDate startDate = dto.term().atDay(1);
         LocalDate endDate = startDate.plusMonths(1);
 
-        AdminClassificationSalesDTO classificationSalesDTO = productSalesDataService.getPeriodClassificationSalesByClassificationId(startDate, endDate, classificationId);
+        AdminClassificationSalesDTO classificationSalesDTO = productSalesDataService.getPeriodClassificationSalesByClassificationId(startDate, endDate, dto.classification());
 
         if(classificationSalesDTO == null)
             return new AdminClassificationSalesResponseDTO(
-                    classificationId,
+                    dto.classification(),
                     AdminClassificationSalesDTO.emptyDTO(),
                     Collections.emptyList()
             );
 
-        List<AdminClassificationSalesProductListDTO> productList = productSalesDataService.getPeriodClassificationProductSalesByClassificationId(startDate, endDate, classificationId);
+        List<AdminClassificationSalesProductListDTO> productList = productSalesDataService.getPeriodClassificationProductSalesByClassificationId(startDate, endDate, dto.classification());
 
-        return new AdminClassificationSalesResponseDTO(classificationId, classificationSalesDTO, productList);
+        return new AdminClassificationSalesResponseDTO(dto.classification(), classificationSalesDTO, productList);
     }
 
-    public AdminPeriodSalesResponseDTO<AdminPeriodClassificationDTO> getSalesByDay(String term) {
-        LocalDate startDate = periodSalesDomainService.getStartDateByTermStr(term);
-        LocalDate endDate = startDate.plusDays(1);
+    public AdminPeriodSalesResponseDTO<AdminPeriodClassificationDTO> getSalesByDay(LocalDate term) {
+        LocalDate endDate = term.plusDays(1);
 
-        AdminClassificationSalesDTO salesDTO = periodSalesDataService.getDailySalesList(startDate);
+        AdminClassificationSalesDTO salesDTO = periodSalesDataService.getDailySalesList(term);
 
         if(salesDTO == null)
             return new AdminPeriodSalesResponseDTO<>(
@@ -102,7 +106,7 @@ public class SalesReadeUseCase {
                     0
             );
 
-        List<AdminPeriodClassificationDTO> classificationList = productSalesDataService.getPeriodClassificationSalesList(startDate, endDate);
+        List<AdminPeriodClassificationDTO> classificationList = productSalesDataService.getPeriodClassificationSalesList(term, endDate);
 
         return new AdminPeriodSalesResponseDTO<>(
                 classificationList,
@@ -110,10 +114,6 @@ public class SalesReadeUseCase {
                 salesDTO.salesQuantity(),
                 salesDTO.orderQuantity()
         );
-    }
-
-    public LocalDate getTermDate(String term) {
-        return periodSalesDomainService.getStartDateByTermStr(term);
     }
 
     public Page<AdminProductSalesListDTO> getProductSalesList(AdminSalesPageDTO pageDTO) {
