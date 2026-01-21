@@ -371,7 +371,7 @@ public class AdminProductControllerIT {
     }
 
     @Test
-    @DisplayName(value = "전체 상품 목록 조회. keyword가 한글자인 경우")
+    @DisplayName(value = "전체 상품 목록 조회. 페이지 값이 0, keyword가 한글자인 경우")
     void getProductListValidationPageZeroAndKeywordLength1() throws Exception {
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "product")
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)

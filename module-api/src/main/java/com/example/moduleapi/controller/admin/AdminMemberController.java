@@ -13,7 +13,6 @@ import com.example.moduleuser.usecase.admin.AdminMemberReadUseCase;
 import com.example.moduleuser.usecase.admin.AdminMemberWriteUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;

@@ -68,7 +68,6 @@ public class AdminProductController {
     @GetMapping("/product")
     public ResponseEntity<PagingResponseDTO<AdminProductListDTO>> getProductList(@ParameterObject @Valid ListRequestDTO requestDTO){
         AdminProductPageDTO pageDTO = AdminProductPageDTO.fromRequestDTO(requestDTO);
-        System.out.println("pageDTO : " + pageDTO);
         PagingListDTO<AdminProductListDTO> responseDTO = adminProductReadUseCase.getProductList(pageDTO);
 
         return pagingResponseMapper.toPagingResponse(responseDTO);

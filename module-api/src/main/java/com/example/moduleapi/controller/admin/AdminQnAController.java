@@ -3,6 +3,7 @@ package com.example.moduleapi.controller.admin;
 import com.example.moduleapi.annotation.swagger.DefaultApiResponse;
 import com.example.moduleapi.annotation.swagger.SwaggerAuthentication;
 import com.example.moduleapi.mapper.PagingResponseMapper;
+import com.example.moduleapi.model.request.admin.qna.ClassificationRequestDTO;
 import com.example.moduleapi.model.response.PagingResponseDTO;
 import com.example.moduleapi.service.PrincipalService;
 import com.example.modulecache.model.cache.CacheRequest;
@@ -11,6 +12,7 @@ import com.example.modulecommon.model.dto.admin.qna.out.AdminQnAListResponseDTO;
 import com.example.modulecommon.model.dto.page.AdminQnAPageDTO;
 import com.example.modulecommon.model.dto.qna.in.QnAReplyInsertDTO;
 import com.example.modulecommon.model.dto.qna.in.QnAReplyPatchDTO;
+import com.example.modulecommon.model.dto.request.ListRequestDTO;
 import com.example.modulecommon.model.dto.response.PagingListDTO;
 import com.example.modulecommon.model.enumuration.AdminListType;
 import com.example.modulecommon.model.enumuration.RedisCaching;
@@ -29,8 +31,12 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -67,8 +73,7 @@ public class AdminQnAController {
 
     /**
      *
-     * @param keyword
-     * @param page
+     * @param requestDTO
      * @param listType
      *
      * 상품 문의 리스트
@@ -95,14 +100,14 @@ public class AdminQnAController {
             )
     })
     @GetMapping("/qna/product")
-    public ResponseEntity<PagingResponseDTO<AdminQnAListResponseDTO>> getProductQnA(@RequestParam(name = "keyword", required = false) String keyword,
-                                                                                    @RequestParam(name = "page", required = false, defaultValue = "1") int page,
-                                                                                    @RequestParam(name = "type") String listType) {
-
-        AdminQnAPageDTO pageDTO = new AdminQnAPageDTO(keyword, listType, page);
+    public ResponseEntity<PagingResponseDTO<AdminQnAListResponseDTO>> getProductQnA(
+            @ParameterObject @Valid ListRequestDTO requestDTO,
+            @RequestParam(name = "type") @NotBlank String listType) {
+        AdminListType.validate(listType);
+        AdminQnAPageDTO pageDTO = AdminQnAPageDTO.fromRequestDTO(requestDTO, listType);
         long totalElements = 0L;
 
-        if(keyword == null && listType.equals(AdminListType.ALL.getType()))
+        if(pageDTO.keyword() == null && AdminListType.isAll(listType))
             totalElements = fullCountScanCachingService.getFullScanCountCache(RedisCaching.ADMIN_PRODUCT_QNA_COUNT, new CacheRequest<>(pageDTO));
 
         PagingListDTO<AdminQnAListResponseDTO> responseDTO = adminProductQnAReadUseCase.getProductQnAList(pageDTO, totalElements);
@@ -126,7 +131,7 @@ public class AdminQnAController {
             in = ParameterIn.PATH
     )
     @GetMapping("/qna/product/{qnaId}")
-    public ResponseEntity<ProductQnADetailResponseDTO> getProductQnADetail(@PathVariable(name = "qnaId") long qnaId) {
+    public ResponseEntity<ProductQnADetailResponseDTO> getProductQnADetail(@PathVariable(name = "qnaId") @Min(value = 1) long qnaId) {
 
 
         ProductQnADetailResponseDTO responseDTO = productQnAReadUseCase.getProductQnADetailData(qnaId);
@@ -150,7 +155,7 @@ public class AdminQnAController {
             in = ParameterIn.PATH
     )
     @PatchMapping("/qna/product/{qnaId}")
-    public ResponseEntity<Void> patchProductQnAComplete(@PathVariable(name = "qnaId") long qnaId) {
+    public ResponseEntity<Void> patchProductQnAComplete(@PathVariable(name = "qnaId") @Min(value = 1) long qnaId) {
 
         adminProductQnAWriteUseCase.patchProductQnAComplete(qnaId);
 
@@ -168,7 +173,10 @@ public class AdminQnAController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PostMapping("/qna/product/reply")
-    public ResponseEntity<Void> postProductQnAReply(@RequestBody QnAReplyInsertDTO insertDTO, Principal principal) {
+    public ResponseEntity<Void> postProductQnAReply(
+            @RequestBody @Valid QnAReplyInsertDTO insertDTO,
+            Principal principal
+    ) {
 
         String userId = principalService.extractUserId(principal);
         adminProductQnAWriteUseCase.postProductQnAReply(insertDTO, userId);
@@ -187,7 +195,10 @@ public class AdminQnAController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PatchMapping("/qna/product/reply")
-    public ResponseEntity<Void> patchProductQnAReply(@RequestBody QnAReplyPatchDTO replyDTO, Principal principal) {
+    public ResponseEntity<Void> patchProductQnAReply(
+            @RequestBody @Valid QnAReplyPatchDTO replyDTO,
+            Principal principal
+    ) {
 
         String userId = principalService.extractUserId(principal);
         adminProductQnAWriteUseCase.patchProductQnAReply(replyDTO, userId);
@@ -197,8 +208,7 @@ public class AdminQnAController {
 
     /**
      *
-     * @param keyword
-     * @param page
+     * @param requestDTO
      * @param listType
      *
      * 관리자의 회원 문의 리스트 조회
@@ -225,14 +235,14 @@ public class AdminQnAController {
             )
     })
     @GetMapping("/qna/member")
-    public ResponseEntity<PagingResponseDTO<AdminQnAListResponseDTO>> getMemberQnA(@RequestParam(name = "keyword", required = false) String keyword,
-                                                                                   @RequestParam(name = "page", required = false, defaultValue = "1") int page,
-                                                                                   @RequestParam(name = "type") String listType) {
-
-        AdminQnAPageDTO pageDTO = new AdminQnAPageDTO(keyword, listType, page);
+    public ResponseEntity<PagingResponseDTO<AdminQnAListResponseDTO>> getMemberQnA(
+            @ParameterObject @Valid ListRequestDTO requestDTO,
+            @RequestParam(name = "type") @NotBlank String listType) {
+        AdminListType.validate(listType);
+        AdminQnAPageDTO pageDTO = AdminQnAPageDTO.fromRequestDTO(requestDTO, listType);
         long totalElements = 0L;
 
-        if(keyword == null && listType.equals(AdminListType.ALL.getType()))
+        if(requestDTO.keyword() == null && AdminListType.isAll(listType))
             totalElements = fullCountScanCachingService.getFullScanCountCache(RedisCaching.ADMIN_MEMBER_QNA_COUNT, new CacheRequest<>(pageDTO));
 
         PagingListDTO<AdminQnAListResponseDTO> responseDTO = adminMemberQnAReadUseCase.getMemberQnAList(pageDTO, totalElements);
@@ -256,7 +266,7 @@ public class AdminQnAController {
             in = ParameterIn.PATH
     )
     @GetMapping("/qna/member/{qnaId}")
-    public ResponseEntity<MemberQnADetailResponseDTO> getMemberQnADetail(@PathVariable(name = "qnaId") long qnaId) {
+    public ResponseEntity<MemberQnADetailResponseDTO> getMemberQnADetail(@PathVariable(name = "qnaId") @Min(value = 1) long qnaId) {
 
         MemberQnADetailResponseDTO responseDTO = memberQnAReadUseCase.getMemberQnADetailData(qnaId);
 
@@ -279,7 +289,7 @@ public class AdminQnAController {
             in = ParameterIn.PATH
     )
     @PatchMapping("/qna/member/{qnaId}")
-    public ResponseEntity<Void> patchMemberQnAComplete(@PathVariable(name = "qnaId") long qnaId) {
+    public ResponseEntity<Void> patchMemberQnAComplete(@PathVariable(name = "qnaId") @Min(value = 1) long qnaId) {
         adminMemberQnAWriteUseCase.patchMemberQnAComplete(qnaId);
 
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
@@ -296,7 +306,10 @@ public class AdminQnAController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PostMapping("/qna/member/reply")
-    public ResponseEntity<Void> postMemberQnAReply(@RequestBody QnAReplyInsertDTO insertDTO, Principal principal) {
+    public ResponseEntity<Void> postMemberQnAReply(
+            @RequestBody @Valid QnAReplyInsertDTO insertDTO,
+            Principal principal
+    ) {
 
         String userId = principalService.extractUserId(principal);
         adminMemberQnAWriteUseCase.postMemberQnAReply(insertDTO, userId);
@@ -315,7 +328,10 @@ public class AdminQnAController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PatchMapping("/qna/member/reply")
-    public ResponseEntity<Void> patchMemberQnAReply(@RequestBody QnAReplyPatchDTO replyDTO, Principal principal) {
+    public ResponseEntity<Void> patchMemberQnAReply(
+            @RequestBody @Valid QnAReplyPatchDTO replyDTO,
+            Principal principal
+    ) {
 
         String userId = principalService.extractUserId(principal);
         memberQnAWriteUseCase.patchMemberQnAReply(replyDTO, userId);
@@ -342,7 +358,7 @@ public class AdminQnAController {
 
     /**
      *
-     * @param classification
+     * @param requestDTO
      *
      * 관리자의 회원 문의 분류 추가
      */
@@ -350,8 +366,8 @@ public class AdminQnAController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PostMapping("/qna/classification")
-    public ResponseEntity<Void> postQnAClassification(@RequestBody String classification) {
-        adminMemberQnAWriteUseCase.postQnAClassification(classification);
+    public ResponseEntity<Void> postQnAClassification(@RequestBody @Valid ClassificationRequestDTO requestDTO) {
+        adminMemberQnAWriteUseCase.postQnAClassification(requestDTO.classification());
 
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
@@ -372,7 +388,7 @@ public class AdminQnAController {
             in = ParameterIn.PATH
     )
     @DeleteMapping("/qna/classification/{qnaClassificationId}")
-    public ResponseEntity<Void> deleteQnAClassification(@PathVariable(name = "qnaClassificationId") Long classificationId) {
+    public ResponseEntity<Void> deleteQnAClassification(@PathVariable(name = "qnaClassificationId") @Min(value = 1) Long classificationId) {
 
         adminMemberQnAWriteUseCase.deleteQnAClassification(classificationId);
 
