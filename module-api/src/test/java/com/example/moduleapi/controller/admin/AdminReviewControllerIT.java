@@ -2,8 +2,11 @@ package com.example.moduleapi.controller.admin;
 
 import com.example.moduleapi.ModuleApiApplication;
 import com.example.moduleapi.config.exception.ExceptionEntity;
+import com.example.moduleapi.config.exception.ValidationError;
+import com.example.moduleapi.config.exception.ValidationExceptionEntity;
 import com.example.moduleapi.fixture.TokenFixture;
 import com.example.moduleapi.model.response.PagingResponseDTO;
+import com.example.modulecommon.customException.CustomNotFoundException;
 import com.example.modulecommon.fixture.ClassificationFixture;
 import com.example.modulecommon.fixture.MemberAndAuthFixture;
 import com.example.modulecommon.fixture.ProductFixture;
@@ -46,8 +49,10 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -136,6 +141,8 @@ public class AdminReviewControllerIT {
 
     private static final String URL_PREFIX = "/api/admin/";
 
+    private static final ErrorCode BAD_REQUEST_ERROR_CODE = ErrorCode.BAD_REQUEST;
+
     @BeforeEach
     void init() {
         MemberAndAuthFixtureDTO memberAndAuthFixtureDTO = MemberAndAuthFixture.createDefaultMember(10);
@@ -196,6 +203,14 @@ public class AdminReviewControllerIT {
         redisTemplate.delete(refreshKey);
 
         cacheRedisTemplate.delete(REVIEW_CACHING_KEY);
+    }
+
+    private long getWrongReviewId() {
+        long fixtureId = allReviewList.get(0).getId() - allReviewList.size() - 100;
+        if(fixtureId < 1)
+            fixtureId = allReviewList.size() + 100;
+
+        return fixtureId;
     }
 
     @Test
@@ -321,6 +336,221 @@ public class AdminReviewControllerIT {
         assertFalse(response.empty());
         assertEquals(contentSize, response.content().size());
         assertEquals(totalPages, response.totalPages());
+    }
+
+    @Test
+    @DisplayName(value = "미처리 리뷰 목록 조회. 페이지값이 0인 경우")
+    void getNewReviewListValidationPageZero() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "review")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("page", "0"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("page", responseObj.field());
+        assertEquals("Min", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "미처리 리뷰 목록 조회. 검색어가 한글자인 경우")
+    void getNewReviewListValidationKeywordLength1() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "review")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("keyword", "a")
+                        .param("searchType", "user"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("keyword", responseObj.field());
+        assertEquals("Size", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "미처리 리뷰 목록 조회. 페이지값이 0, 검색어가 한글자인 경우")
+    void getNewReviewListValidationPageZeroAndKeywordLength1() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "review")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("page", "0")
+                        .param("keyword", "a")
+                        .param("searchType", "user"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(2, response.errors().size());
+
+        Map<String, String> validationMap = new HashMap<>();
+        validationMap.put("page", "Min");
+        validationMap.put("keyword", "Size");
+
+        response.errors().forEach(v -> {
+            String constraint = validationMap.getOrDefault(v.field(), null);
+
+            assertNotNull(constraint);
+            assertEquals(constraint, v.constraint());
+        });
+    }
+
+    @Test
+    @DisplayName(value = "미처리 리뷰 목록 조회. 검색어가 있지만 검색 타입이 없는 경우")
+    void getNewReviewListValidationKeywordIsNotNullAndSearchTypeIsNull() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "review")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("keyword", "abc"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        assertEquals(
+                IllegalArgumentException.class.getSimpleName(),
+                result.getResolvedException().getClass().getSimpleName()
+        );
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "미처리 리뷰 목록 조회. 검색어가 없는데 검색 타입이 있는 경우")
+    void getNewReviewListValidationKeywordIsNullAndSearchTypeIsNotNull() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "review")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("searchType", "user"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        assertEquals(
+                IllegalArgumentException.class.getSimpleName(),
+                result.getResolvedException().getClass().getSimpleName()
+        );
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "미처리 리뷰 목록 조회. 검색 타입이 잘못된 경우")
+    void getNewReviewListValidationWrongSearchType() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "review")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("keyword", "abc")
+                        .param("searchType", "wrong"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        assertEquals(
+                IllegalArgumentException.class.getSimpleName(),
+                result.getResolvedException().getClass().getSimpleName()
+        );
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "미처리 리뷰 목록 조회. 페이지 0, 검색어 한글자, 잘못된 검색 타입인 경우")
+    void getNewReviewListValidationAllParameterInvalid() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "review")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("page", "0")
+                        .param("keyword", "a")
+                        .param("searchType", "wrong"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(2, response.errors().size());
+
+        Map<String, String> validationMap = new HashMap<>();
+        validationMap.put("page", "Min");
+        validationMap.put("keyword", "Size");
+
+        response.errors().forEach(v -> {
+            String constraint = validationMap.getOrDefault(v.field(), null);
+
+            assertNotNull(constraint);
+            assertEquals(constraint, v.constraint());
+        });
     }
 
     @Test
@@ -462,6 +692,221 @@ public class AdminReviewControllerIT {
     }
 
     @Test
+    @DisplayName(value = "전체 리뷰 목록 조회. 페이지값이 0인 경우")
+    void getAllReviewListValidationPageZero() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "review/all")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("page", "0"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("page", responseObj.field());
+        assertEquals("Min", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "전체 리뷰 목록 조회. 검색어가 한글자인 경우")
+    void getAllReviewListValidationKeywordLength1() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "review/all")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("keyword", "a")
+                        .param("searchType", "user"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("keyword", responseObj.field());
+        assertEquals("Size", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "전체 리뷰 목록 조회. 페이지값이 0, 검색어가 한글자인 경우")
+    void getAllReviewListValidationPageZeroAndKeywordLength1() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "review/all")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("page", "0")
+                        .param("keyword", "a")
+                        .param("searchType", "user"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(2, response.errors().size());
+
+        Map<String, String> validationMap = new HashMap<>();
+        validationMap.put("page", "Min");
+        validationMap.put("keyword", "Size");
+
+        response.errors().forEach(v -> {
+            String constraint = validationMap.getOrDefault(v.field(), null);
+
+            assertNotNull(constraint);
+            assertEquals(constraint, v.constraint());
+        });
+    }
+
+    @Test
+    @DisplayName(value = "전체 리뷰 목록 조회. 검색어가 있지만 검색 타입이 없는 경우")
+    void getAllReviewListValidationKeywordIsNotNullAndSearchTypeIsNull() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "review/all")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("keyword", "abc"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        assertEquals(
+                IllegalArgumentException.class.getSimpleName(),
+                result.getResolvedException().getClass().getSimpleName()
+        );
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "전체 리뷰 목록 조회. 검색어가 없는데 검색 타입이 있는 경우")
+    void getAllReviewListValidationKeywordIsNullAndSearchTypeIsNotNull() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "review/all")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("searchType", "user"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        assertEquals(
+                IllegalArgumentException.class.getSimpleName(),
+                result.getResolvedException().getClass().getSimpleName()
+        );
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "전체 리뷰 목록 조회. 검색 타입이 잘못된 경우")
+    void getAllReviewListValidationWrongSearchType() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "review/all")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("keyword", "abc")
+                        .param("searchType", "wrong"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        assertEquals(
+                IllegalArgumentException.class.getSimpleName(),
+                result.getResolvedException().getClass().getSimpleName()
+        );
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "전체 리뷰 목록 조회. 페이지 0, 검색어 한글자, 잘못된 검색 타입인 경우")
+    void getAllReviewListValidationAllParameterInvalid() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "review/all")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("page", "0")
+                        .param("keyword", "a")
+                        .param("searchType", "wrong"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(2, response.errors().size());
+
+        Map<String, String> validationMap = new HashMap<>();
+        validationMap.put("page", "Min");
+        validationMap.put("keyword", "Size");
+
+        response.errors().forEach(v -> {
+            String constraint = validationMap.getOrDefault(v.field(), null);
+
+            assertNotNull(constraint);
+            assertEquals(constraint, v.constraint());
+        });
+    }
+
+    @Test
     @DisplayName(value = "답변 완료된 리뷰 상세 조회")
     void getAnswerReviewDetail() throws Exception {
         ProductReview fixture = answerCompleteReviewList.get(0);
@@ -525,12 +970,19 @@ public class AdminReviewControllerIT {
     @Test
     @DisplayName(value = "리뷰 상세 조회. 리뷰 아이디가 잘못된 경우")
     void getReviewDetailWrongId() throws Exception {
-        MvcResult result = mockMvc.perform(get(URL_PREFIX + "review/detail/0")
+        long fixtureId = getWrongReviewId();
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "review/detail/" + fixtureId)
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
                         .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isBadRequest())
                 .andReturn();
+
+        assertEquals(
+                IllegalArgumentException.class.getSimpleName(),
+                result.getResolvedException().getClass().getSimpleName()
+        );
+
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
                 content,
@@ -538,7 +990,34 @@ public class AdminReviewControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "리뷰 상세 조회. 리뷰 아이디가 1보다 작은 경우")
+    void getReviewDetailValidationReviewIdLT1() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "review/detail/0")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        assertEquals(
+                HandlerMethodValidationException.class.getSimpleName(),
+                result.getResolvedException().getClass().getSimpleName()
+        );
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertNull(response.errors());
     }
 
     @Test
@@ -583,7 +1062,8 @@ public class AdminReviewControllerIT {
     @Test
     @DisplayName(value = "리뷰 답변 작성. 리뷰 아이디가 잘못된 경우")
     void postReviewReplyWrongId() throws Exception {
-        AdminReviewReplyRequestDTO insertDTO = new AdminReviewReplyRequestDTO(0L, "test insert review reply content");
+        long fixtureId = getWrongReviewId();
+        AdminReviewReplyRequestDTO insertDTO = new AdminReviewReplyRequestDTO(fixtureId, "test insert review reply content");
         String requestDTO = om.writeValueAsString(insertDTO);
 
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "review/reply")
@@ -594,6 +1074,12 @@ public class AdminReviewControllerIT {
                         .content(requestDTO))
                 .andExpect(status().isBadRequest())
                 .andReturn();
+
+        assertEquals(
+                IllegalArgumentException.class.getSimpleName(),
+                result.getResolvedException().getClass().getSimpleName()
+        );
+
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
                 content,
@@ -601,7 +1087,7 @@ public class AdminReviewControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -626,7 +1112,7 @@ public class AdminReviewControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
 
         ProductReview patchData = productReviewRepository.findById(fixture.getId()).orElse(null);
         assertNotNull(patchData);
@@ -635,5 +1121,147 @@ public class AdminReviewControllerIT {
         ProductReviewReply originReply = productReviewReplyRepository.findByReviewId(fixture.getId());
         assertNotNull(originReply);
         assertNotEquals(insertDTO.content(), originReply.getReplyContent());
+    }
+
+    @Test
+    @DisplayName(value = "리뷰 답변 작성. 리뷰 아이디가 1보다 작은 경우")
+    void postReviewReplyValidationReviewIdLT1() throws Exception {
+        AdminReviewReplyRequestDTO insertDTO = new AdminReviewReplyRequestDTO(0L, "test insert review reply content");
+        String requestDTO = om.writeValueAsString(insertDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "review/reply")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON_VALUE)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("reviewId", responseObj.field());
+        assertEquals("Min", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "리뷰 답변 작성. 리뷰 내용이 null인 경우")
+    void postReviewReplyValidationContentIsNull() throws Exception {
+        AdminReviewReplyRequestDTO insertDTO = new AdminReviewReplyRequestDTO(1L, null);
+        String requestDTO = om.writeValueAsString(insertDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "review/reply")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON_VALUE)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("content", responseObj.field());
+        assertEquals("NotBlank", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "리뷰 답변 작성. 리뷰 내용이 Blank인 경우")
+    void postReviewReplyValidationContentIsBlank() throws Exception {
+        AdminReviewReplyRequestDTO insertDTO = new AdminReviewReplyRequestDTO(1L, "");
+        String requestDTO = om.writeValueAsString(insertDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "review/reply")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON_VALUE)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("content", responseObj.field());
+        assertEquals("NotBlank", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "리뷰 답변 작성. 리뷰 아이디가 0, 내용이 Blank인 경우")
+    void postReviewReplyValidationReviewIdLT1AndContentIsBlank() throws Exception {
+        AdminReviewReplyRequestDTO insertDTO = new AdminReviewReplyRequestDTO(0L, "");
+        String requestDTO = om.writeValueAsString(insertDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "review/reply")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON_VALUE)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(2, response.errors().size());
+
+        Map<String, String> validationMap = new HashMap<>();
+        validationMap.put("reviewId", "Min");
+        validationMap.put("content", "NotBlank");
+
+        response.errors().forEach(v -> {
+            String constraint = validationMap.getOrDefault(v.field(), null);
+
+            assertNotNull(constraint);
+            assertEquals(constraint, v.constraint());
+        });
     }
 }

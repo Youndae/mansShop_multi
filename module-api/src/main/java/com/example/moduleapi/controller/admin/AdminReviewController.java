@@ -7,9 +7,11 @@ import com.example.moduleapi.model.response.PagingResponseDTO;
 import com.example.moduleapi.service.PrincipalService;
 import com.example.modulecache.model.cache.CacheRequest;
 import com.example.modulecache.service.FullCountScanCachingService;
+import com.example.modulecommon.model.dto.request.ListRequestDTO;
 import com.example.modulecommon.model.dto.response.PagingListDTO;
 import com.example.modulecommon.model.enumuration.AdminListType;
 import com.example.modulecommon.model.enumuration.RedisCaching;
+import com.example.modulecommon.utils.PaginationUtils;
 import com.example.moduleproduct.model.dto.admin.review.in.AdminReviewReplyRequestDTO;
 import com.example.moduleproduct.model.dto.admin.review.out.AdminReviewDTO;
 import com.example.moduleproduct.model.dto.admin.review.out.AdminReviewDetailDTO;
@@ -21,8 +23,11 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -48,8 +53,7 @@ public class AdminReviewController {
 
     /**
      *
-     * @param keyword
-     * @param page
+     * @param requestDTO
      * @param searchType
      *
      * 관리자의 새로운 리뷰 리스트 조회.
@@ -77,11 +81,13 @@ public class AdminReviewController {
             )
     })
     @GetMapping("/review")
-    public ResponseEntity<PagingResponseDTO<AdminReviewDTO>> getNewReviewList(@RequestParam(name = "keyword", required = false) String keyword,
-                                                                              @RequestParam(name = "page", required = false, defaultValue = "1") int page,
-                                                                              @RequestParam(name = "searchType", required = false) String searchType) {
+    public ResponseEntity<PagingResponseDTO<AdminReviewDTO>> getNewReviewList(
+            @ParameterObject @Valid ListRequestDTO requestDTO,
+            @RequestParam(name = "searchType", required = false) String searchType) {
+        log.info("AdminReviewController.getNewReviewList :: searchType = {}, requestDTO = {}", searchType, requestDTO);
+        PaginationUtils.checkKeywordAndSearchTypeExist(requestDTO.keyword(), searchType);
 
-        AdminReviewPageDTO pageDTO = new AdminReviewPageDTO(keyword, searchType, page);
+        AdminReviewPageDTO pageDTO = AdminReviewPageDTO.fromRequestDTO(requestDTO, searchType);
 
         PagingListDTO<AdminReviewDTO> responseDTO = adminProductReviewReadUseCase.getReviewList(pageDTO, AdminListType.NEW, 0L);
 
@@ -90,8 +96,7 @@ public class AdminReviewController {
 
     /**
      *
-     * @param keyword
-     * @param page
+     * @param requestDTO
      * @param searchType
      *
      * 전체 리뷰 조회.
@@ -119,13 +124,16 @@ public class AdminReviewController {
             )
     })
     @GetMapping("/review/all")
-    public ResponseEntity<PagingResponseDTO<AdminReviewDTO>> getAllReviewList(@RequestParam(name = "keyword", required = false) String keyword,
-                                                                              @RequestParam(name = "page", required = false, defaultValue = "1") int page,
-                                                                              @RequestParam(name = "searchType", required = false) String searchType) {
-        AdminReviewPageDTO pageDTO = new AdminReviewPageDTO(keyword, searchType, page);
+    public ResponseEntity<PagingResponseDTO<AdminReviewDTO>> getAllReviewList(
+            @ParameterObject @Valid ListRequestDTO requestDTO,
+            @RequestParam(name = "searchType", required = false) String searchType) {
+        log.info("AdminReviewController.getAllReviewList :: searchType = {}, requestDTO = {}", searchType, requestDTO);
+        PaginationUtils.checkKeywordAndSearchTypeExist(requestDTO.keyword(), searchType);
+
+        AdminReviewPageDTO pageDTO = AdminReviewPageDTO.fromRequestDTO(requestDTO, searchType);
         long totalElements = 0L;
 
-        if(keyword == null)
+        if(pageDTO.keyword() == null)
             totalElements = fullCountScanCachingService.getFullScanCountCache(RedisCaching.ADMIN_REVIEW_COUNT, new CacheRequest<>(pageDTO, AdminListType.ALL.getType()));
 
         PagingListDTO<AdminReviewDTO> responseDTO = adminProductReviewReadUseCase.getReviewList(pageDTO, AdminListType.ALL, totalElements);
@@ -149,7 +157,7 @@ public class AdminReviewController {
             in = ParameterIn.PATH
     )
     @GetMapping("/review/detail/{reviewId}")
-    public ResponseEntity<AdminReviewDetailDTO> getReviewDetail(@PathVariable("reviewId") long reviewId) {
+    public ResponseEntity<AdminReviewDetailDTO> getReviewDetail(@PathVariable("reviewId") @Min(value = 1) long reviewId) {
         AdminReviewDetailDTO responseDTO = adminProductReviewReadUseCase.getReviewDetail(reviewId);
 
         return ResponseEntity.ok(responseDTO);
@@ -166,7 +174,7 @@ public class AdminReviewController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PostMapping("/review/reply")
-    public ResponseEntity<Void> postReviewReply(@RequestBody AdminReviewReplyRequestDTO postDTO,
+    public ResponseEntity<Void> postReviewReply(@RequestBody @Valid AdminReviewReplyRequestDTO postDTO,
                                                               Principal principal) {
         String userId = principalService.extractUserId(principal);
         adminProductReviewWriteUseCase.postReviewReply(postDTO, userId);
