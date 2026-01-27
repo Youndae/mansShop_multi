@@ -4,10 +4,14 @@ import com.example.moduleadmin.repository.PeriodSalesSummaryRepository;
 import com.example.moduleadmin.repository.ProductSalesSummaryRepository;
 import com.example.moduleapi.ModuleApiApplication;
 import com.example.moduleapi.config.exception.ExceptionEntity;
+import com.example.moduleapi.config.exception.ValidationError;
+import com.example.moduleapi.config.exception.ValidationExceptionEntity;
 import com.example.moduleapi.fixture.TokenFixture;
 import com.example.moduleapi.fixture.dto.MemberPaymentMapDTO;
 import com.example.modulecart.repository.CartDetailRepository;
 import com.example.modulecart.repository.CartRepository;
+import com.example.modulecommon.customException.CustomAccessDeniedException;
+import com.example.modulecommon.customException.CustomNotFoundException;
 import com.example.modulecommon.fixture.CartFixture;
 import com.example.modulecommon.fixture.ClassificationFixture;
 import com.example.modulecommon.fixture.MemberAndAuthFixture;
@@ -24,6 +28,8 @@ import com.example.moduleorder.model.dto.in.OrderProductDTO;
 import com.example.moduleorder.model.dto.in.OrderProductRequestDTO;
 import com.example.moduleorder.model.dto.in.PaymentDTO;
 import com.example.moduleorder.model.dto.out.OrderDataResponseDTO;
+import com.example.moduleorder.model.enumuration.OrderPaymentType;
+import com.example.moduleorder.model.enumuration.OrderRequestType;
 import com.example.moduleorder.model.vo.OrderItemVO;
 import com.example.moduleorder.model.vo.PreOrderDataVO;
 import com.example.moduleorder.repository.ProductOrderDetailRepository;
@@ -52,12 +58,10 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
@@ -157,6 +161,8 @@ public class OrderControllerIT {
     private static final String ORDER_TOKEN_HEADER = "order";
 
     private static final String URL_PREFIX = "/api/order/";
+
+    private static final ErrorCode BAD_REQUEST_ERROR_CODE = ErrorCode.BAD_REQUEST;
 
     @BeforeEach
     void init() {
@@ -377,8 +383,8 @@ public class OrderControllerIT {
                 orderProductFixutreList,
                 paymentFixtureDTO.totalPrice() < 100000 ? 3500 : 0,
                 paymentFixtureDTO.totalPrice(),
-                "card",
-                "cart"
+                OrderPaymentType.CARD.getType(),
+                OrderRequestType.CART.getType()
         );
         String requestDTO = om.writeValueAsString(paymentDTO);
         mockMvc.perform(post(URL_PREFIX)
@@ -419,8 +425,8 @@ public class OrderControllerIT {
                 orderProductFixutreList,
                 paymentFixtureDTO.totalPrice() < 100000 ? 3500 : 0,
                 paymentFixtureDTO.totalPrice(),
-                "card",
-                "cart"
+                OrderPaymentType.CARD.getType(),
+                OrderRequestType.CART.getType()
         );
         String requestDTO = om.writeValueAsString(paymentDTO);
         mockMvc.perform(post(URL_PREFIX)
@@ -432,6 +438,877 @@ public class OrderControllerIT {
                 .andReturn();
 
         verifyPaymentByCartResult(paymentFixtureDTO, cartId, paymentDTO, anonymous);
+    }
+
+    @Test
+    @DisplayName(value = "회원의 결제 완료 이후 주문 데이터 처리. 장바구니를 통한 구매인 경우. 수령인 데이터가 null인 경우")
+    void paymentByMemberCartValidationRecipientIsNull() throws Exception {
+        MemberPaymentMapDTO paymentFixtureDTO = getPaymentDataByCart(memberCart);
+        List<OrderProductDTO> orderProductFixutreList = paymentFixtureDTO.orderProductFixtureList();
+
+        PaymentDTO paymentDTO = new PaymentDTO(
+                null,
+                member.getPhone().replaceAll("-", ""),
+                member.getUserName() + "'s memo",
+                member.getUserName() + "'s address",
+                orderProductFixutreList,
+                paymentFixtureDTO.totalPrice() < 100000 ? 3500 : 0,
+                paymentFixtureDTO.totalPrice(),
+                OrderPaymentType.CARD.getType(),
+                OrderRequestType.CART.getType()
+        );
+        String requestDTO = om.writeValueAsString(paymentDTO);
+        MvcResult result = mockMvc.perform(post(URL_PREFIX)
+                                .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                                .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                                .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                                .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(requestDTO))
+                        .andExpect(status().isBadRequest())
+                        .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("recipient", responseObj.field());
+        assertEquals("NotBlank", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원의 결제 완료 이후 주문 데이터 처리. 장바구니를 통한 구매인 경우. 수령인 데이터가 Blank인 경우")
+    void paymentByMemberCartValidationRecipientIsBlank() throws Exception {
+        MemberPaymentMapDTO paymentFixtureDTO = getPaymentDataByCart(memberCart);
+        List<OrderProductDTO> orderProductFixutreList = paymentFixtureDTO.orderProductFixtureList();
+
+        PaymentDTO paymentDTO = new PaymentDTO(
+                "",
+                member.getPhone().replaceAll("-", ""),
+                member.getUserName() + "'s memo",
+                member.getUserName() + "'s address",
+                orderProductFixutreList,
+                paymentFixtureDTO.totalPrice() < 100000 ? 3500 : 0,
+                paymentFixtureDTO.totalPrice(),
+                OrderPaymentType.CARD.getType(),
+                OrderRequestType.CART.getType()
+        );
+        String requestDTO = om.writeValueAsString(paymentDTO);
+        MvcResult result = mockMvc.perform(post(URL_PREFIX)
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("recipient", responseObj.field());
+        assertEquals("NotBlank", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원의 결제 완료 이후 주문 데이터 처리. 장바구니를 통한 구매인 경우. 연락처가 null인 경우")
+    void paymentByMemberCartValidationWrongPhoneIsNull() throws Exception {
+        MemberPaymentMapDTO paymentFixtureDTO = getPaymentDataByCart(memberCart);
+        List<OrderProductDTO> orderProductFixutreList = paymentFixtureDTO.orderProductFixtureList();
+
+        PaymentDTO paymentDTO = new PaymentDTO(
+                member.getUserName(),
+                null,
+                member.getUserName() + "'s memo",
+                member.getUserName() + "'s address",
+                orderProductFixutreList,
+                paymentFixtureDTO.totalPrice() < 100000 ? 3500 : 0,
+                paymentFixtureDTO.totalPrice(),
+                OrderPaymentType.CARD.getType(),
+                OrderRequestType.CART.getType()
+        );
+        String requestDTO = om.writeValueAsString(paymentDTO);
+        MvcResult result = mockMvc.perform(post(URL_PREFIX)
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("phone", responseObj.field());
+        assertEquals("NotBlank", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원의 결제 완료 이후 주문 데이터 처리. 장바구니를 통한 구매인 경우. 연락처가 Blank인 경우")
+    void paymentByMemberCartValidationWrongPhoneIsBlank() throws Exception {
+        MemberPaymentMapDTO paymentFixtureDTO = getPaymentDataByCart(memberCart);
+        List<OrderProductDTO> orderProductFixutreList = paymentFixtureDTO.orderProductFixtureList();
+
+        PaymentDTO paymentDTO = new PaymentDTO(
+                member.getUserName(),
+                "",
+                member.getUserName() + "'s memo",
+                member.getUserName() + "'s address",
+                orderProductFixutreList,
+                paymentFixtureDTO.totalPrice() < 100000 ? 3500 : 0,
+                paymentFixtureDTO.totalPrice(),
+                OrderPaymentType.CARD.getType(),
+                OrderRequestType.CART.getType()
+        );
+        String requestDTO = om.writeValueAsString(paymentDTO);
+        MvcResult result = mockMvc.perform(post(URL_PREFIX)
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(2, response.errors().size());
+
+        List<String> validationConstraintList = List.of("NotBlank", "Pattern");
+
+        response.errors().forEach(v -> validationConstraintList.contains(v.constraint()));
+    }
+
+    @Test
+    @DisplayName(value = "회원의 결제 완료 이후 주문 데이터 처리. 장바구니를 통한 구매인 경우. 연락처에서 하이픈이 같이 전달되는 경우")
+    void paymentByMemberCartValidationWrongPhonePatternIncludeHyphen() throws Exception {
+        MemberPaymentMapDTO paymentFixtureDTO = getPaymentDataByCart(memberCart);
+        List<OrderProductDTO> orderProductFixutreList = paymentFixtureDTO.orderProductFixtureList();
+
+        PaymentDTO paymentDTO = new PaymentDTO(
+                member.getUserName(),
+                member.getPhone(),
+                member.getUserName() + "'s memo",
+                member.getUserName() + "'s address",
+                orderProductFixutreList,
+                paymentFixtureDTO.totalPrice() < 100000 ? 3500 : 0,
+                paymentFixtureDTO.totalPrice(),
+                OrderPaymentType.CARD.getType(),
+                OrderRequestType.CART.getType()
+        );
+        String requestDTO = om.writeValueAsString(paymentDTO);
+        MvcResult result = mockMvc.perform(post(URL_PREFIX)
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("phone", responseObj.field());
+        assertEquals("Pattern", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원의 결제 완료 이후 주문 데이터 처리. 장바구니를 통한 구매인 경우. 연락처가 10자리 미만인 경우")
+    void paymentByMemberCartValidationWrongPhonePatternToShort() throws Exception {
+        MemberPaymentMapDTO paymentFixtureDTO = getPaymentDataByCart(memberCart);
+        List<OrderProductDTO> orderProductFixutreList = paymentFixtureDTO.orderProductFixtureList();
+
+        PaymentDTO paymentDTO = new PaymentDTO(
+                member.getUserName(),
+                "01012123",
+                member.getUserName() + "'s memo",
+                member.getUserName() + "'s address",
+                orderProductFixutreList,
+                paymentFixtureDTO.totalPrice() < 100000 ? 3500 : 0,
+                paymentFixtureDTO.totalPrice(),
+                OrderPaymentType.CARD.getType(),
+                OrderRequestType.CART.getType()
+        );
+        String requestDTO = om.writeValueAsString(paymentDTO);
+        MvcResult result = mockMvc.perform(post(URL_PREFIX)
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("phone", responseObj.field());
+        assertEquals("Pattern", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원의 결제 완료 이후 주문 데이터 처리. 장바구니를 통한 구매인 경우. 연락처가 11자리 초과인 경우")
+    void paymentByMemberCartValidationWrongPhonePatternToLong() throws Exception {
+        MemberPaymentMapDTO paymentFixtureDTO = getPaymentDataByCart(memberCart);
+        List<OrderProductDTO> orderProductFixutreList = paymentFixtureDTO.orderProductFixtureList();
+
+        PaymentDTO paymentDTO = new PaymentDTO(
+                member.getUserName(),
+                "010123412345",
+                member.getUserName() + "'s memo",
+                member.getUserName() + "'s address",
+                orderProductFixutreList,
+                paymentFixtureDTO.totalPrice() < 100000 ? 3500 : 0,
+                paymentFixtureDTO.totalPrice(),
+                OrderPaymentType.CARD.getType(),
+                OrderRequestType.CART.getType()
+        );
+        String requestDTO = om.writeValueAsString(paymentDTO);
+        MvcResult result = mockMvc.perform(post(URL_PREFIX)
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("phone", responseObj.field());
+        assertEquals("Pattern", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원의 결제 완료 이후 주문 데이터 처리. 장바구니를 통한 구매인 경우. 배송지가 null인 경우")
+    void paymentByMemberCartValidationAddressIsNull() throws Exception {
+        MemberPaymentMapDTO paymentFixtureDTO = getPaymentDataByCart(memberCart);
+        List<OrderProductDTO> orderProductFixutreList = paymentFixtureDTO.orderProductFixtureList();
+
+        PaymentDTO paymentDTO = new PaymentDTO(
+                member.getUserName(),
+                member.getPhone().replaceAll("-", ""),
+                member.getUserName() + "'s memo",
+                null,
+                orderProductFixutreList,
+                paymentFixtureDTO.totalPrice() < 100000 ? 3500 : 0,
+                paymentFixtureDTO.totalPrice(),
+                OrderPaymentType.CARD.getType(),
+                OrderRequestType.CART.getType()
+        );
+        String requestDTO = om.writeValueAsString(paymentDTO);
+        MvcResult result = mockMvc.perform(post(URL_PREFIX)
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("address", responseObj.field());
+        assertEquals("NotBlank", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원의 결제 완료 이후 주문 데이터 처리. 장바구니를 통한 구매인 경우. 배송지가 Blank인 경우")
+    void paymentByMemberCartValidationAddressIsBlank() throws Exception {
+        MemberPaymentMapDTO paymentFixtureDTO = getPaymentDataByCart(memberCart);
+        List<OrderProductDTO> orderProductFixutreList = paymentFixtureDTO.orderProductFixtureList();
+
+        PaymentDTO paymentDTO = new PaymentDTO(
+                member.getUserName(),
+                member.getPhone().replaceAll("-", ""),
+                member.getUserName() + "'s memo",
+                "",
+                orderProductFixutreList,
+                paymentFixtureDTO.totalPrice() < 100000 ? 3500 : 0,
+                paymentFixtureDTO.totalPrice(),
+                OrderPaymentType.CARD.getType(),
+                OrderRequestType.CART.getType()
+        );
+        String requestDTO = om.writeValueAsString(paymentDTO);
+        MvcResult result = mockMvc.perform(post(URL_PREFIX)
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("address", responseObj.field());
+        assertEquals("NotBlank", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원의 결제 완료 이후 주문 데이터 처리. 장바구니를 통한 구매인 경우. 배송비가 음수인 경우")
+    void paymentByMemberCartValidationDeliveryFeeIsNegativeNumber() throws Exception {
+        MemberPaymentMapDTO paymentFixtureDTO = getPaymentDataByCart(memberCart);
+        List<OrderProductDTO> orderProductFixutreList = paymentFixtureDTO.orderProductFixtureList();
+
+        PaymentDTO paymentDTO = new PaymentDTO(
+                member.getUserName(),
+                member.getPhone().replaceAll("-", ""),
+                member.getUserName() + "'s memo",
+                member.getUserName() + "'s address",
+                orderProductFixutreList,
+                -1,
+                paymentFixtureDTO.totalPrice(),
+                OrderPaymentType.CARD.getType(),
+                OrderRequestType.CART.getType()
+        );
+        String requestDTO = om.writeValueAsString(paymentDTO);
+        MvcResult result = mockMvc.perform(post(URL_PREFIX)
+                                .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                                .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                                .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                                .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(requestDTO))
+                        .andExpect(status().isBadRequest())
+                        .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("deliveryFee", responseObj.field());
+        assertEquals("Min", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원의 결제 완료 이후 주문 데이터 처리. 장바구니를 통한 구매인 경우. 총 가격이 음수인 경우")
+    void paymentByMemberCartValidationTotalPriceIsNegativeNumber() throws Exception {
+        MemberPaymentMapDTO paymentFixtureDTO = getPaymentDataByCart(memberCart);
+        List<OrderProductDTO> orderProductFixutreList = paymentFixtureDTO.orderProductFixtureList();
+
+        PaymentDTO paymentDTO = new PaymentDTO(
+                member.getUserName(),
+                member.getPhone().replaceAll("-", ""),
+                member.getUserName() + "'s memo",
+                member.getUserName() + "'s address",
+                orderProductFixutreList,
+                paymentFixtureDTO.totalPrice() < 100000 ? 3500 : 0,
+                -1,
+                OrderPaymentType.CARD.getType(),
+                OrderRequestType.CART.getType()
+        );
+        String requestDTO = om.writeValueAsString(paymentDTO);
+        MvcResult result = mockMvc.perform(post(URL_PREFIX)
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("totalPrice", responseObj.field());
+        assertEquals("Min", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원의 결제 완료 이후 주문 데이터 처리. 장바구니를 통한 구매인 경우. 결제 타입이 null인 경우")
+    void paymentByMemberCartValidationPaymentTypeIsNull() throws Exception {
+        MemberPaymentMapDTO paymentFixtureDTO = getPaymentDataByCart(memberCart);
+        List<OrderProductDTO> orderProductFixutreList = paymentFixtureDTO.orderProductFixtureList();
+
+        PaymentDTO paymentDTO = new PaymentDTO(
+                member.getUserName(),
+                member.getPhone().replaceAll("-", ""),
+                member.getUserName() + "'s memo",
+                member.getUserName() + "'s address",
+                orderProductFixutreList,
+                paymentFixtureDTO.totalPrice() < 100000 ? 3500 : 0,
+                paymentFixtureDTO.totalPrice(),
+                null,
+                OrderRequestType.CART.getType()
+        );
+        String requestDTO = om.writeValueAsString(paymentDTO);
+        MvcResult result = mockMvc.perform(post(URL_PREFIX)
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("paymentType", responseObj.field());
+        assertEquals("NotBlank", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원의 결제 완료 이후 주문 데이터 처리. 장바구니를 통한 구매인 경우. 결제 타입이 Blank인 경우")
+    void paymentByMemberCartValidationPaymentTypeIsBlank() throws Exception {
+        MemberPaymentMapDTO paymentFixtureDTO = getPaymentDataByCart(memberCart);
+        List<OrderProductDTO> orderProductFixutreList = paymentFixtureDTO.orderProductFixtureList();
+
+        PaymentDTO paymentDTO = new PaymentDTO(
+                member.getUserName(),
+                member.getPhone().replaceAll("-", ""),
+                member.getUserName() + "'s memo",
+                member.getUserName() + "'s address",
+                orderProductFixutreList,
+                paymentFixtureDTO.totalPrice() < 100000 ? 3500 : 0,
+                paymentFixtureDTO.totalPrice(),
+                "",
+                OrderRequestType.CART.getType()
+        );
+        String requestDTO = om.writeValueAsString(paymentDTO);
+        MvcResult result = mockMvc.perform(post(URL_PREFIX)
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("paymentType", responseObj.field());
+        assertEquals("NotBlank", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원의 결제 완료 이후 주문 데이터 처리. 장바구니를 통한 구매인 경우. 결제 타입이 잘못된 경우")
+    void paymentByMemberCartValidationPaymentTypeIsWrong() throws Exception {
+        MemberPaymentMapDTO paymentFixtureDTO = getPaymentDataByCart(memberCart);
+        List<OrderProductDTO> orderProductFixutreList = paymentFixtureDTO.orderProductFixtureList();
+
+        PaymentDTO paymentDTO = new PaymentDTO(
+                member.getUserName(),
+                member.getPhone().replaceAll("-", ""),
+                member.getUserName() + "'s memo",
+                member.getUserName() + "'s address",
+                orderProductFixutreList,
+                paymentFixtureDTO.totalPrice() < 100000 ? 3500 : 0,
+                paymentFixtureDTO.totalPrice(),
+                OrderRequestType.CART.getType(),
+                OrderRequestType.CART.getType()
+        );
+        String requestDTO = om.writeValueAsString(paymentDTO);
+        MvcResult result = mockMvc.perform(post(URL_PREFIX)
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(IllegalArgumentException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원의 결제 완료 이후 주문 데이터 처리. 장바구니를 통한 구매인 경우. 주문 요청 방식이 null인 경우")
+    void paymentByMemberCartValidationOrderTypeIsNull() throws Exception {
+        MemberPaymentMapDTO paymentFixtureDTO = getPaymentDataByCart(memberCart);
+        List<OrderProductDTO> orderProductFixutreList = paymentFixtureDTO.orderProductFixtureList();
+
+        PaymentDTO paymentDTO = new PaymentDTO(
+                member.getUserName(),
+                member.getPhone().replaceAll("-", ""),
+                member.getUserName() + "'s memo",
+                member.getUserName() + "'s address",
+                orderProductFixutreList,
+                paymentFixtureDTO.totalPrice() < 100000 ? 3500 : 0,
+                paymentFixtureDTO.totalPrice(),
+                OrderPaymentType.CARD.getType(),
+                null
+        );
+        String requestDTO = om.writeValueAsString(paymentDTO);
+        MvcResult result = mockMvc.perform(post(URL_PREFIX)
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("orderType", responseObj.field());
+        assertEquals("NotBlank", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원의 결제 완료 이후 주문 데이터 처리. 장바구니를 통한 구매인 경우. 주문 요청 방식이 Blank인 경우")
+    void paymentByMemberCartValidationOrderTypeIsBlank() throws Exception {
+        MemberPaymentMapDTO paymentFixtureDTO = getPaymentDataByCart(memberCart);
+        List<OrderProductDTO> orderProductFixutreList = paymentFixtureDTO.orderProductFixtureList();
+
+        PaymentDTO paymentDTO = new PaymentDTO(
+                member.getUserName(),
+                member.getPhone().replaceAll("-", ""),
+                member.getUserName() + "'s memo",
+                member.getUserName() + "'s address",
+                orderProductFixutreList,
+                paymentFixtureDTO.totalPrice() < 100000 ? 3500 : 0,
+                paymentFixtureDTO.totalPrice(),
+                OrderPaymentType.CARD.getType(),
+                ""
+        );
+        String requestDTO = om.writeValueAsString(paymentDTO);
+        MvcResult result = mockMvc.perform(post(URL_PREFIX)
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("orderType", responseObj.field());
+        assertEquals("NotBlank", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원의 결제 완료 이후 주문 데이터 처리. 장바구니를 통한 구매인 경우. 주문 요청 방식이 잘못된 경우")
+    void paymentByMemberCartValidationOrderTypeIsWrong() throws Exception {
+        MemberPaymentMapDTO paymentFixtureDTO = getPaymentDataByCart(memberCart);
+        List<OrderProductDTO> orderProductFixutreList = paymentFixtureDTO.orderProductFixtureList();
+
+        PaymentDTO paymentDTO = new PaymentDTO(
+                member.getUserName(),
+                member.getPhone().replaceAll("-", ""),
+                member.getUserName() + "'s memo",
+                member.getUserName() + "'s address",
+                orderProductFixutreList,
+                paymentFixtureDTO.totalPrice() < 100000 ? 3500 : 0,
+                paymentFixtureDTO.totalPrice(),
+                OrderPaymentType.CARD.getType(),
+                OrderPaymentType.CARD.getType()
+        );
+        String requestDTO = om.writeValueAsString(paymentDTO);
+        MvcResult result = mockMvc.perform(post(URL_PREFIX)
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(IllegalArgumentException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원의 결제 완료 이후 주문 데이터 처리. 장바구니를 통한 구매인 경우. 상품 정보를 제외한 모든 주문 데이터가 잘못된 경우")
+    void paymentByMemberCartValidationAllParameterIsWrong() throws Exception {
+        MemberPaymentMapDTO paymentFixtureDTO = getPaymentDataByCart(memberCart);
+        List<OrderProductDTO> orderProductFixutreList = paymentFixtureDTO.orderProductFixtureList();
+
+        // recipient: null (NotBlank)
+        // phone: Hyphen 포함 (Pattern)
+        // address: null (NotBlank)
+        // deliveryFee: -1 (Min)
+        // totalPrice: -1 (Min)
+        // paymentType: null (NotBlank)
+        // orderType: null (NotBlank)
+        PaymentDTO paymentDTO = new PaymentDTO(
+                null,
+                member.getPhone(),
+                member.getUserName() + "'s memo",
+                null,
+                orderProductFixutreList,
+                -1,
+                -1,
+                null,
+                null
+        );
+        String requestDTO = om.writeValueAsString(paymentDTO);
+        MvcResult result = mockMvc.perform(post(URL_PREFIX)
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(7, response.errors().size());
+
+        Map<String, String> validationMap = new HashMap<>();
+        validationMap.put("recipient", "NotBlank");
+        validationMap.put("phone", "Pattern");
+        validationMap.put("address", "NotBlank");
+        validationMap.put("deliveryFee", "Min");
+        validationMap.put("totalPrice", "Min");
+        validationMap.put("paymentType", "NotBlank");
+        validationMap.put("orderType", "NotBlank");
+
+        response.errors().forEach(v -> {
+            String constraint = validationMap.getOrDefault(v.field(), null);
+
+            assertNotNull(constraint);
+            assertEquals(constraint, v.constraint());
+        });
     }
 
     @Test
@@ -577,17 +1454,22 @@ public class OrderControllerIT {
     @DisplayName(value = "회원이 상품 상세 페이지에서 결제 요청 시 상품 결제 정보 조회. 잘못된 싱픔 옵션 아이디를 전달한 경우")
     void orderProductByMemberWrongOptionId() throws Exception {
         Product fixture = productList.get(0);
-        List<OrderProductRequestDTO> orderProductDTO = new ArrayList<>();
+        // 정상 fixture
+        List<OrderProductRequestDTO> orderProductDTO = new ArrayList<>(
+                fixture.getProductOptions()
+                .stream()
+                .map(v -> new OrderProductRequestDTO(v.getId(), 3))
+                .toList()
+        );
 
-        for(int i = 0; i < fixture.getProductOptions().size(); i++) {
-            ProductOption option = fixture.getProductOptions().get(i);
-            orderProductDTO.add(
-                    new OrderProductRequestDTO(
-                            i == 0 ? 0L : option.getId(),
-                            3
-                    )
-            );
-        }
+        // 존재하지 않는 옵션 아이디 fixture
+        long wrongOptionId = productOptionList.get(productOptionList.size() - 1).getId() + 10;
+        orderProductDTO.add(
+                new OrderProductRequestDTO(
+                        wrongOptionId,
+                        2
+                )
+        );
 
         String requestDTO = om.writeValueAsString(orderProductDTO);
 
@@ -599,6 +1481,12 @@ public class OrderControllerIT {
                         .content(requestDTO))
                 .andExpect(status().isBadRequest())
                 .andReturn();
+
+        // Validation 관련 Exception과 다르게 조회시 데이터가 없음을 의미해야 하기 때문에
+        // IllegalArgumentException 발생이 검증되어야 함.
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(IllegalArgumentException.class, ex);
+
         String content = result.getResponse().getContentAsString();
         Map<String, String> cookieMap = tokenFixture.getCookieMap(result);
         ExceptionEntity response = om.readValue(
@@ -610,6 +1498,110 @@ public class OrderControllerIT {
         assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
 
         assertTrue(cookieMap.isEmpty());
+    }
+
+    @Test
+    @DisplayName(value = "회원이 상품 상세 페이지에서 결제 요청 시 상품 결제 정보 조회. 옵션 아이디값이 1보다 작은 경우")
+    void orderProductByMemberValidationOptionIdLT1() throws Exception {
+        Product fixture = productList.get(0);
+        // 정상 fixture
+        List<OrderProductRequestDTO> orderProductDTO = new ArrayList<>(
+                fixture.getProductOptions()
+                        .stream()
+                        .map(v -> new OrderProductRequestDTO(v.getId(), 3))
+                        .toList()
+        );
+
+        // optionId == 0
+        orderProductDTO.add(
+                new OrderProductRequestDTO(
+                        0L,
+                        2
+                )
+        );
+
+        String requestDTO = om.writeValueAsString(orderProductDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "product")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        Map<String, String> cookieMap = tokenFixture.getCookieMap(result);
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertTrue(cookieMap.isEmpty());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("optionId", responseObj.field());
+        assertEquals("Min", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원이 상품 상세 페이지에서 결제 요청 시 상품 결제 정보 조회. 상품 수량이 1보다 작은 경우")
+    void orderProductByMemberValidationCountLT1() throws Exception {
+        Product fixture = productList.get(0);
+        // 정상 fixture
+        List<OrderProductRequestDTO> orderProductDTO = new ArrayList<>(
+                fixture.getProductOptions()
+                        .stream()
+                        .map(v -> new OrderProductRequestDTO(v.getId(), 3))
+                        .toList()
+        );
+
+        // optionId == 0
+        orderProductDTO.add(
+                new OrderProductRequestDTO(
+                        10L,
+                        0
+                )
+        );
+
+        String requestDTO = om.writeValueAsString(orderProductDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "product")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        Map<String, String> cookieMap = tokenFixture.getCookieMap(result);
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertTrue(cookieMap.isEmpty());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("count", responseObj.field());
+        assertEquals("Min", responseObj.constraint());
     }
 
     @Test
@@ -697,7 +1689,13 @@ public class OrderControllerIT {
     @Test
     @DisplayName(value = "회원이 장바구니 페이지에서 결제 요청 시 상품 결제 정보 조회. 잘못된 장바구니 아이디 전달로 인해 데이터가 없는 경우")
     void orderCartByMemberWrongIds() throws Exception {
-        List<Long> requestDetailIds = List.of(0L);
+        Long maxDetailId = Stream.of(memberCart, noneMemberCart, anonymousCart)
+                                .flatMap(v -> v.getCartDetailList().stream())
+                                .map(CartDetail::getId)
+                                .max(Long::compareTo)
+                                .get() + 1L;
+
+        List<Long> requestDetailIds = List.of(maxDetailId);
 
         String requestDTO = om.writeValueAsString(requestDetailIds);
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "cart")
@@ -708,6 +1706,15 @@ public class OrderControllerIT {
                         .content(requestDTO))
                 .andExpect(status().isBadRequest())
                 .andReturn();
+
+        // 다른 사람의 장바구니 상세 아이디가 아니고
+        // 아예 존재하지 않는 상세 아이디로 요청하는 경우
+        // CustomNotFoundException이 발생해야 함.
+        // 다른 사람의 상세 아이디인 경우 CustomAccessDenied,
+        // 유효성 검사에 실패한 경우 IllegalArgumentException이 발생하므로 ResolvedException을 통해 검증 필요.
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(CustomNotFoundException.class, ex);
+
         String content = result.getResponse().getContentAsString();
         Map<String, String> cookieMap = tokenFixture.getCookieMap(result);
         ExceptionEntity response = om.readValue(
@@ -716,7 +1723,7 @@ public class OrderControllerIT {
         );
 
         assertNotNull(response);
-        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
         assertTrue(cookieMap.isEmpty());
     }
 
@@ -738,6 +1745,15 @@ public class OrderControllerIT {
                         .content(requestDTO))
                 .andExpect(status().isForbidden())
                 .andReturn();
+
+        // 다른 사람의 장바구니 상세 아이디가 아니고
+        // 아예 존재하지 않는 상세 아이디로 요청하는 경우
+        // CustomNotFoundException이 발생해야 함.
+        // 다른 사람의 상세 아이디인 경우 CustomAccessDenied,
+        // 유효성 검사에 실패한 경우 IllegalArgumentException이 발생하므로 ResolvedException을 통해 검증 필요.
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(CustomAccessDeniedException.class, ex);
+
         String content = result.getResponse().getContentAsString();
         Map<String, String> cookieMap = tokenFixture.getCookieMap(result);
         ExceptionEntity response = om.readValue(
@@ -747,6 +1763,76 @@ public class OrderControllerIT {
 
         assertNotNull(response);
         assertEquals(ErrorCode.FORBIDDEN.getMessage(), response.errorMessage());
+        assertTrue(cookieMap.isEmpty());
+    }
+
+    @Test
+    @DisplayName(value = "회원이 장바구니 페이지에서 결제 요청 시 상품 결제 정보 조회. 장바구니 아이디가 1보다 작은 경우")
+    void orderCartByMemberValidationDetailIdLT1() throws Exception {
+        List<Long> requestDetailIds = List.of(0L);
+
+        String requestDTO = om.writeValueAsString(requestDetailIds);
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "cart")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // 다른 사람의 장바구니 상세 아이디가 아니고
+        // 아예 존재하지 않는 상세 아이디로 요청하는 경우
+        // CustomNotFoundException이 발생해야 함.
+        // 다른 사람의 상세 아이디인 경우 CustomAccessDenied,
+        // 유효성 검사에 실패한 경우 IllegalArgumentException이 발생하므로 ResolvedException을 통해 검증 필요.
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(IllegalArgumentException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        Map<String, String> cookieMap = tokenFixture.getCookieMap(result);
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertTrue(cookieMap.isEmpty());
+    }
+
+    @Test
+    @DisplayName(value = "회원이 장바구니 페이지에서 결제 요청 시 상품 결제 정보 조회. 요청 리스트가 비어있는 경우")
+    void orderCartByMemberValidationEmptyList() throws Exception {
+        List<Long> requestDetailIds = List.of();
+
+        String requestDTO = om.writeValueAsString(requestDetailIds);
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "cart")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // 다른 사람의 장바구니 상세 아이디가 아니고
+        // 아예 존재하지 않는 상세 아이디로 요청하는 경우
+        // CustomNotFoundException이 발생해야 함.
+        // 다른 사람의 상세 아이디인 경우 CustomAccessDenied,
+        // 유효성 검사에 실패한 경우 IllegalArgumentException이 발생하므로 ResolvedException을 통해 검증 필요.
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(IllegalArgumentException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        Map<String, String> cookieMap = tokenFixture.getCookieMap(result);
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
         assertTrue(cookieMap.isEmpty());
     }
 
@@ -766,6 +1852,11 @@ public class OrderControllerIT {
                         .content(requestDTO))
                 .andExpect(status().isForbidden())
                 .andReturn();
+
+        // cartCookie가 포함된 요청이기 때문에 데이터 조회해서의 불일치로 CustomAccessDenied가 발생
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(CustomAccessDeniedException.class, ex);
+
         String content = result.getResponse().getContentAsString();
         Map<String, String> cookieMap = tokenFixture.getCookieMap(result);
         ExceptionEntity response = om.readValue(
@@ -873,6 +1964,11 @@ public class OrderControllerIT {
                         .content(requestDTO))
                 .andExpect(status().isBadRequest())
                 .andReturn();
+
+        // 비회원인데 쿠키가 없으므로 Controller에서 검증 체크로 인해 CustomNotFound 발생
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(CustomNotFoundException.class, ex);
+
         String content = result.getResponse().getContentAsString();
         Map<String, String> cookieMap = tokenFixture.getCookieMap(result);
         ExceptionEntity response = om.readValue(
@@ -935,6 +2031,144 @@ public class OrderControllerIT {
                         .content(requestDTO))
                 .andExpect(status().isNoContent())
                 .andReturn();
+    }
+
+    @Test
+    @DisplayName(value = "회원의 결제 API 호출 직전 주문 데이터 검증. orderData 리스트가 비어있는 경우")
+    void validateOrderByMemberValidationOrderDataListIsEmpty() throws Exception {
+        List<OrderDataDTO> requestOrderDataDTOList = new ArrayList<>();
+        OrderDataResponseDTO requestOrderDataDTO = new OrderDataResponseDTO(requestOrderDataDTOList, 1000);
+
+        String requestDTO = om.writeValueAsString(requestOrderDataDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "validate")
+                                    .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                                    .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                                    .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                                    .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(requestDTO))
+                            .andExpect(status().isBadRequest())
+                            .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("orderData", responseObj.field());
+        assertEquals("NotEmpty", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원의 결제 API 호출 직전 주문 데이터 검증. 총 금액이 음수인 경우")
+    void validateOrderByMemberValidationTotalPriceIsNegativeNumber() throws Exception {
+        Product productFixture = productList.get(0);
+        List<OrderDataDTO> requestOrderDataDTOList = new ArrayList<>();
+        int totalPrice = -1;
+        for(ProductOption option : productFixture.getProductOptions()) {
+            int orderCount = 3;
+            int price = (int) (productFixture.getProductPrice() * (1 - ((double) productFixture.getProductDiscount() / 100))) * orderCount;
+
+            requestOrderDataDTOList.add(
+                    new OrderDataDTO(
+                            productFixture.getId(),
+                            option.getId(),
+                            productFixture.getProductName(),
+                            option.getSize(),
+                            option.getColor(),
+                            orderCount,
+                            price
+                    )
+            );
+        }
+
+        OrderDataResponseDTO requestOrderDataDTO = new OrderDataResponseDTO(requestOrderDataDTOList, totalPrice);
+
+        String requestDTO = om.writeValueAsString(requestOrderDataDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "validate")
+                                .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                                .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                                .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                                .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(requestDTO))
+                        .andExpect(status().isBadRequest())
+                        .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("totalPrice", responseObj.field());
+        assertEquals("Min", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원의 결제 API 호출 직전 주문 데이터 검증. orderData 리스트가 비어있고 총 금액이 음수인 경우")
+    void validateOrderByMemberValidationAllParameterIsWrong() throws Exception {
+        List<OrderDataDTO> requestOrderDataDTOList = new ArrayList<>();
+        OrderDataResponseDTO requestOrderDataDTO = new OrderDataResponseDTO(requestOrderDataDTOList, -1);
+
+        String requestDTO = om.writeValueAsString(requestOrderDataDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "validate")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .cookie(new Cookie(ORDER_TOKEN_HEADER, ORDER_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(BAD_REQUEST_ERROR_CODE.getHttpStatus().value(), response.errorCode());
+        assertEquals(BAD_REQUEST_ERROR_CODE.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(2, response.errors().size());
+
+        Map<String, String> validationMap = new HashMap<>();
+        validationMap.put("orderData", "NotEmpty");
+        validationMap.put("totalPrice", "Min");
+
+        response.errors().forEach(v -> {
+            String constraint = validationMap.getOrDefault(v.field(), null);
+
+            assertNotNull(constraint);
+            assertEquals(constraint, v.constraint());
+        });
     }
 
     @Test

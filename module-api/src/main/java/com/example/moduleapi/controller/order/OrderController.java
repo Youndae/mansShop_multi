@@ -5,12 +5,15 @@ import com.example.moduleapi.annotation.swagger.SwaggerAuthentication;
 import com.example.moduleapi.service.PrincipalService;
 import com.example.moduleapi.utils.CartUtils;
 import com.example.moduleapi.utils.OrderTokenUtils;
+import com.example.moduleapi.validator.CartDetailRequestValidator;
 import com.example.modulecommon.customException.CustomNotFoundException;
 import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.modulecommon.model.enumuration.Role;
 import com.example.moduleorder.model.dto.in.OrderProductRequestDTO;
 import com.example.moduleorder.model.dto.in.PaymentDTO;
 import com.example.moduleorder.model.dto.out.OrderDataResponseDTO;
+import com.example.moduleorder.model.enumuration.OrderPaymentType;
+import com.example.moduleorder.model.enumuration.OrderRequestType;
 import com.example.moduleorder.usecase.OrderWriteUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -20,6 +23,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -47,6 +51,8 @@ public class OrderController {
 
     private final PrincipalService principalService;
 
+    private final CartDetailRequestValidator cartDetailRequestValidator;
+
     /**
      *
      * @param paymentDTO
@@ -64,13 +70,24 @@ public class OrderController {
             in = ParameterIn.COOKIE
     )
     @PostMapping("/")
-    public ResponseEntity<Void> payment(@RequestBody PaymentDTO paymentDTO,
+    public ResponseEntity<Void> payment(@RequestBody @Valid PaymentDTO paymentDTO,
                                                       HttpServletRequest request,
                                                       HttpServletResponse response,
                                                       Principal principal) {
         Cookie cartCookie = cartUtils.getCartCookie(request);
         Cookie orderTokenCookie = orderTokenUtils.getOrderTokenCookie(request);
         String userId = principalService.extractUserIdIfExist(principal);
+
+        log.info("OrderController.payment :: userId= {}, paymentType= {}, orderType= {}",
+                userId,
+                paymentDTO.paymentType(),
+                paymentDTO.orderType()
+        );
+
+        // paymentType Validate
+        OrderPaymentType.validate(paymentDTO.paymentType());
+        // orderType Validate
+        OrderRequestType.validate(paymentDTO.orderType());
 
         orderWriteUseCase.orderDataProcessAfterPayment(paymentDTO, cartCookie, userId, orderTokenCookie, response);
 
@@ -87,7 +104,7 @@ public class OrderController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PostMapping("/product")
-    public ResponseEntity<OrderDataResponseDTO> orderProduct(@Schema(name = "주문 요청 상품 데이터", type = "array") @RequestBody List<OrderProductRequestDTO> requestDTO,
+    public ResponseEntity<OrderDataResponseDTO> orderProduct(@Schema(name = "주문 요청 상품 데이터", type = "array") @RequestBody List<@Valid OrderProductRequestDTO> requestDTO,
                                                              Principal principal,
                                                              HttpServletRequest request,
                                                              HttpServletResponse response){
@@ -113,12 +130,13 @@ public class OrderController {
                                                           HttpServletRequest request,
                                                           HttpServletResponse response,
                                                           Principal principal) {
+        cartDetailRequestValidator.validateCartDetailIds(cartDetailIds);
         Cookie orderTokenCookie = orderTokenUtils.getOrderTokenCookie(request);
         Cookie cartCookie = cartUtils.getCartCookie(request);
         String userId = principalService.extractUserIdIfExist(principal);
 
         if(cartCookie == null && userId == null) {
-            log.error("OrderController.orderCart :: cartCookie and UserId is null");
+            log.warn("OrderController.orderCart :: cartCookie and UserId is null");
             throw new CustomNotFoundException(ErrorCode.BAD_REQUEST, ErrorCode.BAD_REQUEST.getMessage());
         }
 
@@ -129,7 +147,7 @@ public class OrderController {
 
     @Operation(summary = "결제 API 호출 이전 주문 데이터 검증", hidden = true)
     @PostMapping("/validate")
-    public ResponseEntity<Void> validateOrder(@RequestBody OrderDataResponseDTO requestDTO,
+    public ResponseEntity<Void> validateOrder(@RequestBody @Valid OrderDataResponseDTO requestDTO,
                                                             Principal principal,
                                                             HttpServletRequest request,
                                                             HttpServletResponse response) {

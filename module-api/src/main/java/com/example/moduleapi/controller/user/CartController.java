@@ -4,6 +4,7 @@ import com.example.moduleapi.annotation.swagger.DefaultApiResponse;
 import com.example.moduleapi.annotation.swagger.SwaggerAuthentication;
 import com.example.moduleapi.service.PrincipalService;
 import com.example.moduleapi.utils.CartUtils;
+import com.example.moduleapi.validator.CartDetailRequestValidator;
 import com.example.modulecart.model.dto.in.AddCartDTO;
 import com.example.modulecart.model.dto.out.CartCookieResponseDTO;
 import com.example.modulecart.model.dto.out.CartDetailDTO;
@@ -40,6 +41,8 @@ public class CartController {
     private final CartUtils cartUtils;
 
     private final PrincipalService principalService;
+
+    private final CartDetailRequestValidator cartDetailRequestValidator;
 
     /**
      *
@@ -196,6 +199,7 @@ public class CartController {
                                                                HttpServletRequest request,
                                                                HttpServletResponse response,
                                                                Principal principal) {
+        cartDetailRequestValidator.validateCartDetailIds(deleteSelectId);
         Cookie cartCookie = cartUtils.getCartCookie(request);
         String userId = principalService.extractUserIdIfExist(principal);
         cartUtils.exceptionAfterValidateCartMemberDTO(cartCookie, userId);

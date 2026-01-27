@@ -5,7 +5,6 @@ import com.example.moduleapi.mapper.PagingResponseMapper;
 import com.example.moduleapi.model.response.PagingResponseDTO;
 import com.example.modulecommon.model.dto.response.PagingListDTO;
 import com.example.modulecommon.model.enumuration.Role;
-import com.example.moduleconfig.properties.*;
 import com.example.modulefile.usecase.FileReadUseCase;
 import com.example.moduleorder.model.dto.out.OrderListDTO;
 import com.example.moduleorder.model.dto.page.OrderPageDTO;
@@ -21,7 +20,6 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,47 +39,6 @@ public class MainController {
     private final OrderReadUseCase orderReadUseCase;
 
     private final PagingResponseMapper pagingResponseMapper;
-
-    /**
-     * secrets manager test
-     */
-
-    private final AwsS3Properties awsS3Properties;
-    private final CookieProperties cookieProperties;
-    private final DataSourceProperties dataSourceProperties;
-    private final IamportProperties iamportProperties;
-    private final OAuth2Properties oAuth2Properties;
-    private final TokenProperties tokenProperties;
-    private final TokenRedisProperties tokenRedisProperties;
-    private final JwtSecretProperties jwtSecretProperties;
-
-    @GetMapping("/sec")
-    public void secretTest() {
-        System.out.println("========================================");
-        System.out.println("S3 properties");
-        System.out.println("========================================");
-        System.out.println(awsS3Properties.getBucket());
-        System.out.println("========================================");
-        System.out.println("cookie properties");
-        System.out.println("========================================");
-        System.out.println(cookieProperties.getIno().getAge());
-        System.out.println(cookieProperties.getIno().getHeader());
-        System.out.println(cookieProperties.getCart().getAge());
-        System.out.println(cookieProperties.getCart().getHeader());
-        System.out.println("========================================");
-        System.out.println("dataSource properties");
-        System.out.println("========================================");
-        System.out.println(dataSourceProperties.getUrl());
-        System.out.println(dataSourceProperties.getUsername());
-        System.out.println(dataSourceProperties.getPassword());
-        System.out.println("========================================");
-        System.out.println("oauth2 properties");
-        System.out.println("========================================");
-        oAuth2Properties.getProvider().forEach((k, v) -> System.out.println(k + ":" + v));
-        System.out.println("========================================");
-        oAuth2Properties.getRegistration().getGoogle().getRedirectUri();
-        System.out.println("========================================");
-    }
 
     /**
      *
