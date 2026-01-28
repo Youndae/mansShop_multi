@@ -3,6 +3,7 @@ package com.example.moduleapi.controller.user;
 import com.example.moduleapi.annotation.swagger.DefaultApiResponse;
 import com.example.moduleapi.annotation.swagger.SwaggerAuthentication;
 import com.example.moduleapi.config.exception.ExceptionEntity;
+import com.example.moduleapi.validator.MemberRequestValidator;
 import com.example.moduleauth.service.AuthenticationService;
 import com.example.modulecommon.customException.CustomAccessDeniedException;
 import com.example.modulecommon.model.enumuration.ErrorCode;
@@ -23,6 +24,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -50,6 +52,8 @@ public class MemberController {
 
     private final AuthenticationService authenticationService;
 
+    private final MemberRequestValidator memberRequestValidator;
+
     /**
      *
      * @param loginDTO
@@ -57,6 +61,8 @@ public class MemberController {
      * @param response
      *
      * 로컬 로그인 요청
+     * 로그인은 별도의 Validation 없이 비즈니스 로직에서 바로 검증하는 방법으로 결정.
+     * 조회와 비밀번호 비교 검증에 있어서 성능 리스크가 크지 않다고 판단했기 때문.
      */
     @Operation(summary = "로그인 요청")
     @ApiResponses({
@@ -121,11 +127,18 @@ public class MemberController {
      * @param joinDTO
      *
      * 회원 가입 요청
+     *
+     * Spring Validation 말고 별도의 Validator를 통해 검증
+     * 프론트에서도 검증을 통과해야만 요청을 보내도록 설계되어 있으므로
+     * 유효성 검사에 통과하지 못하는 케이스는 비정상적인 요청으로 판단.
+     * 필드별 유효성 검사 실패 메시지를 보내기 보다 400 BAD_REQUEST만 보내 어디서 잘못 된건지 굳이 응답하지 않는 방향으로 결정.
      */
     @Operation(summary = "회원가입 요청")
     @ApiResponse(responseCode = "200", description = "성공")
     @PostMapping("/join")
     public ResponseEntity<Void> joinProc(@RequestBody JoinDTO joinDTO) {
+
+        memberRequestValidator.validateJoinDTO(joinDTO);
 
         userWriteUseCase.joinProc(joinDTO);
 
@@ -169,7 +182,7 @@ public class MemberController {
             in = ParameterIn.QUERY
     )
     @GetMapping("/check-id")
-    public ResponseEntity<Void> checkJoinId(@RequestParam("userId") String userId) {
+    public ResponseEntity<Void> checkJoinId(@RequestParam("userId") @NotBlank String userId) {
 
         userReadUseCase.checkJoinUserId(userId);
 
@@ -192,7 +205,7 @@ public class MemberController {
             in = ParameterIn.QUERY
     )
     @GetMapping("/check-nickname")
-    public ResponseEntity<Void> checkNickname(@RequestParam("nickname") String nickname, Principal principal) {
+    public ResponseEntity<Void> checkNickname(@RequestParam("nickname") @NotBlank String nickname, Principal principal) {
 
         userReadUseCase.checkNickname(nickname, principal);
 
@@ -245,9 +258,10 @@ public class MemberController {
     })
     @GetMapping("/search-id")
     public ResponseEntity<String> searchId(@RequestParam(name = "userName") String userName,
-                                                            @RequestParam(name = "userPhone", required = false) String userPhone,
-                                                            @RequestParam(name = "userEmail", required = false) String userEmail) {
+                                            @RequestParam(name = "userPhone", required = false) String userPhone,
+                                            @RequestParam(name = "userEmail", required = false) String userEmail) {
 
+        memberRequestValidator.validateSearchId(userName, userPhone, userEmail);
         UserSearchDTO searchDTO = new UserSearchDTO(userName, userPhone, userEmail);
 
         String response = userReadUseCase.searchId(searchDTO);
@@ -293,6 +307,7 @@ public class MemberController {
                                                        @RequestParam(name = "name") String userName,
                                                        @RequestParam(name = "email") String userEmail) {
 
+        memberRequestValidator.validateSearchPassword(userId, userName, userEmail);
         UserSearchPwDTO searchDTO = new UserSearchPwDTO(userId, userName, userEmail);
 
         userWriteUseCase.searchPassword(searchDTO);
@@ -306,6 +321,9 @@ public class MemberController {
      *
      * 인증번호 확인.
      * 사용자가 메일을 확인하고 해당 인증번호를 입력해 확인 요청.
+     *
+     * Redis 기반 체크로 성능 저하 리스크가 적기 때문에
+     * Spring Validation이나 Validator를 통한 검증은 따로 수행하지 않음.
      */
     @Operation(summary = "비밀번호 찾기 인증번호 확인 요청")
     @ApiResponse(responseCode = "200", description = "성공. 정상인 경우 OK, 일치하는 데이터가 없는 경우 FAIL, 오류 발생 시 ERROR 반환")
@@ -322,6 +340,10 @@ public class MemberController {
      * @param resetDTO
      *
      * 비밀번호 수정 요청
+     *
+     * 비밀번호에 대한 validator를 통한 유효성 검사를 수행
+     * userId와 certification의 경우 사용자가 직접 입력하는 값이 아니고,
+     * 비밀번호 수정 전 다시한번 Redis 데이터와 비교 검증을 수행하기 때문에 검증 생략.
      */
     @Operation(summary = "인증번호 확인 이후 비밀번호 수정 요청")
     @ApiResponses({
@@ -333,6 +355,7 @@ public class MemberController {
     @PatchMapping("/reset-pw")
     public ResponseEntity<Void> resetPassword(@RequestBody UserResetPwDTO resetDTO) {
 
+        memberRequestValidator.validatePassword(resetDTO.userPw());
         userWriteUseCase.resetPw(resetDTO);
 
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();

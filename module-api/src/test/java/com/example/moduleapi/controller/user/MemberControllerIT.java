@@ -2,8 +2,11 @@ package com.example.moduleapi.controller.user;
 
 import com.example.moduleapi.ModuleApiApplication;
 import com.example.moduleapi.config.exception.ExceptionEntity;
+import com.example.moduleapi.config.exception.ValidationExceptionEntity;
 import com.example.moduleapi.fixture.TokenFixture;
 import com.example.moduleapi.utils.MailHogUtils;
+import com.example.modulecommon.customException.InvalidJoinPolicyException;
+import com.example.modulecommon.customException.InvalidPasswordPolicyException;
 import com.example.modulecommon.fixture.MemberAndAuthFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.entity.Auth;
@@ -40,6 +43,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -288,7 +292,838 @@ public class MemberControllerIT {
         assertEquals(birth, saveMember.getBirth());
         assertEquals(joinDTO.userEmail(), saveMember.getUserEmail());
         assertEquals(1, saveMember.getAuths().size());
-        assertEquals(Role.MEMBER.getRole(), saveMember.getAuths().get(0).getAuth());
+        assertEquals(Role.MEMBER.getKey(), saveMember.getAuths().get(0).getAuth());
+    }
+
+    @Test
+    @DisplayName(value = "회원가입 요청. 아이디가 null인 경우")
+    void joinProcValidationUserIdIsNull() throws Exception {
+        JoinDTO joinDTO = new JoinDTO(
+                null,
+                "join1234!@",
+                "joinUserName",
+                "joinUserNickname",
+                "01001012020",
+                "2000/1/1",
+                "joinUser@join.com"
+        );
+
+        String joinRequestBody = om.writeValueAsString(joinDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "join")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(joinRequestBody))
+                    .andExpect(status().isBadRequest())
+                    .andReturn();
+
+        // 별도의 InvalidJoinPolicyException이 던져지므로 유효성 검사에서 실패한 것을 확실히 검증하기 위함.
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidJoinPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원가입 요청. 아이디가 Blank인 경우")
+    void joinProcValidationUserIdIsBlank() throws Exception {
+        JoinDTO joinDTO = new JoinDTO(
+                "",
+                "join1234!@",
+                "joinUserName",
+                "joinUserNickname",
+                "01001012020",
+                "2000/1/1",
+                "joinUser@join.com"
+        );
+
+        String joinRequestBody = om.writeValueAsString(joinDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "join")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(joinRequestBody))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // 별도의 InvalidJoinPolicyException이 던져지므로 유효성 검사에서 실패한 것을 확실히 검증하기 위함.
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidJoinPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원가입 요청. 아이디가 5글자 미만인 경우")
+    void joinProcValidationUserIdLengthLT5() throws Exception {
+        JoinDTO joinDTO = new JoinDTO(
+                "test",
+                "join1234!@",
+                "joinUserName",
+                "joinUserNickname",
+                "01001012020",
+                "2000/1/1",
+                "joinUser@join.com"
+        );
+
+        String joinRequestBody = om.writeValueAsString(joinDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "join")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(joinRequestBody))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // 별도의 InvalidJoinPolicyException이 던져지므로 유효성 검사에서 실패한 것을 확실히 검증하기 위함.
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidJoinPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원가입 요청. 아이디가 15자 초과인 경우")
+    void joinProcValidationUserIdLengthGT15() throws Exception {
+        JoinDTO joinDTO = new JoinDTO(
+                "testerUserId1234",
+                "join1234!@",
+                "joinUserName",
+                "joinUserNickname",
+                "01001012020",
+                "2000/1/1",
+                "joinUser@join.com"
+        );
+
+        String joinRequestBody = om.writeValueAsString(joinDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "join")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(joinRequestBody))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // 별도의 InvalidJoinPolicyException이 던져지므로 유효성 검사에서 실패한 것을 확실히 검증하기 위함.
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidJoinPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원가입 요청. 비밀번호가 null인 경우")
+    void joinProcValidationUserPwIsNull() throws Exception {
+        JoinDTO joinDTO = new JoinDTO(
+                "tester",
+                null,
+                "joinUserName",
+                "joinUserNickname",
+                "01001012020",
+                "2000/1/1",
+                "joinUser@join.com"
+        );
+
+        String joinRequestBody = om.writeValueAsString(joinDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "join")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(joinRequestBody))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // 별도의 InvalidJoinPolicyException이 던져지므로 유효성 검사에서 실패한 것을 확실히 검증하기 위함.
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidPasswordPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원가입 요청. 비밀번호가 Blank인 경우")
+    void joinProcValidationUserPWIsBlank() throws Exception {
+        JoinDTO joinDTO = new JoinDTO(
+                "tester",
+                "",
+                "joinUserName",
+                "joinUserNickname",
+                "01001012020",
+                "2000/1/1",
+                "joinUser@join.com"
+        );
+
+        String joinRequestBody = om.writeValueAsString(joinDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "join")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(joinRequestBody))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // 별도의 InvalidJoinPolicyException이 던져지므로 유효성 검사에서 실패한 것을 확실히 검증하기 위함.
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidPasswordPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원가입 요청. 비밀번호가 패턴과 맞지 않는 경우")
+    void joinProcValidationUserPwInvalid() throws Exception {
+        JoinDTO joinDTO = new JoinDTO(
+                "tester",
+                "join12345",
+                "joinUserName",
+                "joinUserNickname",
+                "01001012020",
+                "2000/1/1",
+                "joinUser@join.com"
+        );
+
+        String joinRequestBody = om.writeValueAsString(joinDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "join")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(joinRequestBody))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // 별도의 InvalidJoinPolicyException이 던져지므로 유효성 검사에서 실패한 것을 확실히 검증하기 위함.
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidPasswordPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원가입 요청. 사용자 이름이 null인 경우")
+    void joinProcValidationUserNameIsNull() throws Exception {
+        JoinDTO joinDTO = new JoinDTO(
+                "tester",
+                "join1234!@",
+                null,
+                "joinUserNickname",
+                "01001012020",
+                "2000/1/1",
+                "joinUser@join.com"
+        );
+
+        String joinRequestBody = om.writeValueAsString(joinDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "join")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(joinRequestBody))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // 별도의 InvalidJoinPolicyException이 던져지므로 유효성 검사에서 실패한 것을 확실히 검증하기 위함.
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidJoinPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원가입 요청. 사용자 이름이 2글자 미만인 경우")
+    void joinProcValidationUserNameLT2() throws Exception {
+        JoinDTO joinDTO = new JoinDTO(
+                "tester",
+                "join1234!@",
+                "a",
+                "joinUserNickname",
+                "01001012020",
+                "2000/1/1",
+                "joinUser@join.com"
+        );
+
+        String joinRequestBody = om.writeValueAsString(joinDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "join")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(joinRequestBody))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // 별도의 InvalidJoinPolicyException이 던져지므로 유효성 검사에서 실패한 것을 확실히 검증하기 위함.
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidJoinPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원가입 요청. 닉네임이 null인 경우")
+    void joinProcValidationNicknameIsNull() throws Exception {
+        JoinDTO joinDTO = new JoinDTO(
+                "tester",
+                "join1234!@",
+                "joinUserName",
+                null,
+                "01001012020",
+                "2000/1/1",
+                "joinUser@join.com"
+        );
+
+        LocalDate birth = LocalDate.of(2000, 1, 1);
+
+        String joinRequestBody = om.writeValueAsString(joinDTO);
+
+        mockMvc.perform(post(URL_PREFIX + "join")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(joinRequestBody))
+                .andExpect(status().isNoContent())
+                .andReturn();
+
+        em.flush();
+        em.clear();
+
+        Member saveMember = memberRepository.findByUserId(joinDTO.userId());
+
+        assertNotNull(saveMember);
+        assertTrue(passwordEncoder.matches(joinDTO.userPw(), saveMember.getUserPw()));
+        assertEquals(joinDTO.userName(), saveMember.getUserName());
+        assertEquals(joinDTO.nickname(), saveMember.getNickname());
+        assertEquals(joinDTO.phone(), saveMember.getPhone().replaceAll("-", ""));
+        assertEquals(birth, saveMember.getBirth());
+        assertEquals(joinDTO.userEmail(), saveMember.getUserEmail());
+        assertEquals(1, saveMember.getAuths().size());
+        assertEquals(Role.MEMBER.getKey(), saveMember.getAuths().get(0).getAuth());
+    }
+
+    @Test
+    @DisplayName(value = "회원가입 요청. 닉네임이 2글자 미만인 경우")
+    void joinProcValidationNicknameLT2() throws Exception {
+        JoinDTO joinDTO = new JoinDTO(
+                "tester",
+                "join1234!@",
+                "joinUserName",
+                "a",
+                "01001012020",
+                "2000/1/1",
+                "joinUser@join.com"
+        );
+
+        String joinRequestBody = om.writeValueAsString(joinDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "join")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(joinRequestBody))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // 별도의 InvalidJoinPolicyException이 던져지므로 유효성 검사에서 실패한 것을 확실히 검증하기 위함.
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidJoinPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원가입 요청. 닉네임에 특수문자가 포함된 경우")
+    void joinProcValidationNicknamePatternInvalid() throws Exception {
+        JoinDTO joinDTO = new JoinDTO(
+                "tester",
+                "join1234!@",
+                "joinUserName",
+                "joinUserNickname!",
+                "01001012020",
+                "2000/1/1",
+                "joinUser@join.com"
+        );
+
+        String joinRequestBody = om.writeValueAsString(joinDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "join")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(joinRequestBody))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // 별도의 InvalidJoinPolicyException이 던져지므로 유효성 검사에서 실패한 것을 확실히 검증하기 위함.
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidJoinPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원가입 요청. 연락처에 하이픈이 포함된 경우")
+    void joinProcValidationPhoneIncludeHyphen() throws Exception {
+        JoinDTO joinDTO = new JoinDTO(
+                "tester",
+                "join1234!@",
+                "joinUserName",
+                "joinUserNickname",
+                "010-0101-2020",
+                "2000/1/1",
+                "joinUser@join.com"
+        );
+
+        String joinRequestBody = om.writeValueAsString(joinDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "join")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(joinRequestBody))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // 별도의 InvalidJoinPolicyException이 던져지므로 유효성 검사에서 실패한 것을 확실히 검증하기 위함.
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidJoinPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원가입 요청. 연락처가 null인 경우")
+    void joinProcValidationPhoneIsNull() throws Exception {
+        JoinDTO joinDTO = new JoinDTO(
+                "tester",
+                "join1234!@",
+                "joinUserName",
+                "joinUserNickname",
+                null,
+                "2000/1/1",
+                "joinUser@join.com"
+        );
+
+        String joinRequestBody = om.writeValueAsString(joinDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "join")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(joinRequestBody))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // 별도의 InvalidJoinPolicyException이 던져지므로 유효성 검사에서 실패한 것을 확실히 검증하기 위함.
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidJoinPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원가입 요청. 연락처가 Blank인 경우")
+    void joinProcValidationPhoneIsBlank() throws Exception {
+        JoinDTO joinDTO = new JoinDTO(
+                "tester",
+                "join1234!@",
+                "joinUserName",
+                "joinUserNickname",
+                "",
+                "2000/1/1",
+                "joinUser@join.com"
+        );
+
+        String joinRequestBody = om.writeValueAsString(joinDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "join")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(joinRequestBody))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // 별도의 InvalidJoinPolicyException이 던져지므로 유효성 검사에서 실패한 것을 확실히 검증하기 위함.
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidJoinPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원가입 요청. 연락처가 짧은 경우")
+    void joinProcValidationPhoneIsShort() throws Exception {
+        JoinDTO joinDTO = new JoinDTO(
+                "tester",
+                "join1234!@",
+                "joinUserName",
+                "joinUserNickname",
+                "01001012",
+                "2000/1/1",
+                "joinUser@join.com"
+        );
+
+        String joinRequestBody = om.writeValueAsString(joinDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "join")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(joinRequestBody))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // 별도의 InvalidJoinPolicyException이 던져지므로 유효성 검사에서 실패한 것을 확실히 검증하기 위함.
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidJoinPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원가입 요청. 연락처가 긴 경우")
+    void joinProcValidationPhoneIsLong() throws Exception {
+        JoinDTO joinDTO = new JoinDTO(
+                "tester",
+                "join1234!@",
+                "joinUserName",
+                "joinUserNickname",
+                "010010120201",
+                "2000/1/1",
+                "joinUser@join.com"
+        );
+
+        String joinRequestBody = om.writeValueAsString(joinDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "join")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(joinRequestBody))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // 별도의 InvalidJoinPolicyException이 던져지므로 유효성 검사에서 실패한 것을 확실히 검증하기 위함.
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidJoinPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원가입 요청. 생년월일이 null인 경우")
+    void joinProcValidationBirthIsNull() throws Exception {
+        JoinDTO joinDTO = new JoinDTO(
+                "tester",
+                "join1234!@",
+                "joinUserName",
+                "joinUserNickname",
+                "01001012020",
+                null,
+                "joinUser@join.com"
+        );
+
+        String joinRequestBody = om.writeValueAsString(joinDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "join")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(joinRequestBody))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // 별도의 InvalidJoinPolicyException이 던져지므로 유효성 검사에서 실패한 것을 확실히 검증하기 위함.
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidJoinPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원가입 요청. 생년월일이 Blank인 경우")
+    void joinProcValidationBirthIsBlank() throws Exception {
+        JoinDTO joinDTO = new JoinDTO(
+                "tester",
+                "join1234!@",
+                "joinUserName",
+                "joinUserNickname",
+                "01001012020",
+                "",
+                "joinUser@join.com"
+        );
+
+        String joinRequestBody = om.writeValueAsString(joinDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "join")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(joinRequestBody))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // 별도의 InvalidJoinPolicyException이 던져지므로 유효성 검사에서 실패한 것을 확실히 검증하기 위함.
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidJoinPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원가입 요청. 생년월일에 문자열이 포함된 경우")
+    void joinProcValidationBirthWrongPattern() throws Exception {
+        JoinDTO joinDTO = new JoinDTO(
+                "tester",
+                "join1234!@",
+                "joinUserName",
+                "joinUserNickname",
+                "01001012020",
+                "2000/a/1",
+                "joinUser@join.com"
+        );
+
+        String joinRequestBody = om.writeValueAsString(joinDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "join")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(joinRequestBody))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // 별도의 InvalidJoinPolicyException이 던져지므로 유효성 검사에서 실패한 것을 확실히 검증하기 위함.
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidJoinPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원가입 요청. 이메일이 null인 경우")
+    void joinProcValidationEmailIsNull() throws Exception {
+        JoinDTO joinDTO = new JoinDTO(
+                "tester",
+                "join1234!@",
+                "joinUserName",
+                "joinUserNickname",
+                "01001012020",
+                "2000/1/1",
+                null
+        );
+
+        String joinRequestBody = om.writeValueAsString(joinDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "join")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(joinRequestBody))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // 별도의 InvalidJoinPolicyException이 던져지므로 유효성 검사에서 실패한 것을 확실히 검증하기 위함.
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidJoinPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원가입 요청. 이메일이 Blank인 경우")
+    void joinProcValidationEmailIsBlank() throws Exception {
+        JoinDTO joinDTO = new JoinDTO(
+                "",
+                "join1234!@",
+                "joinUserName",
+                "joinUserNickname",
+                "01001012020",
+                "2000/1/1",
+                ""
+        );
+
+        String joinRequestBody = om.writeValueAsString(joinDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "join")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(joinRequestBody))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // 별도의 InvalidJoinPolicyException이 던져지므로 유효성 검사에서 실패한 것을 확실히 검증하기 위함.
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidJoinPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원가입 요청. 이메일이 패턴에 맞지 않는 경우")
+    void joinProcValidationEmailWrongPattern() throws Exception {
+        JoinDTO joinDTO = new JoinDTO(
+                "tester",
+                "join1234!@",
+                "joinUserName",
+                "joinUserNickname",
+                "01001012020",
+                "2000/1/1",
+                "joinUserjoin.com"
+        );
+
+        String joinRequestBody = om.writeValueAsString(joinDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "join")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(joinRequestBody))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // 별도의 InvalidJoinPolicyException이 던져지므로 유효성 검사에서 실패한 것을 확실히 검증하기 위함.
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidJoinPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -439,6 +1274,30 @@ public class MemberControllerIT {
     }
 
     @Test
+    @DisplayName(value = "회원 가입 시 아이디 중복 체크. 아이디가 Blank인 경우")
+    void checkJoinIdValidationUserIdIsBlank() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "check-id")
+                        .param("userId", ""))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // Spring Validation 실패이기 때문에 HandlerMethodValidationException을 보장하기 위함
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(HandlerMethodValidationException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertNull(response.errors());
+    }
+
+    @Test
     @DisplayName(value = "닉네임 중복 체크")
     void checkNickname() throws Exception {
         mockMvc.perform(get(URL_PREFIX + "check-nickname")
@@ -476,6 +1335,30 @@ public class MemberControllerIT {
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
                 .andExpect(status().isOk())
                 .andReturn();
+    }
+
+    @Test
+    @DisplayName(value = "닉네임 중복 체크. 닉네임이 Blank인 경우")
+    void checkNicknameValidationNicknameIsBlank() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "check-nickname")
+                        .param("nickname", ""))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // Spring Validation 실패이기 때문에 HandlerMethodValidationException을 보장하기 위함
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(HandlerMethodValidationException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertNull(response.errors());
     }
 
     @Test
@@ -554,6 +1437,81 @@ public class MemberControllerIT {
     }
 
     @Test
+    @DisplayName(value = "아이디 찾기. 연락처와 이메일이 전달되지 않은 경우")
+    void searchIdValidationPhoneAndEmailIsNull() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "search-id")
+                        .param("userName", member.getUserName()))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // Validator에서의 오류 발생 검증을 위함
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidJoinPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "아이디 찾기. 연락처와 이메일 모두 전달된 경우")
+    void searchIdValidationPhoneAndEmail() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "search-id")
+                        .param("userName", member.getUserName())
+                        .param("userPhone", "01000001111")
+                        .param("userEmail", "tester@tester.com"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // Validator에서의 오류 발생 검증을 위함
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidJoinPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "아이디 찾기. 사용자 이름이 Blank인 경우")
+    void searchIdValidationUserNameIsBlank() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "search-id")
+                        .param("userName", "")
+                        .param("userPhone", "01000001111"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // Validator에서의 오류 발생 검증을 위함
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidJoinPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
     @DisplayName(value = "비밀번호 찾기")
     void searchPw() throws Exception {
         mockMvc.perform(get(URL_PREFIX + "search-pw")
@@ -591,6 +1549,81 @@ public class MemberControllerIT {
         );
 
         assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "비밀번호 찾기. 아이디가 Blank인 경우")
+    void searchPwValidationUserIdIsBlank() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "search-pw")
+                        .param("id", "")
+                        .param("name", "noneUsername")
+                        .param("email", "none@none.com"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // Validator에서의 오류 발생 검증을 위함
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidJoinPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "비밀번호 찾기. 아이디가 Blank인 경우")
+    void searchPwValidationUserNameIsBlank() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "search-pw")
+                        .param("id", "noneUserId")
+                        .param("name", "")
+                        .param("email", "none@none.com"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // Validator에서의 오류 발생 검증을 위함
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidJoinPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "비밀번호 찾기. 이메일이 Blank인 경우")
+    void searchPwValidationEmailIsBlank() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "search-pw")
+                        .param("id", "noneUserId")
+                        .param("name", "noneUsername")
+                        .param("email", ""))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // Validator에서의 오류 발생 검증을 위함
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidJoinPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
         assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
@@ -638,7 +1671,7 @@ public class MemberControllerIT {
     @DisplayName(value = "비밀번호 찾기 인증번호 확인 이후 비밀번호 수정")
     void resetPassword() throws Exception {
         setRedisByCertification();
-        UserResetPwDTO resetDTO = new UserResetPwDTO(member.getUserId(), CERTIFICATION_FIXTURE, "5678!@");
+        UserResetPwDTO resetDTO = new UserResetPwDTO(member.getUserId(), CERTIFICATION_FIXTURE, "testerpw5678!@");
         String requestDTO = om.writeValueAsString(resetDTO);
 
         mockMvc.perform(patch(URL_PREFIX + "reset-pw")
@@ -657,7 +1690,7 @@ public class MemberControllerIT {
     @Test
     @DisplayName(value = "비밀번호 찾기 인증번호 확인 이후 비밀번호 수정. Redis에 인증번호 데이터가 없는 경우")
     void resetPasswordNotExistCertificationNumber() throws Exception {
-        UserResetPwDTO resetDTO = new UserResetPwDTO(member.getUserId(), "000000", "5678!@");
+        UserResetPwDTO resetDTO = new UserResetPwDTO(member.getUserId(), "000000", "testerpw5678!@");
         String requestDTO = om.writeValueAsString(resetDTO);
 
         MvcResult result = mockMvc.perform(patch(URL_PREFIX + "reset-pw")
@@ -680,7 +1713,7 @@ public class MemberControllerIT {
     @DisplayName(value = "비밀번호 찾기 인증번호 확인 이후 비밀번호 수정. 인증번호가 일치하지 않는 경우")
     void resetPasswordNotEqualsCertificationNumber() throws Exception {
         setRedisByCertification();
-        UserResetPwDTO resetDTO = new UserResetPwDTO(member.getUserId(), "000000", "5678!@");
+        UserResetPwDTO resetDTO = new UserResetPwDTO(member.getUserId(), "000000", "testerpw5678!@");
         String requestDTO = om.writeValueAsString(resetDTO);
 
         MvcResult result = mockMvc.perform(patch(URL_PREFIX + "reset-pw")
@@ -697,5 +1730,32 @@ public class MemberControllerIT {
 
         assertNotNull(response);
         assertEquals(ErrorCode.UNAUTHORIZED.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "비밀번호 찾기 인증번호 확인 이후 비밀번호 수정. 비밀번호가 패턴과 맞지 않는 경우")
+    void resetPasswordValidationPassword() throws Exception {
+        UserResetPwDTO resetDTO = new UserResetPwDTO(member.getUserId(), CERTIFICATION_FIXTURE, "5678!@");
+        String requestDTO = om.writeValueAsString(resetDTO);
+
+        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "reset-pw")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // Validator에서의 실패 검증 확인을 위함
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidPasswordPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 }

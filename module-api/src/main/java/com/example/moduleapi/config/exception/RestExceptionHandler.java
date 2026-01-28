@@ -171,6 +171,13 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         return toResponseEntity(ErrorCode.CONFLICT);
     }
 
+    @ExceptionHandler({InvalidPasswordPolicyException.class, InvalidJoinPolicyException.class})
+    public ResponseEntity<ExceptionEntity> memberValidationException (Exception e) {
+        log.warn("Member verification related exception", e.getMessage());
+
+        return toResponseEntity(ErrorCode.BAD_REQUEST);
+    }
+
     private void loggingConflict(Exception e) {
         if(e instanceof CustomConflictException)
             log.error("conflictException : {}", e.getMessage());
