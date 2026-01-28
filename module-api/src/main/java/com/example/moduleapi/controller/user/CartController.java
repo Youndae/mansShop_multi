@@ -17,6 +17,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -91,7 +93,7 @@ public class CartController {
             in = ParameterIn.COOKIE
     )
     @PostMapping("/")
-    public ResponseEntity<Void> addCart(@RequestBody List<AddCartDTO> addList,
+    public ResponseEntity<Void> addCart(@RequestBody List<@Valid AddCartDTO> addList,
                                                       HttpServletRequest request,
                                                       HttpServletResponse response,
                                                       Principal principal) {
@@ -127,7 +129,7 @@ public class CartController {
             in = ParameterIn.PATH
     )
     @PatchMapping("/count-up/{cartDetailId}")
-    public ResponseEntity<Void> cartCountUp(@PathVariable(name = "cartDetailId") long cartDetailId,
+    public ResponseEntity<Void> cartCountUp(@PathVariable(name = "cartDetailId") @Min(value = 1) long cartDetailId,
                                                           HttpServletRequest request,
                                                           HttpServletResponse response,
                                                           Principal principal) {
@@ -164,7 +166,7 @@ public class CartController {
             in = ParameterIn.PATH
     )
     @PatchMapping("/count-down/{cartDetailId}")
-    public ResponseEntity<Void> cartCountDown(@PathVariable(name = "cartDetailId") long cartDetailId,
+    public ResponseEntity<Void> cartCountDown(@PathVariable(name = "cartDetailId") @Min(value = 1) long cartDetailId,
                                                             HttpServletRequest request,
                                                             HttpServletResponse response,
                                                             Principal principal) {

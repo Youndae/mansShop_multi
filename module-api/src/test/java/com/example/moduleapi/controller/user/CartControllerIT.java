@@ -2,6 +2,9 @@ package com.example.moduleapi.controller.user;
 
 
 import com.example.moduleapi.ModuleApiApplication;
+import com.example.moduleapi.config.exception.ExceptionEntity;
+import com.example.moduleapi.config.exception.ValidationError;
+import com.example.moduleapi.config.exception.ValidationExceptionEntity;
 import com.example.moduleapi.fixture.TokenFixture;
 import com.example.modulecart.model.dto.business.CartMemberDTO;
 import com.example.modulecart.model.dto.in.AddCartDTO;
@@ -14,6 +17,7 @@ import com.example.modulecommon.fixture.MemberAndAuthFixture;
 import com.example.modulecommon.fixture.ProductFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.entity.*;
+import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.moduleconfig.properties.CookieProperties;
 import com.example.moduleconfig.properties.TokenProperties;
 import com.example.moduleproduct.repository.classification.ClassificationRepository;
@@ -41,12 +45,11 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -123,6 +126,8 @@ public class CartControllerIT {
 
     private List<Product> productList;
 
+    private List<ProductOption> optionList;
+
     private static final String URL_PREFIX = "/api/cart/";
 
     @BeforeEach
@@ -148,7 +153,7 @@ public class CartControllerIT {
         classificationRepository.saveAll(classificationList);
 
         productList = ProductFixture.createProductFixtureList(10, classificationList.get(0));
-        List<ProductOption> optionList = productList.stream().flatMap(v -> v.getProductOptions().stream()).toList();
+        optionList = productList.stream().flatMap(v -> v.getProductOptions().stream()).toList();
 
         productRepository.saveAll(productList);
         productOptionRepository.saveAll(optionList);
@@ -439,21 +444,198 @@ public class CartControllerIT {
     }
 
     @Test
-    @DisplayName(value = "장바구니 추가. 잘못된 옵션 아이디인 경우.")
+    @DisplayName(value = "장바구니 추가. 존재하지 않는 옵션 아이디인 경우.")
     void addCartExistsCartByMemberWrongProductOptionId() throws Exception {
-        List<AddCartDTO> requestDTO = List.of(new AddCartDTO(0L, 2));
+        long wrongOptionId = optionList.stream()
+                .mapToLong(ProductOption::getId)
+                .max()
+                .getAsLong() + 1L;
+        List<AddCartDTO> requestDTO = List.of(new AddCartDTO(wrongOptionId, 2));
 
         String addCartRequestBody = om.writeValueAsString(requestDTO);
 
-        mockMvc.perform(post(URL_PREFIX)
+        MvcResult result = mockMvc.perform(post(URL_PREFIX)
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
                         .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(addCartRequestBody)
                 )
-                .andExpect(status().is4xxClientError())
+                .andExpect(status().isBadRequest())
                 .andReturn();
+
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(IllegalArgumentException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "장바구니 추가. 옵션 아이디가 null인 경우.")
+    void addCartExistsCartByMemberValidationOptionIdIsNull() throws Exception {
+        List<AddCartDTO> requestDTO = List.of(
+                new AddCartDTO(null, 2),
+                new AddCartDTO(optionList.get(0).getId(), 1)
+        );
+
+        String addCartRequestBody = om.writeValueAsString(requestDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX)
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(addCartRequestBody)
+                )
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("optionId", responseObj.field());
+        assertEquals("NotNull", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "장바구니 추가. 옵션 아이디가 1보다 작은 경우.")
+    void addCartExistsCartByMemberValidationOptionIdIsZero() throws Exception {
+        List<AddCartDTO> requestDTO = List.of(
+                new AddCartDTO(0L, 2),
+                new AddCartDTO(optionList.get(0).getId(), 1)
+        );
+
+        String addCartRequestBody = om.writeValueAsString(requestDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX)
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(addCartRequestBody)
+                )
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("optionId", responseObj.field());
+        assertEquals("Min", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "장바구니 추가. 상품 수량이 1보다 작은 경우.")
+    void addCartExistsCartByMemberValidationCountIsZero() throws Exception {
+        List<AddCartDTO> requestDTO = List.of(
+                new AddCartDTO(optionList.get(0).getId(), 0)
+        );
+
+        String addCartRequestBody = om.writeValueAsString(requestDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX)
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(addCartRequestBody)
+                )
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("count", responseObj.field());
+        assertEquals("Min", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "장바구니 추가. 옵션 아이디가 null, 상품 수량이 1보다 작은 경우.")
+    void addCartExistsCartByMemberValidationOptionIdIsNullAndCountIsZero() throws Exception {
+        List<AddCartDTO> requestDTO = List.of(
+                new AddCartDTO(null, 0)
+        );
+
+        String addCartRequestBody = om.writeValueAsString(requestDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX)
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(addCartRequestBody)
+                )
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(2, response.errors().size());
+
+        Map<String, String> validationMap = new HashMap<>();
+        validationMap.put("optionId", "NotNull");
+        validationMap.put("count", "Min");
+
+        response.errors().forEach(v -> {
+            String constraint = validationMap.getOrDefault(v.field(), null);
+
+            assertNotNull(constraint);
+            assertEquals(constraint, v.constraint());
+        });
     }
 
     @Test
@@ -607,13 +789,57 @@ public class CartControllerIT {
     @Test
     @DisplayName(value = "장바구니 상품 수량 증가. 회원인 경우. 장바구니 상세 아이디가 잘못된 경우")
     void cartCountUpByMemberWrongDetailId() throws Exception {
-        mockMvc.perform(patch(URL_PREFIX + "count-up/0")
+        long wrongDetailId = Stream.of(memberCart, anonymousCart)
+                                .flatMap(v -> v.getCartDetailList().stream())
+                                .mapToLong(CartDetail::getId)
+                                .max()
+                                .getAsLong() + 1L;
+        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "count-up/" + wrongDetailId)
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
                         .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                 )
-                .andExpect(status().is4xxClientError())
+                .andExpect(status().isBadRequest())
                 .andReturn();
+
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(IllegalArgumentException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "장바구니 상품 수량 증가. 회원인 경우. 장바구니 상세 아이디가 1보다 작은 경우")
+    void cartCountUpByMemberValidationDetailIdIsZero() throws Exception {
+        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "count-up/0")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                )
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(HandlerMethodValidationException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertNull(response.errors());
     }
 
     @Test
@@ -704,13 +930,57 @@ public class CartControllerIT {
     @Test
     @DisplayName(value = "장바구니 상품 수량 감소. 회원인 경우. 장바구니 상세 아이디가 잘못된 경우")
     void cartCountDownByMemberWrongDetailId() throws Exception {
-        mockMvc.perform(patch(URL_PREFIX + "count-down/0")
+        long wrongDetailId = Stream.of(memberCart, anonymousCart)
+                .flatMap(v -> v.getCartDetailList().stream())
+                .mapToLong(CartDetail::getId)
+                .max()
+                .getAsLong() + 1L;
+        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "count-down/" + wrongDetailId)
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
                         .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                 )
-                .andExpect(status().is4xxClientError())
+                .andExpect(status().isBadRequest())
                 .andReturn();
+
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(IllegalArgumentException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "장바구니 상품 수량 감소. 회원인 경우. 장바구니 상세 아이디가 1보다 작은 경우")
+    void cartCountDownByMemberValidationDetailIdIsZero() throws Exception {
+        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "count-down/0")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                )
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(HandlerMethodValidationException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertNull(response.errors());
     }
 
     @Test
@@ -789,6 +1059,39 @@ public class CartControllerIT {
                 .limit(memberCart.getCartDetailList().size() - 2)
                 .toList();
         List<Long> deleteIds = new ArrayList<>(fixtureList.stream().mapToLong(CartDetail::getId).boxed().toList());
+        long wrongDetailId = Stream.of(memberCart, anonymousCart)
+                .flatMap(v -> v.getCartDetailList().stream())
+                .mapToLong(CartDetail::getId)
+                .max()
+                .getAsLong() + 1L;
+        deleteIds.add(wrongDetailId);
+        String deleteSelectId = om.writeValueAsString(deleteIds);
+
+        mockMvc.perform(delete(URL_PREFIX + "select")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(deleteSelectId)
+                )
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        List<CartDetailDTO> existData = cartDetailRepository.findAllByCartId(memberCart.getId());
+
+        assertNotNull(existData);
+        assertFalse(existData.isEmpty());
+        assertEquals(memberCart.getCartDetailList().size(), existData.size());
+    }
+
+    @Test
+    @DisplayName(value = "회원의 장바구니 선택 상품 삭제. 상세 아이디 리스트에 1보다 작은 값이 포함되어 있는 경우")
+    void deleteSelectCartByMemberValidationDetailIdIsZero() throws Exception{
+        List<CartDetail> fixtureList = memberCart.getCartDetailList()
+                .stream()
+                .limit(memberCart.getCartDetailList().size() - 2)
+                .toList();
+        List<Long> deleteIds = new ArrayList<>(fixtureList.stream().mapToLong(CartDetail::getId).boxed().toList());
         deleteIds.add(0L);
         String deleteSelectId = om.writeValueAsString(deleteIds);
 
@@ -799,7 +1102,7 @@ public class CartControllerIT {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(deleteSelectId)
                 )
-                .andExpect(status().is4xxClientError())
+                .andExpect(status().isBadRequest())
                 .andReturn();
 
         List<CartDetailDTO> existData = cartDetailRepository.findAllByCartId(memberCart.getId());
