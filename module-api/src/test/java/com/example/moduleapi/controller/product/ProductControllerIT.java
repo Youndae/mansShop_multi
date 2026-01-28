@@ -2,6 +2,8 @@ package com.example.moduleapi.controller.product;
 
 import com.example.moduleapi.ModuleApiApplication;
 import com.example.moduleapi.config.exception.ExceptionEntity;
+import com.example.moduleapi.config.exception.ValidationError;
+import com.example.moduleapi.config.exception.ValidationExceptionEntity;
 import com.example.moduleapi.fixture.TokenFixture;
 import com.example.moduleapi.model.response.PagingElementsResponseDTO;
 import com.example.modulecommon.fixture.*;
@@ -49,6 +51,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 
 import java.util.*;
@@ -454,6 +457,31 @@ public class ProductControllerIT {
     }
 
     @Test
+    @DisplayName(value = "상품의 리뷰 조회. 페이지값이 1보다 작은 경우")
+    void getProductReviewValidationPageIsZero() throws Exception {
+        ProductDetailDTO responseFixture = getProductDetailDTOFixture(false);
+
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + product.getId() + "/review")
+                        .param("page", "0"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(HandlerMethodValidationException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertNull(response.errors());
+    }
+
+    @Test
     @DisplayName(value = "상품의 문의 조회")
     void getProductQnA() throws Exception {
         ProductDetailDTO responseFixture = getProductDetailDTOFixture(false);
@@ -496,6 +524,28 @@ public class ProductControllerIT {
         assertTrue(response.content().isEmpty());
         assertEquals(0, response.totalElements());
         assertEquals(0, response.totalPages());
+    }
+
+    @Test
+    @DisplayName(value = "상품의 문의 조회. 페이지 값이 1보다 작은 경우")
+    void getProductQnAValidationPageIsZero() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + product.getId() + "/qna")
+                        .param("page", "0"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(HandlerMethodValidationException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
     }
 
     @Test
@@ -547,6 +597,218 @@ public class ProductControllerIT {
 
         assertNotNull(response);
         assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "상품 문의 작성. 상품 아이디가 null인 경우")
+    void postProductQnAValidationProductIdIsNull() throws Exception {
+        ProductQnAPostDTO postDTO = new ProductQnAPostDTO(null, "test insert Product QnA content");
+        String requestDTO = om.writeValueAsString(postDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna")
+                                .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                                .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                                .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(requestDTO))
+                        .andExpect(status().isBadRequest())
+                        .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("productId", responseObj.field());
+        assertEquals("NotBlank", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "상품 문의 작성. 상품 아이디가 Blank인 경우")
+    void postProductQnAValidationProductIdIsBlank() throws Exception {
+        ProductQnAPostDTO postDTO = new ProductQnAPostDTO("", "test insert Product QnA content");
+        String requestDTO = om.writeValueAsString(postDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("productId", responseObj.field());
+        assertEquals("NotBlank", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "상품 문의 작성. 문의 내용이 null인 경우")
+    void postProductQnAValidationContentIsNull() throws Exception {
+        ProductQnAPostDTO postDTO = new ProductQnAPostDTO(product.getId(), null);
+        String requestDTO = om.writeValueAsString(postDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("content", responseObj.field());
+        assertEquals("NotBlank", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "상품 문의 작성. 문의 내용이 Blank인 경우")
+    void postProductQnAValidationContentIsBlank() throws Exception {
+        ProductQnAPostDTO postDTO = new ProductQnAPostDTO(product.getId(), "");
+        String requestDTO = om.writeValueAsString(postDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(2, response.errors().size());
+
+        List<String> contentValidationConstraintList = List.of("NotBlank", "Size");
+
+        response.errors().forEach(v -> {
+            assertEquals("content", v.field());
+            assertTrue(contentValidationConstraintList.contains(v.constraint()));
+        });
+    }
+
+    @Test
+    @DisplayName(value = "상품 문의 작성. 문의 내용이 한 글자인 경우")
+    void postProductQnAValidationContentLength1() throws Exception {
+        ProductQnAPostDTO postDTO = new ProductQnAPostDTO(product.getId(), "a");
+        String requestDTO = om.writeValueAsString(postDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("content", responseObj.field());
+        assertEquals("Size", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "상품 문의 작성. 모든 파라미터가 null인 경우")
+    void postProductQnAValidationAllParameterIsNull() throws Exception {
+        ProductQnAPostDTO postDTO = new ProductQnAPostDTO(null, null);
+        String requestDTO = om.writeValueAsString(postDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(2, response.errors().size());
+
+        Map<String, String> validationMap = new HashMap<>();
+        validationMap.put("productId", "NotBlank");
+        validationMap.put("content", "NotBlank");
+
+        response.errors().forEach(v -> {
+            String constraint = validationMap.getOrDefault(v.field(), null);
+
+            assertNotNull(constraint);
+            assertEquals(constraint, v.constraint());
+        });
     }
 
     @Test

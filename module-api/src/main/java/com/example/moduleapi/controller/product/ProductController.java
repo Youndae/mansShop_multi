@@ -19,6 +19,8 @@ import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -110,7 +112,7 @@ public class ProductController {
     })
     @GetMapping("/{productId}/review")
     public ResponseEntity<PagingElementsResponseDTO<ProductDetailReviewDTO>> getReview(@PathVariable(name = "productId") String productId,
-                                                                                       @RequestParam(name = "page") int page) {
+                                                                                       @RequestParam(name = "page") @Min(value = 1) int page) {
         ProductDetailPageDTO pageDTO = new ProductDetailPageDTO(page);
         Page<ProductDetailReviewDTO> responseDTO = productReadUseCase.getProductDetailReview(pageDTO, productId);
 
@@ -147,7 +149,7 @@ public class ProductController {
     })
     @GetMapping("/{productId}/qna")
     public ResponseEntity<PagingElementsResponseDTO<ProductQnAResponseDTO>> getQnA(@PathVariable(name = "productId") String productId,
-                                                                                   @RequestParam(name = "page") int page) {
+                                                                                   @RequestParam(name = "page") @Min(value = 1) int page) {
 
         ProductDetailPageDTO pageDTO = new ProductDetailPageDTO(page);
         Page<ProductQnAResponseDTO> responseDTO = productReadUseCase.getProductDetailQnA(pageDTO, productId);
@@ -167,7 +169,7 @@ public class ProductController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PostMapping("/qna")
-    public ResponseEntity<Void> postProductQnA(@RequestBody ProductQnAPostDTO postDTO, Principal principal) {
+    public ResponseEntity<Void> postProductQnA(@RequestBody @Valid ProductQnAPostDTO postDTO, Principal principal) {
 
         String userId = principalService.extractUserId(principal);
         productQnAWriteUseCase.postProductQnA(postDTO, userId);
