@@ -751,7 +751,8 @@ public class AdminOrderControllerIT {
                 .andExpect(status().isBadRequest())
                 .andReturn();
 
-        assertEquals(HandlerMethodValidationException.class.getSimpleName(), result.getResolvedException().getClass().getSimpleName());
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(HandlerMethodValidationException.class, ex);
 
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(

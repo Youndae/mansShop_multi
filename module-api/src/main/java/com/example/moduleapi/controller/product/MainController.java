@@ -3,13 +3,17 @@ package com.example.moduleapi.controller.product;
 import com.example.moduleapi.annotation.swagger.DefaultApiResponse;
 import com.example.moduleapi.mapper.PagingResponseMapper;
 import com.example.moduleapi.model.response.PagingResponseDTO;
+import com.example.modulecommon.model.dto.request.ListRequestDTO;
 import com.example.modulecommon.model.dto.response.PagingListDTO;
 import com.example.modulecommon.model.enumuration.Role;
 import com.example.modulefile.usecase.FileReadUseCase;
 import com.example.moduleorder.model.dto.out.OrderListDTO;
 import com.example.moduleorder.model.dto.page.OrderPageDTO;
 import com.example.moduleorder.model.dto.in.MemberOrderDTO;
+import com.example.moduleorder.model.enumuration.MemberOrderTerm;
 import com.example.moduleorder.usecase.OrderReadUseCase;
+import com.example.moduleproduct.model.dto.main.enumuration.SearchRequestDTO;
+import com.example.moduleproduct.model.dto.main.in.AnonymousOrderRequestDTO;
 import com.example.moduleproduct.model.dto.main.out.MainListResponseDTO;
 import com.example.moduleproduct.model.dto.page.MainPageDTO;
 import com.example.moduleproduct.usecase.main.MainReadUseCase;
@@ -18,8 +22,12 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -91,7 +99,7 @@ public class MainController {
     })
     @GetMapping("/{classification}")
     public ResponseEntity<PagingResponseDTO<MainListResponseDTO>> mainClassificationList(@PathVariable(name = "classification") String classification,
-                                                                                         @RequestParam(name = "page", required = false, defaultValue = "1") int page){
+                                                                                         @RequestParam(name = "page", required = false, defaultValue = "1") @Min(value = 1) int page){
         MainPageDTO mainPageDTO = new MainPageDTO(page, null, classification);
 
         PagingListDTO<MainListResponseDTO> responseDTO = mainReadUseCase.getClassificationOrSearchList(mainPageDTO);
@@ -101,8 +109,7 @@ public class MainController {
 
     /**
      *
-     * @param page
-     * @param keyword
+     * @param requestDTO
      *
      * Navbar의 상품 검색 기능
      */
@@ -121,10 +128,9 @@ public class MainController {
             )
     })
     @GetMapping("/search")
-    public ResponseEntity<PagingResponseDTO<MainListResponseDTO>> searchList(@RequestParam(name = "page", required = false, defaultValue = "1") int page,
-                                                                             @RequestParam(name = "keyword") String keyword){
+    public ResponseEntity<PagingResponseDTO<MainListResponseDTO>> searchList(@ParameterObject @Valid SearchRequestDTO requestDTO){
 
-        MainPageDTO mainPageDTO = new MainPageDTO(page, keyword, null);
+        MainPageDTO mainPageDTO = MainPageDTO.fromRequestDTO(requestDTO, null);
         PagingListDTO<MainListResponseDTO> responseDTO = mainReadUseCase.getClassificationOrSearchList(mainPageDTO);
 
         return pagingResponseMapper.toPagingResponse(responseDTO);
@@ -190,19 +196,14 @@ public class MainController {
             )
     })
     @GetMapping("/order/{term}")
-    public ResponseEntity<PagingResponseDTO<OrderListDTO>> nonMemberOrderList(@RequestParam(name = "recipient") String recipient,
-                                                                                @RequestParam(name = "phone") String phone,
-                                                                                @PathVariable(name = "term") String term,
-                                                                                @RequestParam(name = "page", required = false, defaultValue = "1") int page){
+    public ResponseEntity<PagingResponseDTO<OrderListDTO>> nonMemberOrderList(@ParameterObject @Valid AnonymousOrderRequestDTO requestDTO,
+                                                                                @PathVariable(name = "term") String term){
+        log.info("MainController.nonMemberOrderList :: page= {}, term= {}", requestDTO.page(), term);
 
-        MemberOrderDTO memberOrderDTO = MemberOrderDTO.builder()
-                .userId(Role.ANONYMOUS.getRole())
-                .recipient(recipient)
-                .phone(phone)
-                .build();
-
+        MemberOrderTerm.validate(term);
+        MemberOrderDTO memberOrderDTO = MemberOrderDTO.fromAnonymousOrderRequestDTO(requestDTO);
         OrderPageDTO orderPageDTO = OrderPageDTO.builder()
-                .pageNum(page)
+                .pageNum(requestDTO.page())
                 .term(term)
                 .build();
 

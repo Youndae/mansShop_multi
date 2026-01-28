@@ -9,9 +9,15 @@ public record OrderPageDTO(
         String term
 ) {
 
+    private static final PageAmount pageAmount = PageAmount.DEFAULT_AMOUNT;
+
     @Builder
     public OrderPageDTO(int pageNum, String term) {
 
-        this(pageNum, PageAmount.DEFAULT_AMOUNT.getAmount(), term);
+        this(
+                pageNum,
+                pageAmount.getAmount(),
+                term
+        );
     }
 }
