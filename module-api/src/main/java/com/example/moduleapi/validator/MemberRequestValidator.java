@@ -4,6 +4,7 @@ import com.example.modulecommon.customException.InvalidJoinPolicyException;
 import com.example.modulecommon.customException.InvalidPasswordPolicyException;
 import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.moduleuser.model.dto.member.in.JoinDTO;
+import com.example.moduleuser.model.dto.member.in.MyPageInfoPatchDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -99,5 +100,13 @@ public class MemberRequestValidator {
         validateUserId(userId);
         validateUserName(userName);
         validateEmail(userEmail);
+    }
+
+    public void validatePatchInfo(MyPageInfoPatchDTO infoDTO) {
+        log.info("MemberRequestValidator.validatePatchInfo");
+
+        validateNickname(infoDTO.nickname());
+        validatePhone(infoDTO.phone());
+        validateEmail(infoDTO.mail());
     }
 }

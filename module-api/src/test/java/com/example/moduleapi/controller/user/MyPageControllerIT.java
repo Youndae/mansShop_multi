@@ -3,9 +3,13 @@ package com.example.moduleapi.controller.user;
 
 import com.example.moduleapi.ModuleApiApplication;
 import com.example.moduleapi.config.exception.ExceptionEntity;
+import com.example.moduleapi.config.exception.ValidationError;
+import com.example.moduleapi.config.exception.ValidationExceptionEntity;
 import com.example.moduleapi.fixture.TokenFixture;
 import com.example.moduleapi.model.response.PagingResponseDTO;
 import com.example.moduleapi.model.response.ResponseIdDTO;
+import com.example.modulecommon.customException.CustomNotFoundException;
+import com.example.modulecommon.customException.InvalidJoinPolicyException;
 import com.example.modulecommon.fixture.*;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.dto.page.MyPagePageDTO;
@@ -74,8 +78,10 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.filter.CharacterEncodingFilter;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -176,6 +182,8 @@ public class MyPageControllerIT {
 
     private String inoValue;
 
+    private List<ProductOption> productOptionList;
+
     private List<ProductLike> productLikeList;
 
     private List<ProductOrder> productOrderList;
@@ -237,7 +245,7 @@ public class MyPageControllerIT {
         classificationRepository.saveAll(classificationList);
 
         List<Product> productList = ProductFixture.createProductFixtureList(30, classificationList.get(0));
-        List<ProductOption> productOptionList = productList.stream().flatMap(v -> v.getProductOptions().stream()).toList();
+        productOptionList = productList.stream().flatMap(v -> v.getProductOptions().stream()).toList();
         productRepository.saveAll(productList);
         productOptionRepository.saveAll(productOptionList);
 
@@ -294,6 +302,56 @@ public class MyPageControllerIT {
         redisTemplate.delete(refreshKey);
     }
 
+    private long getWrongProductQnAId() {
+        return allProductQnAList.stream()
+                .mapToLong(ProductQnA::getId)
+                .max()
+                .getAsLong() + 1;
+    }
+
+    private long getWrongQnAClassificationId() {
+        return qnAClassificationList.stream()
+                .mapToLong(QnAClassification::getId)
+                .max()
+                .getAsLong() + 1;
+    }
+
+    private long getWrongMemberQnAId() {
+        return allMemberQnAList.stream()
+                .mapToLong(MemberQnA::getId)
+                .max()
+                .getAsLong() + 1;
+    }
+
+    private long getWrongMemberQnAReplyId() {
+        return memberQnAReplyList.stream()
+                .mapToLong(MemberQnAReply::getId)
+                .max()
+                .getAsLong() + 1;
+    }
+
+    private long getWrongReviewId() {
+        return allReviewList.stream()
+                .mapToLong(ProductReview::getId)
+                .max()
+                .getAsLong() + 1;
+    }
+
+    private long getWrongProductOptionId() {
+        return productOptionList.stream()
+                .mapToLong(ProductOption::getId)
+                .max()
+                .getAsLong() + 1;
+    }
+
+    private long getWrongOrderDetailId() {
+        return productOrderList.stream()
+                .flatMap(v -> v.getProductOrderDetailList().stream())
+                .mapToLong(ProductOrderDetail::getId)
+                .max()
+                .getAsLong() + 1;
+    }
+
     @Test
     @DisplayName(value = "회원 주문 내역 조회")
     void getOrderList() throws Exception {
@@ -339,6 +397,54 @@ public class MyPageControllerIT {
         assertTrue(response.content().isEmpty());
         assertTrue(response.empty());
         assertEquals(0, response.totalPages());
+    }
+
+    @Test
+    @DisplayName(value = "회원 주문 내역 조회. term 값이 잘못된 경우")
+    void getOrderListValidationTermIsWrong() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "order/8")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원 주문 내역 조회. 페이지 값이 1보다 작은 경우")
+    void getOrderListValidationPageIsZero() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "order/3")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("page", "0"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // @Min에 의한 HandlerMethodValidationException을 검증하기 위함
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(HandlerMethodValidationException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertNull(response.errors());
     }
 
     @Test
@@ -389,6 +495,32 @@ public class MyPageControllerIT {
     }
 
     @Test
+    @DisplayName(value = "회원의 관심 상품 목록 조회. 페이지값이 1보다 작은 경우")
+    void getLikeProductListValidationPageIsZero() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "like")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("page", "0"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        // @Min에 의한 HandlerMethodValidationException 검증을 위함
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(HandlerMethodValidationException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertNull(response.errors());
+    }
+
+    @Test
     @DisplayName(value = "회원의 상품 문의 목록 조회")
     void getProductQnAList() throws Exception {
         MyPagePageDTO pageDTO = new MyPagePageDTO(1);
@@ -433,6 +565,33 @@ public class MyPageControllerIT {
         assertTrue(response.content().isEmpty());
         assertTrue(response.empty());
         assertEquals(0, response.totalPages());
+    }
+
+    @Test
+    @DisplayName(value = "회원의 상품 문의 목록 조회. 페이지값이 1보다 작은 경우")
+    void getProductQnAListValidationPageIsZero() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/product")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("page", "0"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // @Min에 의한 HandlerMethodValidationException 검증을 위함
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(HandlerMethodValidationException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertNull(response.errors());
     }
 
     @Test
@@ -501,7 +660,7 @@ public class MyPageControllerIT {
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
                         .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
-                .andExpect(status().is(403))
+                .andExpect(status().isForbidden())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -516,12 +675,18 @@ public class MyPageControllerIT {
     @Test
     @DisplayName(value = "회원의 상품 문의 상세 조회. 데이터가 없는 경우")
     void getProductQnADetailNotFound() throws Exception {
-        MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/product/detail/0")
+        long wrongProductQnAId = getWrongProductQnAId();
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/product/detail/" + wrongProductQnAId)
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
                         .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
+
+        // 잘못된 아이디로 인해 조회결과가 null인 경우 CustomNotFoundException
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(CustomNotFoundException.class, ex);
+
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
                 content,
@@ -530,6 +695,32 @@ public class MyPageControllerIT {
 
         assertNotNull(response);
         assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원의 상품 문의 상세 조회. 문의 아이디가 1보다 작은 경우")
+    void getProductQnADetailValidationQnAIdIsZero() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/product/detail/0")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // @Min에 의한 HandlerMethodValidationException 검증을 위함
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(HandlerMethodValidationException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertNull(response.errors());
     }
 
     @Test
@@ -556,7 +747,7 @@ public class MyPageControllerIT {
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
                         .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
-                .andExpect(status().is(403))
+                .andExpect(status().isForbidden())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -574,12 +765,18 @@ public class MyPageControllerIT {
     @Test
     @DisplayName(value = "회원의 상품 문의 삭제. 데이터가 없는 경우")
     void deleteProductQnANotFound() throws Exception {
-        MvcResult result = mockMvc.perform(delete(URL_PREFIX + "qna/product/0")
+        long wrongProductQnAId = getWrongProductQnAId();
+        MvcResult result = mockMvc.perform(delete(URL_PREFIX + "qna/product/" + wrongProductQnAId)
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
                         .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
+
+        // Repository를 통한 조회 과정에서 findById 사용으로 인해 orElse IllegalArgumentException 발생
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(IllegalArgumentException.class, ex);
+
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
                 content,
@@ -588,6 +785,32 @@ public class MyPageControllerIT {
 
         assertNotNull(response);
         assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원의 상품 문의 삭제. 문의 아이디 값이 1보다 작은 경우")
+    void deleteProductQnAValidationQnAIdIsZero() throws Exception {
+        MvcResult result = mockMvc.perform(delete(URL_PREFIX + "qna/product/0")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // @Min에 의한 HandlerMethodValidationException 검증을 위함
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(HandlerMethodValidationException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertNull(response.errors());
     }
 
     @Test
@@ -638,6 +861,32 @@ public class MyPageControllerIT {
     }
 
     @Test
+    @DisplayName(value = "회원의 문의 목록 조회. 페이지값이 1보다 작은 경우")
+    void getMemberQnAValidationPageIsZero() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/member")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("page", "0"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        // @Min에 의한 HandlerMethodValidationException 검증을 위함
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(HandlerMethodValidationException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertNull(response.errors());
+    }
+
+    @Test
     @DisplayName(value = "회원 문의 작성")
     void postMemberQnA() throws Exception {
         MemberQnAInsertDTO insertDTO = new MemberQnAInsertDTO(
@@ -676,6 +925,272 @@ public class MyPageControllerIT {
     @Test
     @DisplayName(value = "회원 문의 작성. 분류 아이디가 잘못된 경우")
     void postMemberQnAWrongQnAClassificationId() throws Exception {
+        long wrongQnAClassificationId = getWrongQnAClassificationId();
+        MemberQnAInsertDTO insertDTO = new MemberQnAInsertDTO(
+                "test insert title",
+                "test insert content",
+                wrongQnAClassificationId
+        );
+        String requestDTO = om.writeValueAsString(insertDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna/member")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // repository 호출 시 findById 호출로 인해 orElse IllegalArgumentException 발생
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(IllegalArgumentException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원 문의 작성. 제목이 null인 경우")
+    void postMemberQnAValidationTitleIsNull() throws Exception {
+        MemberQnAInsertDTO insertDTO = new MemberQnAInsertDTO(
+                null,
+                "test insert content",
+                qnAClassificationList.get(0).getId()
+        );
+        String requestDTO = om.writeValueAsString(insertDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna/member")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("title", responseObj.field());
+        assertEquals("NotBlank", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원 문의 작성. 제목이 Blank인 경우")
+    void postMemberQnAValidationTitleIsBlank() throws Exception {
+        MemberQnAInsertDTO insertDTO = new MemberQnAInsertDTO(
+                "",
+                "test insert content",
+                qnAClassificationList.get(0).getId()
+        );
+        String requestDTO = om.writeValueAsString(insertDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna/member")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(2, response.errors().size());
+
+        List<String> titleConstraintValidationList = List.of("NotBlank", "Size");
+
+        response.errors().forEach(v -> {
+            assertEquals("title", v.field());
+            assertTrue(titleConstraintValidationList.contains(v.constraint()));
+        });
+    }
+
+    @Test
+    @DisplayName(value = "회원 문의 작성. 제목이 한글자인 경우")
+    void postMemberQnAValidationTitleLength1() throws Exception {
+        MemberQnAInsertDTO insertDTO = new MemberQnAInsertDTO(
+                "a",
+                "test insert content",
+                qnAClassificationList.get(0).getId()
+        );
+        String requestDTO = om.writeValueAsString(insertDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna/member")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("title", responseObj.field());
+        assertEquals("Size", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원 문의 작성. 내용이 null인 경우")
+    void postMemberQnAValidationContentIsNull() throws Exception {
+        MemberQnAInsertDTO insertDTO = new MemberQnAInsertDTO(
+                "test insert title",
+                null,
+                qnAClassificationList.get(0).getId()
+        );
+        String requestDTO = om.writeValueAsString(insertDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna/member")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("content", responseObj.field());
+        assertEquals("NotBlank", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원 문의 작성. 내용이 Blank인 경우")
+    void postMemberQnAValidationContentIsBlank() throws Exception {
+        MemberQnAInsertDTO insertDTO = new MemberQnAInsertDTO(
+                "test insert title",
+                "",
+                qnAClassificationList.get(0).getId()
+        );
+        String requestDTO = om.writeValueAsString(insertDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna/member")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(2, response.errors().size());
+
+        List<String> contentConstraintValidationList = List.of("NotBlank", "Size");
+
+        response.errors().forEach(v -> {
+            assertEquals("content", v.field());
+            assertTrue(contentConstraintValidationList.contains(v.constraint()));
+        });
+    }
+
+    @Test
+    @DisplayName(value = "회원 문의 작성. 내용이 한글자인 경우")
+    void postMemberQnAValidationContentLength1() throws Exception {
+        MemberQnAInsertDTO insertDTO = new MemberQnAInsertDTO(
+                "test insert title",
+                "a",
+                qnAClassificationList.get(0).getId()
+        );
+        String requestDTO = om.writeValueAsString(insertDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna/member")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("content", responseObj.field());
+        assertEquals("Size", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원 문의 작성. 문의 분류 아이디가 1보다 작은 경우")
+    void postMemberQnAValidationClassificationIdIsZero() throws Exception {
         MemberQnAInsertDTO insertDTO = new MemberQnAInsertDTO(
                 "test insert title",
                 "test insert content",
@@ -689,16 +1204,71 @@ public class MyPageControllerIT {
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
+
         String content = result.getResponse().getContentAsString();
-        ExceptionEntity response = om.readValue(
+        ValidationExceptionEntity response = om.readValue(
                 content,
                 new TypeReference<>(){}
         );
 
         assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
         assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("classificationId", responseObj.field());
+        assertEquals("Min", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원 문의 작성. 제목과 내용이 각각 한글자, 분류 아이디가 0인 경우")
+    void postMemberQnAValidationAllParameterIsWrong() throws Exception {
+        MemberQnAInsertDTO insertDTO = new MemberQnAInsertDTO(
+                "a",
+                "a",
+                0L
+        );
+        String requestDTO = om.writeValueAsString(insertDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna/member")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(3, response.errors().size());
+
+        Map<String, String> validationMap = new HashMap<>();
+        validationMap.put("title", "Size");
+        validationMap.put("content", "Size");
+        validationMap.put("classificationId", "Min");
+
+        response.errors().forEach(v -> {
+            String constraint = validationMap.getOrDefault(v.field(), null);
+
+            assertNotNull(constraint);
+            assertEquals(constraint, v.constraint());
+        });
     }
 
     @Test
@@ -778,7 +1348,7 @@ public class MyPageControllerIT {
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
                         .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
-                .andExpect(status().is(403))
+                .andExpect(status().isForbidden())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -793,12 +1363,18 @@ public class MyPageControllerIT {
     @Test
     @DisplayName(value = "회원 문의 상세 조회. 데이터가 없는 경우")
     void getMemberQnADetailNotFound() throws Exception {
-        MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/member/detail/0")
+        long wrongMemberQnAId = getWrongMemberQnAId();
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/member/detail/" + wrongMemberQnAId)
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
                         .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
+
+        // 데이터 조회 결과가 null인 경우 NotFoundException 발생
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(CustomNotFoundException.class, ex);
+
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
                 content,
@@ -807,6 +1383,32 @@ public class MyPageControllerIT {
 
         assertNotNull(response);
         assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원 문의 상세 조회. 문의 아이디가 1보다 작은 경우")
+    void getMemberQnADetailValidationQnAIdIsZero() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/member/detail/0")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // @Min에 의한 HandlerMethodValidationException 검증을 위함
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(HandlerMethodValidationException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertNull(response.errors());
     }
 
     @Test
@@ -851,7 +1453,8 @@ public class MyPageControllerIT {
     @Test
     @DisplayName(value = "회원 문의 답변 작성. 회원 문의 데이터가 없는 경우")
     void postMemberQnAReplyNotFound() throws Exception {
-        QnAReplyInsertDTO insertDTO = new QnAReplyInsertDTO(0L, "test reply content");
+        long wrongMemberQnAId = getWrongMemberQnAId();
+        QnAReplyInsertDTO insertDTO = new QnAReplyInsertDTO(wrongMemberQnAId, "test reply content");
         String requestDTO = om.writeValueAsString(insertDTO);
 
         MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna/member/reply")
@@ -860,8 +1463,13 @@ public class MyPageControllerIT {
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
+
+        // findById를 통한 조회로 orElse IllegalArgumentException 발생
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(IllegalArgumentException.class, ex);
+
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
                 content,
@@ -884,7 +1492,7 @@ public class MyPageControllerIT {
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().is(403))
+                .andExpect(status().isForbidden())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -894,6 +1502,148 @@ public class MyPageControllerIT {
 
         assertNotNull(response);
         assertEquals(ErrorCode.FORBIDDEN.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원 문의 답변 작성. 문의 아이디가 1보다 작은 경우")
+    void postMemberQnAReplyValidationQnAIdIsZero() throws Exception {
+        QnAReplyInsertDTO insertDTO = new QnAReplyInsertDTO(0L, "test reply content");
+        String requestDTO = om.writeValueAsString(insertDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna/member/reply")
+                                .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                                .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                                .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(requestDTO))
+                        .andExpect(status().isBadRequest())
+                        .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("qnaId", responseObj.field());
+        assertEquals("Min", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원 문의 답변 작성. 문의 내용이 null인 경우")
+    void postMemberQnAReplyValidationContentIsNull() throws Exception {
+        QnAReplyInsertDTO insertDTO = new QnAReplyInsertDTO(1L, null);
+        String requestDTO = om.writeValueAsString(insertDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna/member/reply")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("content", responseObj.field());
+        assertEquals("NotBlank", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원 문의 답변 작성. 문의 내용이 Blank인 경우")
+    void postMemberQnAReplyValidationContentIsBlank() throws Exception {
+        QnAReplyInsertDTO insertDTO = new QnAReplyInsertDTO(1L, "");
+        String requestDTO = om.writeValueAsString(insertDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna/member/reply")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("content", responseObj.field());
+        assertEquals("NotBlank", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원 문의 답변 작성. 문의 아이디가 0, 내용이 null인 경우")
+    void postMemberQnAReplyValidationQnAIdIsZeroAndContentIsNull() throws Exception {
+        QnAReplyInsertDTO insertDTO = new QnAReplyInsertDTO(0L, null);
+        String requestDTO = om.writeValueAsString(insertDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "qna/member/reply")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(2, response.errors().size());
+
+        Map<String, String> validationMap = new HashMap<>();
+        validationMap.put("qnaId", "Min");
+        validationMap.put("content", "NotBlank");
+
+        response.errors().forEach(v -> {
+            String constraint = validationMap.getOrDefault(v.field(), null);
+
+            assertNotNull(constraint);
+            assertEquals(constraint, v.constraint());
+        });
     }
 
     @Test
@@ -925,7 +1675,8 @@ public class MyPageControllerIT {
     @Test
     @DisplayName(value = "회원 문의 답변 수정. 답변 데이터가 없는 경우")
     void patchMemberQnAReplyEmpty() throws Exception {
-        QnAReplyPatchDTO replyDTO = new QnAReplyPatchDTO(0L, "modify memberQnA Reply content");
+        long wrongMemberQnAReplyId = getWrongMemberQnAReplyId();
+        QnAReplyPatchDTO replyDTO = new QnAReplyPatchDTO(wrongMemberQnAReplyId, "modify memberQnA Reply content");
         String requestDTO = om.writeValueAsString(replyDTO);
 
         MvcResult result = mockMvc.perform(patch(URL_PREFIX + "qna/member/reply")
@@ -934,8 +1685,13 @@ public class MyPageControllerIT {
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
+
+        // findById를 통한 조회로 orElse IllegalArgumentException 발생
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(IllegalArgumentException.class, ex);
+
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
                 content,
@@ -964,7 +1720,7 @@ public class MyPageControllerIT {
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().is(403))
+                .andExpect(status().isForbidden())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -974,6 +1730,148 @@ public class MyPageControllerIT {
 
         assertNotNull(response);
         assertEquals(ErrorCode.FORBIDDEN.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원 문의 답변 수정. 답변 아이디가 1보다 작은 경우")
+    void patchMemberQnAReplyValidationReplyIdIsZero() throws Exception {
+        QnAReplyPatchDTO replyDTO = new QnAReplyPatchDTO(0L, "modify memberQnA Reply content");
+        String requestDTO = om.writeValueAsString(replyDTO);
+
+        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "qna/member/reply")
+                                .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                                .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                                .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(requestDTO))
+                        .andExpect(status().isBadRequest())
+                        .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("replyId", responseObj.field());
+        assertEquals("Min", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원 문의 답변 수정. 답변 내용이 null인 경우")
+    void patchMemberQnAReplyValidationContentIsNull() throws Exception {
+        QnAReplyPatchDTO replyDTO = new QnAReplyPatchDTO(1L, null);
+        String requestDTO = om.writeValueAsString(replyDTO);
+
+        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "qna/member/reply")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("content", responseObj.field());
+        assertEquals("NotBlank", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원 문의 답변 수정. 답변 내용이 Blank인 경우")
+    void patchMemberQnAReplyValidationContentIsBlank() throws Exception {
+        QnAReplyPatchDTO replyDTO = new QnAReplyPatchDTO(1L, "");
+        String requestDTO = om.writeValueAsString(replyDTO);
+
+        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "qna/member/reply")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("content", responseObj.field());
+        assertEquals("NotBlank", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원 문의 답변 수정. 답변 아이디가 0, 내용이 null인 경우")
+    void patchMemberQnAReplyValidationReplyIdIsZeroAndContentIsNull() throws Exception {
+        QnAReplyPatchDTO replyDTO = new QnAReplyPatchDTO(0L, null);
+        String requestDTO = om.writeValueAsString(replyDTO);
+
+        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "qna/member/reply")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(2, response.errors().size());
+
+        Map<String, String> validationMap = new HashMap<>();
+        validationMap.put("replyId", "Min");
+        validationMap.put("content", "NotBlank");
+
+        response.errors().forEach(v -> {
+            String constraint = validationMap.getOrDefault(v.field(), null);
+
+            assertNotNull(constraint);
+            assertEquals(constraint, v.constraint());
+        });
     }
 
     @Test
@@ -1004,12 +1902,18 @@ public class MyPageControllerIT {
     @Test
     @DisplayName(value = "회원 문의 수정을 위한 데이터 조회. 데이터가 없는 경우")
     void getModifyDataEmpty() throws Exception {
-        MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/member/modify/0")
+        long wrongMemberQnAId = getWrongMemberQnAId();
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/member/modify/" + wrongMemberQnAId)
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
                         .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
+
+        // 잘못된 아이디 기반 요청으로 IllegalArgumentException이 발생
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(IllegalArgumentException.class, ex);
+
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
                 content,
@@ -1027,7 +1931,7 @@ public class MyPageControllerIT {
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
                         .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -1037,6 +1941,32 @@ public class MyPageControllerIT {
 
         assertNotNull(response);
         assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원 문의 수정을 위한 데이터 조회. 문의 아이디가 1보다 작은 경우")
+    void getModifyDataValidationQnAIdIsZero() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "qna/member/modify/0")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // @Min에 의한 HandlerMethodValidationException 검증을 위함
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(HandlerMethodValidationException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertNull(response.errors());
     }
 
     @Test
@@ -1075,8 +2005,9 @@ public class MyPageControllerIT {
     @Test
     @DisplayName(value = "회원 문의 수정. 데이터가 없는 경우")
     void patchMemberQnANotFound() throws Exception {
+        long wrongMemberQnAId = getWrongMemberQnAId();
         MemberQnAModifyDTO modifyDTO = new MemberQnAModifyDTO(
-                0L,
+                wrongMemberQnAId,
                 "test modify title",
                 "test modify content",
                 qnAClassificationList.get(0).getId()
@@ -1089,8 +2020,13 @@ public class MyPageControllerIT {
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
+
+        // findById를 통한 조회로 orElse IllegalArgumentException 발생
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(IllegalArgumentException.class, ex);
+
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
                 content,
@@ -1118,7 +2054,7 @@ public class MyPageControllerIT {
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().is(403))
+                .andExpect(status().isForbidden())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -1131,16 +2067,287 @@ public class MyPageControllerIT {
     }
 
     @Test
-    @DisplayName(value = "회원 문의 수정. 문의 분류 아이디가 잘못 된 경우")
-    void patchMemberQnAWrongQnAClassificationId() throws Exception {
-        MemberQnA fixture = allMemberQnAList.stream()
-                .filter(v ->
-                        v.getMember().getUserId().equals(member.getUserId())
-                )
-                .findFirst()
-                .get();
+    @DisplayName(value = "회원 문의 수정. 문의 아이디가 1보다 작은 경우")
+    void patchMemberQnAValidationQnAIdIsZero() throws Exception {
         MemberQnAModifyDTO modifyDTO = new MemberQnAModifyDTO(
-                fixture.getId(),
+                0L,
+                "test modify title",
+                "test modify content",
+                1L
+        );
+        String requestDTO = om.writeValueAsString(modifyDTO);
+
+        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "qna/member")
+                            .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                            .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                            .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(requestDTO))
+                    .andExpect(status().isBadRequest())
+                    .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("qnaId", responseObj.field());
+        assertEquals("Min", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원 문의 수정. 문의 제목이 null인 경우")
+    void patchMemberQnAValidationTitleIsNull() throws Exception {
+        MemberQnAModifyDTO modifyDTO = new MemberQnAModifyDTO(
+                1L,
+                null,
+                "test modify content",
+                1L
+        );
+        String requestDTO = om.writeValueAsString(modifyDTO);
+
+        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "qna/member")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("title", responseObj.field());
+        assertEquals("NotBlank", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원 문의 수정. 문의 제목이 Blank인 경우")
+    void patchMemberQnAValidationTitleIsBlank() throws Exception {
+        MemberQnAModifyDTO modifyDTO = new MemberQnAModifyDTO(
+                1L,
+                "",
+                "test modify content",
+                1L
+        );
+        String requestDTO = om.writeValueAsString(modifyDTO);
+
+        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "qna/member")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(2, response.errors().size());
+
+        List<String> titleConstraintValidationList = List.of("NotBlank", "Size");
+
+        response.errors().forEach(v -> {
+            assertEquals("title", v.field());
+            assertTrue(titleConstraintValidationList.contains(v.constraint()));
+        });
+    }
+
+    @Test
+    @DisplayName(value = "회원 문의 수정. 문의 제목이 한글자인 경우")
+    void patchMemberQnAValidationTitleLength1() throws Exception {
+        MemberQnAModifyDTO modifyDTO = new MemberQnAModifyDTO(
+                1L,
+                "a",
+                "test modify content",
+                1L
+        );
+        String requestDTO = om.writeValueAsString(modifyDTO);
+
+        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "qna/member")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("title", responseObj.field());
+        assertEquals("Size", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원 문의 수정. 문의 내용이 null인 경우")
+    void patchMemberQnAValidationContentIsNull() throws Exception {
+        MemberQnAModifyDTO modifyDTO = new MemberQnAModifyDTO(
+                1L,
+                "test modify title",
+                null,
+                1L
+        );
+        String requestDTO = om.writeValueAsString(modifyDTO);
+
+        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "qna/member")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("content", responseObj.field());
+        assertEquals("NotBlank", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원 문의 수정. 문의 내용이 Blank인 경우")
+    void patchMemberQnAValidationContentIsBlank() throws Exception {
+        MemberQnAModifyDTO modifyDTO = new MemberQnAModifyDTO(
+                1L,
+                "test modify title",
+                "",
+                1L
+        );
+        String requestDTO = om.writeValueAsString(modifyDTO);
+
+        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "qna/member")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(2, response.errors().size());
+
+        List<String> contentConstraintValidationList = List.of("NotBlank", "Size");
+
+        response.errors().forEach(v -> {
+            assertEquals("content", v.field());
+            assertTrue(contentConstraintValidationList.contains(v.constraint()));
+        });
+    }
+
+    @Test
+    @DisplayName(value = "회원 문의 수정. 문의 내용이 한글자인 경우")
+    void patchMemberQnAValidationContentLength1() throws Exception {
+        MemberQnAModifyDTO modifyDTO = new MemberQnAModifyDTO(
+                1L,
+                "test modify title",
+                "a",
+                1L
+        );
+        String requestDTO = om.writeValueAsString(modifyDTO);
+
+        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "qna/member")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("content", responseObj.field());
+        assertEquals("Size", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원 문의 수정. 문의 분류 아이디가 1보다 작은 경우")
+    void patchMemberQnAValidationClassificationIdIsZero() throws Exception {
+        MemberQnAModifyDTO modifyDTO = new MemberQnAModifyDTO(
+                1L,
                 "test modify title",
                 "test modify content",
                 0L
@@ -1153,16 +2360,73 @@ public class MyPageControllerIT {
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
+
         String content = result.getResponse().getContentAsString();
-        ExceptionEntity response = om.readValue(
+        ValidationExceptionEntity response = om.readValue(
                 content,
-                new TypeReference<>(){}
+                new TypeReference<>() {}
         );
 
         assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
         assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("classificationId", responseObj.field());
+        assertEquals("Min", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "회원 문의 수정. 모든 필드값이 유효성 검사를 통과하지 못한 경우")
+    void patchMemberQnAValidationAllParameterIsWrong() throws Exception {
+        MemberQnAModifyDTO modifyDTO = new MemberQnAModifyDTO(
+                0L,
+                null,
+                null,
+                0L
+        );
+        String requestDTO = om.writeValueAsString(modifyDTO);
+
+        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "qna/member")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(4, response.errors().size());
+
+        Map<String, String> validationMap = new HashMap<>();
+        validationMap.put("qnaId", "Min");
+        validationMap.put("title", "NotBlank");
+        validationMap.put("content", "NotBlank");
+        validationMap.put("classificationId", "Min");
+
+        response.errors().forEach(v -> {
+            String constraint = validationMap.getOrDefault(v.field(), null);
+
+            assertNotNull(constraint);
+            assertEquals(constraint, v.constraint());
+        });
     }
 
     @Test
@@ -1189,12 +2453,18 @@ public class MyPageControllerIT {
     @Test
     @DisplayName(value = "회원 문의 삭제. 데이터가 없는 경우")
     void deleteMemberQnANotFound() throws Exception {
-        MvcResult result = mockMvc.perform(delete(URL_PREFIX + "qna/member/0")
+        long wrongMemberQnAId = getWrongMemberQnAId();
+        MvcResult result = mockMvc.perform(delete(URL_PREFIX + "qna/member/" + wrongMemberQnAId)
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
                         .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
+
+        // findById를 통한 조회로 orElse IllegalArgumentException 발생
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(IllegalArgumentException.class, ex);
+
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
                 content,
@@ -1212,7 +2482,7 @@ public class MyPageControllerIT {
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
                         .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
-                .andExpect(status().is(403))
+                .andExpect(status().isForbidden())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -1225,6 +2495,32 @@ public class MyPageControllerIT {
 
         MemberQnA checkData = memberQnARepository.findById(noneMemberQnA.getId()).orElse(null);
         assertNotNull(checkData);
+    }
+
+    @Test
+    @DisplayName(value = "회원 문의 삭제. 문의 아이디가 1보다 작은 경우")
+    void deleteMemberQnAValidationQnAIdIsZero() throws Exception {
+        MvcResult result = mockMvc.perform(delete(URL_PREFIX + "qna/member/0")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // @Min에 의한 HandlerMethodValidationException 검증을 위함
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(HandlerMethodValidationException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertNull(response.errors());
     }
 
     @Test
@@ -1323,6 +2619,33 @@ public class MyPageControllerIT {
     }
 
     @Test
+    @DisplayName(value = "작성한 리뷰 목록 조회. 페이지값이 1보다 작은 경우")
+    void getReviewValidationPageIsZero() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "review")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("page", "0"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // @Min에 의한 HandlerMethodValidationException 검증을 위함
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(HandlerMethodValidationException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertNull(response.errors());
+    }
+
+    @Test
     @DisplayName(value = "리뷰 수정을 위한 데이터 조회")
     void getModifyReviewData() throws Exception {
         ProductReview fixture = allReviewList.stream()
@@ -1352,12 +2675,18 @@ public class MyPageControllerIT {
     @Test
     @DisplayName(value = "리뷰 수정을 위한 데이터 조회. 데이터가 없는 경우")
     void getModifyReviewDataNotFound() throws Exception {
-        MvcResult result = mockMvc.perform(get(URL_PREFIX + "review/modify/0")
+        long wrongReviewId = getWrongReviewId();
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "review/modify/" + wrongReviewId)
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
                         .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
+
+        // findById를 통한 조회로 orElse IllegalArgumentException 발생
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(IllegalArgumentException.class, ex);
+
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
                 content,
@@ -1375,7 +2704,7 @@ public class MyPageControllerIT {
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
                         .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
-                .andExpect(status().is(403))
+                .andExpect(status().isForbidden())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -1385,6 +2714,32 @@ public class MyPageControllerIT {
 
         assertNotNull(response);
         assertNotNull(ErrorCode.FORBIDDEN.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "리뷰 수정을 위한 데이터 조회. 리뷰 아이디가 1보다 작은 경우")
+    void getModifyReviewDataValidationReviewIdIsZero() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "review/modify/0")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // @Min에 의한 HandlerMethodValidationException 검증을 위함
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(HandlerMethodValidationException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertNull(response.errors());
     }
 
     @Test
@@ -1466,7 +2821,7 @@ public class MyPageControllerIT {
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -1481,6 +2836,7 @@ public class MyPageControllerIT {
     @Test
     @DisplayName(value = "리뷰 작성. 상품 옵션 아이디가 잘못 된 경우")
     void postReviewWrongProductOptionId() throws Exception {
+        long wrongOptionId = getWrongProductOptionId();
         ProductOrder fixture = productOrderList.stream()
                 .filter(v ->
                         v.getMember().getUserId().equals(member.getUserId())
@@ -1497,7 +2853,7 @@ public class MyPageControllerIT {
         MyPagePostReviewDTO reviewDTO = new MyPagePostReviewDTO(
                 detailFixture.getProduct().getId(),
                 "test insert review content",
-                0L,
+                wrongOptionId,
                 detailFixture.getId()
         );
         String requestDTO = om.writeValueAsString(reviewDTO);
@@ -1508,8 +2864,13 @@ public class MyPageControllerIT {
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
+
+        // findById를 통한 조회로 orElse IllegalArgumentException 발생
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(IllegalArgumentException.class, ex);
+
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
                 content,
@@ -1523,6 +2884,7 @@ public class MyPageControllerIT {
     @Test
     @DisplayName(value = "리뷰 작성. 주문 상세 아이디가 잘못 된 경우")
     void postReviewWrongOrderDetailId() throws Exception {
+        long wrongOrderDetailId = getWrongOrderDetailId();
         ProductOrder fixture = productOrderList.stream()
                 .filter(v ->
                         v.getMember().getUserId().equals(member.getUserId())
@@ -1542,7 +2904,7 @@ public class MyPageControllerIT {
                 detailFixture.getProduct().getId(),
                 "test insert review content",
                 detailFixture.getProductOption().getId(),
-                0L
+                wrongOrderDetailId
         );
         String requestDTO = om.writeValueAsString(reviewDTO);
 
@@ -1552,8 +2914,13 @@ public class MyPageControllerIT {
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
+
+        // findById를 통한 조회로 orElse IllegalArgumentException 발생
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(IllegalArgumentException.class, ex);
+
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
                 content,
@@ -1596,7 +2963,7 @@ public class MyPageControllerIT {
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -1643,7 +3010,7 @@ public class MyPageControllerIT {
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -1653,6 +3020,328 @@ public class MyPageControllerIT {
 
         assertNotNull(response);
         assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "리뷰 작성. 상품 아이디가 null인 경우")
+    void postReviewValidationProductIdIsNull() throws Exception {
+        MyPagePostReviewDTO reviewDTO = new MyPagePostReviewDTO(
+                null,
+                "test insert review content",
+                1L,
+                1L
+        );
+        String requestDTO = om.writeValueAsString(reviewDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "review")
+                                .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                                .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                                .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(requestDTO))
+                        .andExpect(status().isBadRequest())
+                        .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("productId", responseObj.field());
+        assertEquals("NotBlank", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "리뷰 작성. 상품 아이디가 Blank인 경우")
+    void postReviewValidationProductIdIsBlank() throws Exception {
+        MyPagePostReviewDTO reviewDTO = new MyPagePostReviewDTO(
+                "",
+                "test insert review content",
+                1L,
+                1L
+        );
+        String requestDTO = om.writeValueAsString(reviewDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "review")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("productId", responseObj.field());
+        assertEquals("NotBlank", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "리뷰 작성. 리뷰 내용이 null인 경우")
+    void postReviewValidationContentIsNull() throws Exception {
+        MyPagePostReviewDTO reviewDTO = new MyPagePostReviewDTO(
+                "validationProductId",
+                null,
+                1L,
+                1L
+        );
+        String requestDTO = om.writeValueAsString(reviewDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "review")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("content", responseObj.field());
+        assertEquals("NotBlank", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "리뷰 작성. 리뷰 내용이 Blank인 경우")
+    void postReviewValidationContentIsBlank() throws Exception {
+        MyPagePostReviewDTO reviewDTO = new MyPagePostReviewDTO(
+                "validationProductId",
+                "",
+                1L,
+                1L
+        );
+        String requestDTO = om.writeValueAsString(reviewDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "review")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(2, response.errors().size());
+
+        List<String> contentConstraintValidationList = List.of("NotBlank", "Size");
+
+        response.errors().forEach(v -> {
+            assertEquals("content", v.field());
+            assertTrue(contentConstraintValidationList.contains(v.constraint()));
+        });
+    }
+
+    @Test
+    @DisplayName(value = "리뷰 작성. 리뷰 내용이 한글자인 경우")
+    void postReviewValidationContentLength1() throws Exception {
+        MyPagePostReviewDTO reviewDTO = new MyPagePostReviewDTO(
+                "validationProductId",
+                "a",
+                1L,
+                1L
+        );
+        String requestDTO = om.writeValueAsString(reviewDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "review")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("content", responseObj.field());
+        assertEquals("Size", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "리뷰 작성. 옵션 아이디가 1보다 작은 경우")
+    void postReviewValidationOptionIdLT1() throws Exception {
+        MyPagePostReviewDTO reviewDTO = new MyPagePostReviewDTO(
+                "validationProductId",
+                "Validation test content",
+                0L,
+                1L
+        );
+        String requestDTO = om.writeValueAsString(reviewDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "review")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("optionId", responseObj.field());
+        assertEquals("Min", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "리뷰 작성. 주문 상세 아이디가 1보다 작은 경우")
+    void postReviewValidationDetailIdLT1() throws Exception {
+        MyPagePostReviewDTO reviewDTO = new MyPagePostReviewDTO(
+                "validationProductId",
+                "Validation test content",
+                1L,
+                0L
+        );
+        String requestDTO = om.writeValueAsString(reviewDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "review")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("detailId", responseObj.field());
+        assertEquals("Min", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "리뷰 작성. 모든 필드값이 유효성 검사를 통과하지 못하는 경우")
+    void postReviewValidationAllParameterIsWrong() throws Exception {
+        MyPagePostReviewDTO reviewDTO = new MyPagePostReviewDTO(
+                null,
+                null,
+                0L,
+                0L
+        );
+        String requestDTO = om.writeValueAsString(reviewDTO);
+
+        MvcResult result = mockMvc.perform(post(URL_PREFIX + "review")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(4, response.errors().size());
+
+        Map<String, String> validationMap = new HashMap<>();
+        validationMap.put("productId", "NotBlank");
+        validationMap.put("content", "NotBlank");
+        validationMap.put("optionId", "Min");
+        validationMap.put("detailId", "Min");
+
+        response.errors().forEach(v -> {
+            String constraint = validationMap.getOrDefault(v.field(), null);
+
+            assertNotNull(constraint);
+            assertEquals(constraint, v.constraint());
+        });
     }
 
     @Test
@@ -1683,7 +3372,8 @@ public class MyPageControllerIT {
     @Test
     @DisplayName(value = "리뷰 수정. 데이터가 없는 경우")
     void patchReviewNotFound() throws Exception {
-        MyPagePatchReviewDTO patchDTO = new MyPagePatchReviewDTO(0L, "test modify review content");
+        long wrongReviewId = getWrongReviewId();
+        MyPagePatchReviewDTO patchDTO = new MyPagePatchReviewDTO(wrongReviewId, "test modify review content");
         String requestDTO = om.writeValueAsString(patchDTO);
         MvcResult result = mockMvc.perform(patch(URL_PREFIX + "review")
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
@@ -1691,8 +3381,13 @@ public class MyPageControllerIT {
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
+
+        // findById를 통한 조회로 orElse IllegalArgumentException 발생
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(IllegalArgumentException.class, ex);
+
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
                 content,
@@ -1714,7 +3409,7 @@ public class MyPageControllerIT {
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestDTO))
-                .andExpect(status().is(403))
+                .andExpect(status().isForbidden())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -1724,6 +3419,194 @@ public class MyPageControllerIT {
 
         assertNotNull(response);
         assertEquals(ErrorCode.FORBIDDEN.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "리뷰 수정. 리뷰 아이디가 1보다 작은 경우")
+    void patchReviewValidationReviewIdIsZero() throws Exception {
+        MyPagePatchReviewDTO patchDTO = new MyPagePatchReviewDTO(
+                0L,
+                "test modify review content"
+        );
+        String requestDTO = om.writeValueAsString(patchDTO);
+        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "review")
+                                .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                                .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                                .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(requestDTO))
+                        .andExpect(status().isBadRequest())
+                        .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("reviewId", responseObj.field());
+        assertEquals("Min", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "리뷰 수정. 리뷰 내용이 null인 경우")
+    void patchReviewValidationContentIsNull() throws Exception {
+        MyPagePatchReviewDTO patchDTO = new MyPagePatchReviewDTO(
+                1L,
+                null
+        );
+        String requestDTO = om.writeValueAsString(patchDTO);
+        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "review")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("content", responseObj.field());
+        assertEquals("NotBlank", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "리뷰 수정. 리뷰 내용이 Blank인 경우")
+    void patchReviewValidationContentIsBlank() throws Exception {
+        MyPagePatchReviewDTO patchDTO = new MyPagePatchReviewDTO(
+                1L,
+                ""
+        );
+        String requestDTO = om.writeValueAsString(patchDTO);
+        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "review")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(2, response.errors().size());
+
+        List<String> contentConstraintValidationList = List.of("NotBlank", "Size");
+
+        response.errors().forEach(v -> {
+            assertEquals("content", v.field());
+            assertTrue(contentConstraintValidationList.contains(v.constraint()));
+        });
+    }
+
+    @Test
+    @DisplayName(value = "리뷰 수정. 리뷰 내용이 한글자인 경우")
+    void patchReviewValidationContentLength1() throws Exception {
+        MyPagePatchReviewDTO patchDTO = new MyPagePatchReviewDTO(
+                1L,
+                "a"
+        );
+        String requestDTO = om.writeValueAsString(patchDTO);
+        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "review")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(1, response.errors().size());
+
+        ValidationError responseObj = response.errors().get(0);
+
+        assertEquals("content", responseObj.field());
+        assertEquals("Size", responseObj.constraint());
+    }
+
+    @Test
+    @DisplayName(value = "리뷰 수정. 리뷰 아이디가 0, 내용이 한글자인 경우")
+    void patchReviewValidationReviewIdIsZeroAndContentLength1() throws Exception {
+        MyPagePatchReviewDTO patchDTO = new MyPagePatchReviewDTO(
+                0L,
+                "a"
+        );
+        String requestDTO = om.writeValueAsString(patchDTO);
+        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "review")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertFalse(response.errors().isEmpty());
+
+        assertEquals(2, response.errors().size());
+
+        Map<String, String> validationMap = new HashMap<>();
+        validationMap.put("reviewId", "Min");
+        validationMap.put("content", "Size");
+
+        response.errors().forEach(v -> {
+            String constraint = validationMap.getOrDefault(v.field(), null);
+
+            assertNotNull(constraint);
+            assertEquals(constraint, v.constraint());
+        });
     }
 
     @Test
@@ -1750,12 +3633,18 @@ public class MyPageControllerIT {
     @Test
     @DisplayName(value = "리뷰 삭제. 데이터가 없는 경우")
     void deleteReviewNotFound() throws Exception {
-        MvcResult result = mockMvc.perform(delete(URL_PREFIX + "review/0")
+        long wrongReviewId = getWrongReviewId();
+        MvcResult result = mockMvc.perform(delete(URL_PREFIX + "review/" + wrongReviewId)
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
                         .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
-                .andExpect(status().is(400))
+                .andExpect(status().isBadRequest())
                 .andReturn();
+
+        // findById를 통한 조회로 orElse IllegalArgumentException 발생
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(IllegalArgumentException.class, ex);
+
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
                 content,
@@ -1773,7 +3662,7 @@ public class MyPageControllerIT {
                         .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
                         .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
                         .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
-                .andExpect(status().is(403))
+                .andExpect(status().isForbidden())
                 .andReturn();
         String content = result.getResponse().getContentAsString();
         ExceptionEntity response = om.readValue(
@@ -1786,6 +3675,32 @@ public class MyPageControllerIT {
 
         ProductReview checkData = productReviewRepository.findById(noneMemberReview.getId()).orElse(null);
         assertNotNull(checkData);
+    }
+
+    @Test
+    @DisplayName(value = "리뷰 삭제. 리뷰 아이디가 1보다 작은 경우")
+    void deleteReviewValidationReviewIdIsZero() throws Exception {
+        MvcResult result = mockMvc.perform(delete(URL_PREFIX + "review/0")
+                                    .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                                    .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                                    .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue)))
+                            .andExpect(status().isBadRequest())
+                            .andReturn();
+
+        // @Min에 의한 HandlerMethodValidationException 검증을 위함
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(HandlerMethodValidationException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertNull(response.errors());
     }
 
     @Test
@@ -1838,5 +3753,134 @@ public class MyPageControllerIT {
         assertEquals(patchDTO.nickname(), patchMember.getNickname());
         assertEquals(patchDTO.phone(), patchMember.getPhone().replaceAll("-", ""));
         assertEquals(patchDTO.mail(), patchMember.getUserEmail());
+    }
+
+    @Test
+    @DisplayName(value = "회원 정보 수정. nickname이 패턴에 맞지 않는 경우")
+    void patchInfoValidationNickNamePatternNotMatch() throws Exception {
+        MyPageInfoPatchDTO patchDTO = new MyPageInfoPatchDTO(
+                "a",
+                "01098981212",
+                "modify@modify.com"
+        );
+        String requestDTO = om.writeValueAsString(patchDTO);
+
+        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "info")
+                                .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                                .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                                .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(requestDTO))
+                        .andExpect(status().isBadRequest())
+                        .andReturn();
+
+        // Validator를 통한 Exception 발생임을 검증
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidJoinPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원 정보 수정. 연락처가 패턴에 맞지 않는 경우")
+    void patchInfoValidationPhonePatternNotMatch() throws Exception {
+        MyPageInfoPatchDTO patchDTO = new MyPageInfoPatchDTO(
+                "patchNickname",
+                "010-9898-1212",
+                "modify@modify.com"
+        );
+        String requestDTO = om.writeValueAsString(patchDTO);
+
+        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "info")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // Validator를 통한 Exception 발생임을 검증
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidJoinPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "회원 정보 수정. 이메일이 패턴에 맞지 않는 경우")
+    void patchInfoValidationEmailPatternNotMatch() throws Exception {
+        MyPageInfoPatchDTO patchDTO = new MyPageInfoPatchDTO(
+                "patchNickname",
+                "01098981212",
+                "modifymodify.com"
+        );
+        String requestDTO = om.writeValueAsString(patchDTO);
+
+        MvcResult result = mockMvc.perform(patch(URL_PREFIX + "info")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestDTO))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // Validator를 통한 Exception 발생임을 검증
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(InvalidJoinPolicyException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+    }
+
+    @Test
+    @DisplayName(value = "알림 리스트 조회. 페이지값이 1보다 작은 경우")
+    void getNotificationValidationPageIsZero() throws Exception {
+        MvcResult result = mockMvc.perform(get(URL_PREFIX + "notification")
+                        .header(tokenProperties.getAccess().getHeader(), accessTokenValue)
+                        .cookie(new Cookie(tokenProperties.getRefresh().getHeader(), refreshTokenValue))
+                        .cookie(new Cookie(cookieProperties.getIno().getHeader(), inoValue))
+                        .param("page", "0"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // @Min에 의한 HandlerMethodValidationException 검증을 위함
+        Exception ex = result.getResolvedException();
+        assertInstanceOf(HandlerMethodValidationException.class, ex);
+
+        String content = result.getResponse().getContentAsString();
+        ValidationExceptionEntity response = om.readValue(
+                content,
+                new TypeReference<>(){}
+        );
+
+        assertNotNull(response);
+        assertEquals(ErrorCode.BAD_REQUEST.getHttpStatus().value(), response.errorCode());
+        assertEquals(ErrorCode.BAD_REQUEST.getMessage(), response.errorMessage());
+        assertNull(response.errors());
     }
 }

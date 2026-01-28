@@ -7,6 +7,7 @@ import com.example.moduleapi.model.response.PagingResponseDTO;
 import com.example.moduleapi.model.response.ResponseIdDTO;
 import com.example.moduleapi.service.PrincipalService;
 import com.example.moduleapi.usecase.ReviewWriteUseCase;
+import com.example.moduleapi.validator.MemberRequestValidator;
 import com.example.modulecommon.model.dto.page.MyPagePageDTO;
 import com.example.modulecommon.model.dto.qna.in.QnAReplyInsertDTO;
 import com.example.modulecommon.model.dto.qna.in.QnAReplyPatchDTO;
@@ -25,6 +26,7 @@ import com.example.modulenotification.usecase.NotificationReadUseCase;
 import com.example.moduleorder.model.dto.in.MemberOrderDTO;
 import com.example.moduleorder.model.dto.out.OrderListDTO;
 import com.example.moduleorder.model.dto.page.OrderPageDTO;
+import com.example.moduleorder.model.enumuration.MemberOrderTerm;
 import com.example.moduleorder.usecase.OrderReadUseCase;
 import com.example.moduleproduct.model.dto.page.LikePageDTO;
 import com.example.moduleproduct.model.dto.productLike.out.ProductLikeDTO;
@@ -48,6 +50,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -93,6 +97,8 @@ public class MyPageController {
 
     private final PrincipalService principalService;
 
+    private final MemberRequestValidator memberRequestValidator;
+
     /**
      *
      * @param term
@@ -122,8 +128,11 @@ public class MyPageController {
     })
     @GetMapping("/order/{term}")
     public ResponseEntity<PagingResponseDTO<OrderListDTO>> getOrderList(@PathVariable(name = "term") String term,
-                                                                        @RequestParam(name = "page", required = false, defaultValue = "1") int page,
+                                                                        @RequestParam(name = "page", required = false, defaultValue = "1") @Min(value = 1) int page,
                                                                         Principal principal) {
+        log.info("MyPageController.getOrderList :: term= {}, page= {}", term, page);
+
+        MemberOrderTerm.validate(term);
 
         OrderPageDTO orderPageDTO = OrderPageDTO.builder()
                 .term(term)
@@ -156,7 +165,7 @@ public class MyPageController {
             in = ParameterIn.QUERY
     )
     @GetMapping("/like")
-    public ResponseEntity<PagingResponseDTO<ProductLikeDTO>> getLikeProduct(@RequestParam(name = "page", required = false, defaultValue = "1") int page,
+    public ResponseEntity<PagingResponseDTO<ProductLikeDTO>> getLikeProduct(@RequestParam(name = "page", required = false, defaultValue = "1") @Min(value = 1) int page,
                                                                             Principal principal) {
         LikePageDTO pageDTO = new LikePageDTO(page);
         String userId = principalService.extractUserId(principal);
@@ -181,7 +190,8 @@ public class MyPageController {
             in = ParameterIn.QUERY
     )
     @GetMapping("/qna/product")
-    public ResponseEntity<PagingResponseDTO<ProductQnAListDTO>> getProductQnA(@RequestParam(name = "page", required = false, defaultValue = "1") int page, Principal principal) {
+    public ResponseEntity<PagingResponseDTO<ProductQnAListDTO>> getProductQnA(@RequestParam(name = "page", required = false, defaultValue = "1") @Min(value = 1) int page,
+                                                                              Principal principal) {
         MyPagePageDTO pageDTO = new MyPagePageDTO(page);
         String userId = principalService.extractUserId(principal);
         Page<ProductQnAListDTO> responseDTO = productQnAReadUseCase.getProductQnAList(pageDTO, userId);
@@ -206,7 +216,8 @@ public class MyPageController {
             in = ParameterIn.PATH
     )
     @GetMapping("/qna/product/detail/{qnaId}")
-    public ResponseEntity<ProductQnADetailResponseDTO> getProductQnADetail(@PathVariable(name = "qnaId") long qnaId, Principal principal) {
+    public ResponseEntity<ProductQnADetailResponseDTO> getProductQnADetail(@PathVariable(name = "qnaId") @Min(value = 1) long qnaId,
+                                                                           Principal principal) {
         String nickname = principalService.getNicknameOrUsername(principal);
         ProductQnADetailResponseDTO responseDTO = productQnAReadUseCase.getProductQnADetail(qnaId, nickname);
 
@@ -230,7 +241,7 @@ public class MyPageController {
             in = ParameterIn.PATH
     )
     @DeleteMapping("/qna/product/{qnaId}")
-    public ResponseEntity<Void> deleteProductQnA(@PathVariable(name = "qnaId") long qnaId, Principal principal) {
+    public ResponseEntity<Void> deleteProductQnA(@PathVariable(name = "qnaId") @Min(value = 1) long qnaId, Principal principal) {
 
         String userId = principalService.extractUserId(principal);
         productQnaWriteUseCase.deleteProductQnA(qnaId, userId);
@@ -255,7 +266,7 @@ public class MyPageController {
             in = ParameterIn.QUERY
     )
     @GetMapping("/qna/member")
-    public ResponseEntity<PagingResponseDTO<MemberQnAListDTO>> getMemberQnA(@RequestParam(name = "page", required = false, defaultValue = "1") int page,
+    public ResponseEntity<PagingResponseDTO<MemberQnAListDTO>> getMemberQnA(@RequestParam(name = "page", required = false, defaultValue = "1") @Min(value = 1) int page,
                                                                             Principal principal) {
         MyPagePageDTO pageDTO = new MyPagePageDTO(page);
         String userId = principalService.extractUserId(principal);
@@ -275,7 +286,7 @@ public class MyPageController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PostMapping("/qna/member")
-    public ResponseEntity<ResponseIdDTO<Long>> memberQnAInsert(@RequestBody MemberQnAInsertDTO insertDTO, Principal principal) {
+    public ResponseEntity<ResponseIdDTO<Long>> memberQnAInsert(@RequestBody @Valid MemberQnAInsertDTO insertDTO, Principal principal) {
         String userId = principalService.extractUserId(principal);
 
         Long responseId = memberQnaWriteUseCase.postMemberQnA(insertDTO, userId);
@@ -301,7 +312,7 @@ public class MyPageController {
             in = ParameterIn.PATH
     )
     @GetMapping("/qna/member/detail/{qnaId}")
-    public ResponseEntity<MemberQnADetailResponseDTO> getMemberQnADetail(@PathVariable(name = "qnaId") long qnaId, Principal principal) {
+    public ResponseEntity<MemberQnADetailResponseDTO> getMemberQnADetail(@PathVariable(name = "qnaId") @Min(value = 1) long qnaId, Principal principal) {
         String userId = principalService.getNicknameOrUsername(principal);
         MemberQnADetailResponseDTO responseDTO = memberQnAReadUseCase.getMemberQnADetail(qnaId, userId);
 
@@ -319,7 +330,7 @@ public class MyPageController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PostMapping("/qna/member/reply")
-    public ResponseEntity<Void> postMemberQnAReply(@RequestBody QnAReplyInsertDTO insertDTO, Principal principal) {
+    public ResponseEntity<Void> postMemberQnAReply(@RequestBody @Valid QnAReplyInsertDTO insertDTO, Principal principal) {
         String userId = principalService.extractUserId(principal);
 
         memberQnaWriteUseCase.postMemberQnAReply(insertDTO, userId);
@@ -338,7 +349,7 @@ public class MyPageController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PatchMapping("/qna/member/reply")
-    public ResponseEntity<Void> patchMemberQnAReply(@RequestBody QnAReplyPatchDTO replyDTO, Principal principal) {
+    public ResponseEntity<Void> patchMemberQnAReply(@RequestBody @Valid QnAReplyPatchDTO replyDTO, Principal principal) {
         String userId = principalService.extractUserId(principal);
 
         memberQnaWriteUseCase.patchMemberQnAReply(replyDTO, userId);
@@ -363,7 +374,7 @@ public class MyPageController {
             in = ParameterIn.PATH
     )
     @GetMapping("/qna/member/modify/{qnaId}")
-    public ResponseEntity<MemberQnAModifyDataDTO> getModifyData(@PathVariable(name = "qnaId") long qnaId, Principal principal) {
+    public ResponseEntity<MemberQnAModifyDataDTO> getModifyData(@PathVariable(name = "qnaId") @Min(value = 1) long qnaId, Principal principal) {
         String userId = principalService.extractUserId(principal);
 
         MemberQnAModifyDataDTO responseDTO = memberQnAReadUseCase.getModifyData(qnaId, userId);
@@ -383,7 +394,7 @@ public class MyPageController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PatchMapping("/qna/member")
-    public ResponseEntity<Void> patchMemberQnA(@RequestBody MemberQnAModifyDTO modifyDTO, Principal principal) {
+    public ResponseEntity<Void> patchMemberQnA(@RequestBody @Valid MemberQnAModifyDTO modifyDTO, Principal principal) {
         String userId = principalService.extractUserId(principal);
 
         memberQnaWriteUseCase.patchMemberQnA(modifyDTO, userId);
@@ -408,7 +419,7 @@ public class MyPageController {
             in = ParameterIn.PATH
     )
     @DeleteMapping("/qna/member/{qnaId}")
-    public ResponseEntity<Void> deleteMemberQnA(@PathVariable(name = "qnaId") long qnaId, Principal principal) {
+    public ResponseEntity<Void> deleteMemberQnA(@PathVariable(name = "qnaId") @Min(value = 1) long qnaId, Principal principal) {
         String userId = principalService.extractUserId(principal);
         memberQnaWriteUseCase.deleteMemberQnA(qnaId, userId);
 
@@ -451,7 +462,7 @@ public class MyPageController {
             in = ParameterIn.QUERY
     )
     @GetMapping("/review")
-    public ResponseEntity<PagingResponseDTO<MyPageReviewDTO>> getReview(@RequestParam(name = "page", required = false, defaultValue = "1") int page,
+    public ResponseEntity<PagingResponseDTO<MyPageReviewDTO>> getReview(@RequestParam(name = "page", required = false, defaultValue = "1") @Min(value = 1) int page,
                                                                         Principal principal) {
         MyPagePageDTO pageDTO = new MyPagePageDTO(page);
         String userId = principalService.extractUserId(principal);
@@ -477,7 +488,7 @@ public class MyPageController {
             in = ParameterIn.PATH
     )
     @GetMapping("/review/modify/{reviewId}")
-    public ResponseEntity<MyPagePatchReviewDataDTO> getPatchReviewData(@PathVariable(name = "reviewId") long reviewId, Principal principal) {
+    public ResponseEntity<MyPagePatchReviewDataDTO> getPatchReviewData(@PathVariable(name = "reviewId") @Min(value = 1) long reviewId, Principal principal) {
         String userId = principalService.extractUserId(principal);
 
         MyPagePatchReviewDataDTO responseDTO = productReviewReadUseCase.getPatchReview(reviewId, userId);
@@ -496,7 +507,7 @@ public class MyPageController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PostMapping("/review")
-    public ResponseEntity<Void> postReview(@RequestBody MyPagePostReviewDTO reviewDTO, Principal principal) {
+    public ResponseEntity<Void> postReview(@RequestBody @Valid MyPagePostReviewDTO reviewDTO, Principal principal) {
         String userId = principalService.extractUserId(principal);
         reviewWriteUseCase.postReview(reviewDTO, userId);
 
@@ -514,7 +525,7 @@ public class MyPageController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @PatchMapping("/review")
-    public ResponseEntity<Void> patchReview(@RequestBody MyPagePatchReviewDTO reviewDTO, Principal principal) {
+    public ResponseEntity<Void> patchReview(@RequestBody @Valid MyPagePatchReviewDTO reviewDTO, Principal principal) {
 
         String userId = principalService.extractUserId(principal);
         productReviewWriteUseCase.patchReview(reviewDTO, userId);
@@ -539,7 +550,7 @@ public class MyPageController {
             in = ParameterIn.PATH
     )
     @DeleteMapping("/review/{reviewId}")
-    public ResponseEntity<Void> deleteReview(@PathVariable(name = "reviewId") long reviewId, Principal principal) {
+    public ResponseEntity<Void> deleteReview(@PathVariable(name = "reviewId") @Min(value = 1) long reviewId, Principal principal) {
         String userId = principalService.extractUserId(principal);
         productReviewWriteUseCase.deleteReview(reviewId, userId);
 
@@ -576,6 +587,8 @@ public class MyPageController {
     @PatchMapping("/info")
     public ResponseEntity<Void> patchInfo(@RequestBody MyPageInfoPatchDTO infoDTO, Principal principal) {
 
+        memberRequestValidator.validatePatchInfo(infoDTO);
+
         String userId = principalService.extractUserId(principal);
         userWriteUseCase.patchMyPageUserInfo(infoDTO, userId);
 
@@ -587,7 +600,7 @@ public class MyPageController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @GetMapping("/notification")
-    public ResponseEntity<PagingResponseDTO<NotificationListDTO>> getNotification(@RequestParam(name = "page", required = false, defaultValue = "1") int page,
+    public ResponseEntity<PagingResponseDTO<NotificationListDTO>> getNotification(@RequestParam(name = "page", required = false, defaultValue = "1") @Min(value = 1) int page,
                                                                                   Principal principal) {
         NotificationPageDTO pageDTO = new NotificationPageDTO(page);
         String userId = principalService.extractUserId(principal);
