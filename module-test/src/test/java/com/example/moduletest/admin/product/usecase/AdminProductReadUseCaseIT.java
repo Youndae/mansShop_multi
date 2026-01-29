@@ -1,5 +1,6 @@
 package com.example.moduletest.admin.product.usecase;
 
+import com.example.modulecommon.customException.CustomNotFoundException;
 import com.example.modulecommon.fixture.ClassificationFixture;
 import com.example.modulecommon.fixture.ProductFixture;
 import com.example.modulecommon.model.dto.response.PagingListDTO;
@@ -339,9 +340,9 @@ public class AdminProductReadUseCaseIT {
     @Test
     @DisplayName(value = "상품 분류에 해당하는 상품 리스트 조회. 데이터가 없는 경우")
     void getSelectDiscountProductEmpty() {
-        List<AdminDiscountProductDTO> result = assertDoesNotThrow(() -> adminProductReadUseCase.getSelectDiscountProductList(classificationList.get(1).getId()));
-
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
+        assertThrows(
+                CustomNotFoundException.class,
+                () -> adminProductReadUseCase.getSelectDiscountProductList(classificationList.get(1).getId())
+        );
     }
 }

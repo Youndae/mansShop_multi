@@ -98,7 +98,7 @@ public class JWTTokenService {
     public void reIssueToken(TokenDTO tokenDTO, HttpServletResponse response) {
         // ino가 존재하지 않는다면 무조건 탈취로 판단.
         if(tokenDTO.inoValue() == null) {
-            deleteCookieAndThrowException(Result.TOKEN_STEALING, response);
+            jwtTokenProvider.deleteCookie(response);
         }else {
             String accessTokenClaim = jwtTokenProvider.decodeToken(tokenDTO.accessTokenValue());
 
@@ -108,7 +108,7 @@ public class JWTTokenService {
                 if(refreshTokenClaim.equals(Result.WRONG_TOKEN.getResultKey()))
                     jwtTokenProvider.deleteCookie(response);
                 else
-                    deleteTokenAndCookieAndThrowException(refreshTokenClaim, tokenDTO.inoValue(), response);
+                    jwtTokenProvider.deleteRedisDataAndCookie(refreshTokenClaim, tokenDTO.inoValue(), response);
 
                 throw new CustomTokenStealingException(ErrorCode.TOKEN_STEALING, ErrorCode.TOKEN_STEALING.getMessage());
             }else {
@@ -122,7 +122,7 @@ public class JWTTokenService {
                     jwtTokenProvider.issueTokens(accessTokenClaim, tokenDTO.inoValue(), response);
                     return;
                 }else {
-                    deleteTokenAndCookieAndThrowException(accessTokenClaim, tokenDTO.inoValue(), response);
+                    jwtTokenProvider.deleteRedisDataAndCookie(accessTokenClaim, tokenDTO.inoValue(), response);
                 }
             }
         }

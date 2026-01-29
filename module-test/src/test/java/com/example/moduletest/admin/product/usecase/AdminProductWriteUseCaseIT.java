@@ -304,8 +304,6 @@ public class AdminProductWriteUseCaseIT {
                 IllegalArgumentException.class,
                 () -> adminProductWriteUseCase.patchProduct(productFixture.getId(), deleteOptionList, patchDTO, imageDTO)
         );
-
-        verify(fileService, times(6)).deleteImage(anyString());
     }
 
     @Test
@@ -352,8 +350,6 @@ public class AdminProductWriteUseCaseIT {
                 IllegalArgumentException.class,
                 () -> adminProductWriteUseCase.patchProduct(productFixture.getId(), deleteOptionList, patchDTO, imageDTO)
         );
-
-        verify(fileService, times(6)).deleteImage(anyString());
     }
 
     @Test

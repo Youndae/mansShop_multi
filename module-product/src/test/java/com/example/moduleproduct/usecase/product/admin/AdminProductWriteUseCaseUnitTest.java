@@ -121,9 +121,6 @@ public class AdminProductWriteUseCaseUnitTest {
                 infoImages
         );
 
-        when(productDomainService.setProductFirstThumbnail(any(Product.class), any(MockMultipartFile.class))).thenReturn(null);
-        doNothing().when(productDomainService).deleteImages(anyList());
-
         assertThrows(IllegalArgumentException.class, () -> adminProductWriteUseCase.postProduct(postDTO, imageDTO));
 
         verify(productDomainService, never()).saveProductImage(any(Product.class), anyList(), anyList());
@@ -457,9 +454,7 @@ public class AdminProductWriteUseCaseUnitTest {
         List<Long> deleteOptionList = new ArrayList<>(List.of(1L, 2L, 3L));
 
         when(productDataService.getProductByIdOrElseIllegal(any())).thenReturn(product);
-        doNothing().when(productDomainService).setPatchProductOptionData(any(Product.class), any(AdminProductPatchDTO.class));
-        when(productDomainService.saveProductImage(any(Product.class), anyList(), anyList())).thenReturn(Collections.emptyList());
-        doNothing().when(productDomainService).deleteImages(anyList());
+        when(productDataService.getProductInfoImageNameList(anyString())).thenReturn(anyList());
 
         assertThrows(
                 IllegalArgumentException.class,
@@ -504,9 +499,7 @@ public class AdminProductWriteUseCaseUnitTest {
         List<Long> deleteOptionList = new ArrayList<>(List.of(1L, 2L, 3L));
 
         when(productDataService.getProductByIdOrElseIllegal(any())).thenReturn(product);
-        doNothing().when(productDomainService).setPatchProductOptionData(any(Product.class), any(AdminProductPatchDTO.class));
-        when(productDomainService.saveProductImage(any(Product.class), anyList(), anyList())).thenReturn(Collections.emptyList());
-        doNothing().when(productDomainService).deleteImages(anyList());
+        when(productDataService.getProductInfoImageNameList(anyString())).thenReturn(anyList());
 
         assertThrows(
                 IllegalArgumentException.class,

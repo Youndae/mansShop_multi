@@ -3,6 +3,10 @@ spring:
     activate:
       on-profile: prod
 
+  datasource:
+    hikari:
+      maximum-pool-size: 30
+
   rabbitmq:
     ssl:
       enabled: true
