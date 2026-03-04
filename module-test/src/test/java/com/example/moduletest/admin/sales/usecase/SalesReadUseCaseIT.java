@@ -36,6 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -78,11 +79,15 @@ public class SalesReadUseCaseIT {
     @Autowired
     private EntityManager em;
 
-    private int TERM_YEAR = 2024;
+    private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM");
 
-    private String TERM_MONTH = "2024-01";
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-    private String TERM = "2024-01-01";
+    private static final int TERM_YEAR = LocalDate.now().minusYears(1).getYear();
+
+    private static final String TERM_MONTH = LocalDate.now().minusYears(1).format(MONTH_FORMATTER);
+
+    private static final String TERM = LocalDate.now().minusYears(1).format(DATE_FORMATTER);
 
     private List<ProductSalesSummary> productSalesSummaryList;
 

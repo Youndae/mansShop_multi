@@ -1,20 +1,7 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.4.0'
-    id 'io.spring.dependency-management' version '1.1.6'
-}
-
-group = 'com.example'
-version = '0.0.1-SNAPSHOT'
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
-}
-
-repositories {
-    mavenCentral()
+    id 'org.springframework.boot'
+    id 'io.spring.dependency-management'
 }
 
 dependencies {
@@ -33,14 +20,17 @@ dependencies {
     implementation project(':module-cache')
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
     implementation 'org.springframework.boot:spring-boot-starter-mail:3.3.0'
     implementation 'org.springframework.boot:spring-boot-starter-webflux:3.4.0'
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
 
     //iamport
     implementation 'com.github.iamport:iamport-rest-client-java:0.2.23'
 
     testImplementation(testFixtures(project(':module-common')))
-
+    testImplementation 'org.springframework.security:spring-security-test'
 }
 
 tasks.register("prepareKotlinBuildScriptModel"){}
@@ -51,5 +41,10 @@ tasks.named('test') {
 }
 
 bootJar {
+    enabled = true
     archiveFileName = "app.jar"
+}
+
+jar {
+    enabled = true
 }

@@ -48,7 +48,7 @@ public class SalesSummaryFixture {
     }
 
     public static List<PeriodSalesSummary> createPeriodSalesSummary() {
-        LocalDate date = LocalDate.of(2023, 1, 1);
+        LocalDate date = LocalDate.now().minusMonths(24);
         List<PeriodSalesSummary> result = new ArrayList<>();
         for(int i = 0; i < 730; i++) {
             long sales = randomInt(10000000, 1000000);

@@ -1,65 +1,62 @@
 plugins {
 	id 'java'
-	id 'org.springframework.boot' version '3.4.0'
-	id 'io.spring.dependency-management' version '1.1.6'
+	id 'org.springframework.boot' version '3.4.0' apply false
+	id 'io.spring.dependency-management' version '1.1.6' apply false
 }
 
-group = 'com.example'
-version = '0.0.1-SNAPSHOT'
+allprojects{
+	group = 'com.example'
+	version = '0.0.1-SNAPSHOT'
 
-java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(17)
-	}
-}
-
-allprojects {
 	repositories {
 		mavenCentral()
 		maven { url 'https://jitpack.io' }
 	}
+}
 
+subprojects {
 	apply plugin: 'java'
 	apply plugin: 'java-library'
+	apply plugin: 'org.springframework.boot'
 	apply plugin: 'io.spring.dependency-management'
 
+	java {
+		toolchain {
+			languageVersion = JavaLanguageVersion.of(17)
+		}
+	}
+
 	dependencies {
+		// Spring, AOP
 		implementation 'org.springframework.boot:spring-boot-starter'
-		testImplementation 'org.springframework.boot:spring-boot-starter-test'
-		testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-		implementation 'org.springframework.boot:spring-boot-starter-security'
 		implementation 'org.springframework.boot:spring-boot-starter-aop'
+		implementation 'org.springframework.boot:spring-boot-starter-validation'
+		testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+		testImplementation 'org.springframework.boot:spring-boot-starter-test'
+		
+		// JSON, YAML
 		implementation 'com.fasterxml.jackson.core:jackson-databind:2.16.1'
 		implementation 'com.fasterxml.jackson.core:jackson-core:2.16.1'
 		implementation 'com.fasterxml.jackson.core:jackson-annotations:2.16.1'
 		implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.16.1'
+		implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.1'
 		implementation 'org.json:json:20240303'
-		implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.0'
-		implementation 'org.springframework.boot:spring-boot-starter-validation'
-//		implementation 'org.springframework.boot:spring-boot-starter-mail:3.3.0'
-		/*implementation 'commons-fileupload:commons-fileupload:1.5'
-		implementation 'commons-io:commons-io:2.11.0'*/
+
+		// Infra
 		implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 		implementation 'org.springframework.boot:spring-boot-starter-amqp'
 
-		//webSocktet & STOMP
-		implementation 'org.springframework.boot:spring-boot-starter-websocket'
-
-		/*implementation 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4:1.16'
-		implementation 'org.springframework.boot:spring-boot-starter-log4j2'*/
-
+		// Data
 		implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 		implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
 		annotationProcessor "com.querydsl:querydsl-apt:5.0.0:jakarta"
 		annotationProcessor "jakarta.annotation:jakarta.annotation-api"
 		annotationProcessor "jakarta.persistence:jakarta.persistence-api"
 
+		// configuration, tool
 		annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
-
 		compileOnly 'org.projectlombok:lombok'
 		annotationProcessor 'org.projectlombok:lombok'
-
-		testImplementation 'org.springframework.security:spring-security-test'
 
 		// monitoring
 		implementation 'org.springframework.boot:spring-boot-starter-actuator'
@@ -69,25 +66,14 @@ allprojects {
 	tasks.named('test') {
 		useJUnitPlatform()
 	}
-}
 
-springBoot {
-	mainClass = 'com.example.moduleapi.ModuleApiApplication'
-}
-
-repositories {
-	mavenCentral()
-}
-
-dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	tasks.named('bootJar') { enabled = false }
+	tasks.named('jar') { enabled = true }
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
 }
 
-tasks.bootJar { enabled = false }
-tasks.jar { enabled = true }
+//tasks.bootJar { enabled = false }
+//tasks.jar { enabled = false }

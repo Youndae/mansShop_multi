@@ -1,6 +1,7 @@
 package com.example.moduleapi.controller.admin;
 
 import com.example.moduleadmin.model.dto.page.AdminSalesPageDTO;
+import com.example.moduleadmin.model.dto.sales.business.AdminBestSalesProductDTO;
 import com.example.moduleadmin.model.dto.sales.business.AdminClassificationSalesProductListDTO;
 import com.example.moduleadmin.model.dto.sales.business.AdminProductSalesOptionDTO;
 import com.example.moduleadmin.model.dto.sales.out.*;
@@ -50,6 +51,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -130,11 +132,15 @@ public class AdminSalesControllerIT {
 
     private List<ProductOrder> orderList;
 
-    private static final int TERM_YEAR = 2024;
+    private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM");
 
-    private static final String TERM_MONTH = "2024-01";
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-    private static final String TERM = "2024-01-01";
+    private static final int TERM_YEAR = LocalDate.now().minusYears(1).getYear();
+
+    private static final String TERM_MONTH = LocalDate.now().minusYears(1).format(MONTH_FORMATTER);
+
+    private static final String TERM = LocalDate.now().minusYears(1).format(DATE_FORMATTER);
 
     private static final String URL_PREFIX = "/api/admin/";
 
@@ -344,6 +350,18 @@ public class AdminSalesControllerIT {
                 new TypeReference<>() {}
         );
 
+        List<AdminBestSalesProductDTO> testFixture = productSalesSummaryRepository.findPeriodBest5Product(term, term.plusMonths(1));
+
+        List<ProductSalesSummary> productSalesFixture = productSalesSummaryRepository.findAll()
+                        .stream()
+                                .filter(v -> v.getPeriodMonth().isAfter(term))
+                                        .toList();
+
+        System.out.println("===============================");
+        productSalesFixture.forEach(System.out::println);
+        System.out.println("textFixture : " + testFixture);
+        System.out.println("response : " + response);
+        System.out.println("===============================");
         assertNotNull(response);
         assertEquals(monthSales, response.monthSales());
         assertEquals(monthSalesQuantity, response.monthSalesQuantity());
