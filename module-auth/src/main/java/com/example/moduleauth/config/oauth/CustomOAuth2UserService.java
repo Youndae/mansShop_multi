@@ -32,7 +32,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             oAuth2Response = new KakaoResponse(oAuth2User.getAttributes());
 
         String userId = oAuth2Response.getProvider() + "_" + oAuth2Response.getProviderId();
-        Member existsData = userDataService.getMemberByUserIdOrElseNull(userId);
+        Member existsData = userDataService.getMemberAndFetchJoinAuthByUserIdOrElseNull(userId);
 
         if(existsData == null) {
             Member member = OAuth2ResponseEntityConverter.toEntity(oAuth2Response, userId);

@@ -169,6 +169,8 @@ public class JWTTokenProvider {
                     .getClaim("userId")
                     .asString();
 
+            System.out.println("===============getClaimByUserId : " + claimByUserId + "=========================");
+
             return claimByUserId == null ? Result.WRONG_TOKEN.getResultKey() : claimByUserId;
         }catch (TokenExpiredException e){
             return Result.TOKEN_EXPIRATION.getResultKey();
@@ -209,6 +211,8 @@ public class JWTTokenProvider {
     public void saveTokenToRedis(String key, String value, Duration redisExpiration) {
         ValueOperations<String, String> stringValueOperations = redisTemplate.opsForValue();
 
+        System.out.println("===============saveTokenToRedis=================");
+        System.out.println("key : " + key);
         stringValueOperations.set(key, value, redisExpiration);
     }
 
@@ -260,6 +264,7 @@ public class JWTTokenProvider {
      * 구조 변환 시 누락되는 실수를 대비하기 위해 메소드로 처리
      */
     public String setRedisKey(String prefix, String ino, String userId){
+        System.out.println("prefix : " + prefix + ", ino : " + ino + ", userId: " + userId);
         return prefix + ino + userId;
     }
 
@@ -398,7 +403,9 @@ public class JWTTokenProvider {
      */
     public void createTemporaryToken(String userId, HttpServletResponse response) {
         String temporaryToken = createToken(userId, jwtSecretProperties.getTemporary(), tokenProperties.getTemporary().getExpiration());
-
+        System.out.println("==================temporaryToken==============");
+        System.out.println("==================userId============== : " + userId);
+        System.out.println("=============ttl=============== : " + tokenRedisProperties.getTemporary().getExpiration());
         saveTokenToRedis(userId, temporaryToken, Duration.ofMinutes(tokenRedisProperties.getTemporary().getExpiration()));
         setTokenCookie(tokenProperties.getTemporary().getHeader(), temporaryToken, Duration.ofMinutes(tokenRedisProperties.getTemporary().getExpiration()), response);
     }
@@ -415,6 +422,7 @@ public class JWTTokenProvider {
      */
     public String verifyTemporaryToken(String temporaryTokenValue) {
         String claimByUserId = getClaimByUserId(temporaryTokenValue, jwtSecretProperties.getTemporary());
+        System.out.println("===============verifyTemporaryToken================ id : " + claimByUserId);
 
         if(claimByUserId.equals(Result.WRONG_TOKEN.getResultKey())
                 || claimByUserId.equals(Result.TOKEN_EXPIRATION.getResultKey())) {
@@ -423,6 +431,9 @@ public class JWTTokenProvider {
         }
 
         String redisValue = getTokenValueToRedis(claimByUserId);
+
+        System.out.println("========verify temporaryToken : " + temporaryTokenValue + "==============");
+        System.out.println("========verify redisValue : " + redisValue + "==============");
 
         if(temporaryTokenValue.equals(redisValue))
             return claimByUserId;
@@ -441,6 +452,8 @@ public class JWTTokenProvider {
      * 임시 토큰의 쿠키 및 Redis 데이터 삭제
      */
     public void deleteTemporaryTokenAndCookie(String userId, HttpServletResponse response) {
+        System.out.println("================deleteTemporaryTokenAndCookie=======");
+
         redisTemplate.delete(userId);
 
         Cookie cookie = new Cookie(tokenProperties.getTemporary().getHeader(), null);

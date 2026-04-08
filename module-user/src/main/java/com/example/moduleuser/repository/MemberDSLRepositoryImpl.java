@@ -1,6 +1,7 @@
 package com.example.moduleuser.repository;
 
 
+import com.example.modulecommon.model.entity.Auth;
 import com.example.modulecommon.model.entity.Member;
 import com.example.moduleuser.model.dto.admin.out.AdminMemberDTO;
 import com.example.moduleuser.model.dto.admin.page.AdminMemberPageDTO;
@@ -117,5 +118,12 @@ public class MemberDSLRepositoryImpl implements MemberDSLRepository {
             return member.nickname.eq(pageDTO.keyword());
 
         return null;
+    }
+
+    @Override
+    public List<Auth> getMemberAuths(String userId) {
+        return jpaQueryFactory.selectFrom(auth1)
+                .where(auth1.member.userId.eq(userId))
+                .fetch();
     }
 }

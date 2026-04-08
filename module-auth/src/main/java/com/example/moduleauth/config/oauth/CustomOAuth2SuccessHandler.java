@@ -25,8 +25,11 @@ public class CustomOAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHa
                                         Authentication authentication) throws IOException, ServletException {
         CustomOAuth2User customOAuth2User = (CustomOAuth2User) authentication.getPrincipal();
         String userId = customOAuth2User.getUserId();
+        System.out.println("================createTemporaryToken start=================");
         jwtTokenProvider.createTemporaryToken(userId, response);
+        System.out.println("==================createTemporaryToken end===============");
 
-        response.sendRedirect("/oAuth");
+//        response.sendRedirect(request, response, "http://localhost:3000/oAuth");
+        getRedirectStrategy().sendRedirect(request, response, "http://localhost:3000/oAuth");
     }
 }

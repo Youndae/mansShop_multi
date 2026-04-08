@@ -76,7 +76,7 @@ public class UserDomainService {
     public String validateTemporaryClaimByUserId(Cookie temporaryCookie) {
         String temporaryValue = temporaryCookie.getValue();
         String temporaryClaimByUserId = jwtTokenProvider.verifyTemporaryToken(temporaryValue);
-
+        System.out.println("validateTemporaryClaimByUserID :: temporaryClaim : " + temporaryClaimByUserId);
         if(temporaryClaimByUserId.equals(Result.WRONG_TOKEN.getResultKey())
                 || temporaryClaimByUserId.equals(Result.TOKEN_EXPIRATION.getResultKey()))
             throw new CustomBadCredentialsException(ErrorCode.UNAUTHORIZED, ErrorCode.UNAUTHORIZED.getMessage());

@@ -1,5 +1,6 @@
 package com.example.moduleuser.model.dto.member.out;
 
+import com.example.modulecommon.model.entity.Auth;
 import com.example.modulecommon.model.enumuration.Role;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -8,6 +9,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 
 import java.util.Collection;
+import java.util.List;
 
 @Getter
 public class UserStatusResponseDTO {
@@ -34,5 +36,11 @@ public class UserStatusResponseDTO {
 
         this.userId = userId;
         this.role = Role.getHighestRole(authorities);
+    }
+
+    public UserStatusResponseDTO(String userId, List<Auth> auths) {
+
+        this.userId = userId;
+        this.role = Role.getHighestRole(auths);
     }
 }

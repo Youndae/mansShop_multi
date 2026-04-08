@@ -24,6 +24,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -58,6 +59,10 @@ public class UserDataService {
 
     public Member getMemberByUserIdOrElseNull(String userId){
         return memberRepository.findById(userId).orElse(null);
+    }
+
+    public Member getMemberAndFetchJoinAuthByUserIdOrElseNull(String userId){
+        return memberRepository.findByUserId(userId);
     }
 
     public Member getMemberByUserIdOrElseAccessDenied(String userId) {
@@ -130,5 +135,9 @@ public class UserDataService {
                                 );
 
         return memberRepository.findMember(pageDTO, pageable);
+    }
+
+    public List<Auth> getMemberAuths(String userId) {
+        return memberRepository.getMemberAuths(userId);
     }
 }

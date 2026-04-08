@@ -6,4 +6,4 @@ token-redis:
     expiration: 14
     prefix: rt
   temporary:
-    expiration: 1
+    expiration: 5

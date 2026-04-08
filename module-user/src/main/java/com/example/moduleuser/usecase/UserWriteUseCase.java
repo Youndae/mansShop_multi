@@ -3,10 +3,12 @@ package com.example.moduleuser.usecase;
 import com.example.modulecommon.customException.CustomBadCredentialsException;
 import com.example.modulecommon.customException.CustomConflictException;
 import com.example.modulecommon.customException.CustomNotFoundException;
+import com.example.modulecommon.model.entity.Auth;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.modulecommon.model.enumuration.Result;
 import com.example.moduleuser.model.dto.member.in.*;
+import com.example.moduleuser.model.dto.member.out.UserStatusResponseDTO;
 import com.example.moduleuser.service.UserDataService;
 import com.example.moduleuser.service.UserDomainService;
 import com.example.moduleuser.service.UserExternalService;
@@ -18,6 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -60,16 +64,21 @@ public class UserWriteUseCase {
         }
     }
 
-    public void issueOAuthUserToken(HttpServletRequest request, HttpServletResponse response) {
+    public UserStatusResponseDTO issueOAuthUserToken(HttpServletRequest request, HttpServletResponse response) {
         Cookie temporaryCookie = userDomainService.getOAuthTemporaryCookie(request);
 
         if(temporaryCookie == null)
             throw new CustomBadCredentialsException(ErrorCode.UNAUTHORIZED, ErrorCode.UNAUTHORIZED.getMessage());
 
         String temporaryClaim = userDomainService.validateTemporaryClaimByUserId(temporaryCookie);
+        System.out.println("=============issueOAuthUserToken.temporaryClaim : " + temporaryClaim);
         userDataService.deleteTemporaryTokenAndCookie(temporaryClaim, response);
         if(!userDomainService.issueOAuthUserToken(temporaryClaim, request, response))
             throw new CustomBadCredentialsException(ErrorCode.UNAUTHORIZED, ErrorCode.UNAUTHORIZED.getMessage());
+
+        List<Auth> oAuthUserAuths = userDataService.getMemberAuths(temporaryClaim);
+
+        return new UserStatusResponseDTO(temporaryClaim, oAuthUserAuths);
     }
 
     public void logoutProc(LogoutDTO dto, HttpServletResponse response) {

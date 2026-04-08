@@ -19,7 +19,7 @@ public class CustomOAuth2User implements OAuth2User, CustomUserDetails {
 
     @Override
     public String getUserId() {
-        return null;
+        return oAuth2DTO.userId();
     }
 
     @Override

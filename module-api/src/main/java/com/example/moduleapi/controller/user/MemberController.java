@@ -162,10 +162,12 @@ public class MemberController {
     )
     @DefaultApiResponse
     @GetMapping("/oAuth/token")
-    public ResponseEntity<Void> oAuthIssueToken(HttpServletRequest request, HttpServletResponse response) {
-        userWriteUseCase.issueOAuthUserToken(request, response);
+    public ResponseEntity<UserStatusResponseDTO> oAuthIssueToken(HttpServletRequest request, HttpServletResponse response) {
 
-        return ResponseEntity.ok().build();
+
+        UserStatusResponseDTO responseDTO = userWriteUseCase.issueOAuthUserToken(request, response);
+
+        return ResponseEntity.ok(responseDTO);
     }
 
     /**
