@@ -114,7 +114,7 @@ public class JWTTokenProvider {
 
         TokenVerifyResult result = verifyToken(refreshTokenValue, jwtSecretProperties.getRefresh());
 
-        String redisKey = setRedisKey(tokenRedisProperties.getRefresh().getPrefix(), inoValue, result.userId());
+        String redisKey = setRedisKey(inoValue, result.userId());
         String redisValue = getTokenValueToRedis(redisKey);
 
         if(refreshTokenValue.equals(redisValue))
@@ -217,7 +217,7 @@ public class JWTTokenProvider {
      *
      */
     public void deleteRefreshTokenByRedis(String userId, String inoValue) {
-        String refreshKey = setRedisKey(tokenRedisProperties.getRefresh().getPrefix(), inoValue, userId);
+        String refreshKey = setRedisKey(inoValue, userId);
 
         redisTemplate.delete(refreshKey);
     }
@@ -347,7 +347,7 @@ public class JWTTokenProvider {
     public TokenIssueResponse issueTokens(String userId, Role role, String ino, HttpServletResponse response) {
         String accessToken = createToken(userId, role, jwtSecretProperties.getAccess(), tokenProperties.getAccess().getExpiration());
         String refreshToken = createToken(userId, role, jwtSecretProperties.getRefresh(), tokenProperties.getRefresh().getExpiration());
-        String refreshKey = setRedisKey(tokenRedisProperties.getRefresh().getPrefix(), ino, userId);
+        String refreshKey = setRedisKey(ino, userId);
         Duration tokenExpiration = Duration.ofDays(tokenRedisProperties.getRefresh().getExpiration());
         saveTokenToRedis(refreshKey, refreshToken, tokenExpiration);
 
