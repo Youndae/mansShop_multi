@@ -3,7 +3,7 @@ token:
 
   access:
     header: Authorization
-    expiration: 900000
+    expiration: 3600
 
   refresh:
     header: Authorization_Refresh

@@ -80,7 +80,7 @@ public class JWTTokenService {
 
         Map<String, Object> body = Map.of(
                 "code", errorCode.getHttpStatus().value(),
-                "message", errorCode.getMessage()
+                "errorMessage", errorCode.getMessage()
         );
 
         try {
