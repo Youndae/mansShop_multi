@@ -224,7 +224,6 @@ public class JWTTokenProvider {
 
     /**
      *
-     * @param prefix
      * @param ino
      * @param userId
      * @return redisKey
@@ -232,8 +231,8 @@ public class JWTTokenProvider {
      * RedisKey 구조를 생성해 반환.
      * 구조 변환 시 누락되는 실수를 대비하기 위해 메소드로 처리
      */
-    public String setRedisKey(String prefix, String ino, String userId){
-        return prefix + ino + userId;
+    public String setRedisKey(String ino, String userId){
+        return userId + ":" + ino;
     }
 
     /**

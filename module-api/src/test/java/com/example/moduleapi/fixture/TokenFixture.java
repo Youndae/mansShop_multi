@@ -82,8 +82,8 @@ public class TokenFixture {
 
     public Map<String, String> getRedisKeyMap(Member member, String ino) {
         Map<String, String> keyMap = new HashMap<>();
-        String accessKey = tokenProvider.setRedisKey(tokenRedisProperties.getAccess().getPrefix(), ino, member.getUserId());
-        String refreshKey = tokenProvider.setRedisKey(tokenRedisProperties.getRefresh().getPrefix(), ino, member.getUserId());
+        String accessKey = tokenProvider.setRedisKey(ino, member.getUserId());
+        String refreshKey = tokenProvider.setRedisKey(ino, member.getUserId());
 
         keyMap.put(ACCESS_KEY_NAME, accessKey);
         keyMap.put(REFRESH_KEY_NAME, refreshKey);

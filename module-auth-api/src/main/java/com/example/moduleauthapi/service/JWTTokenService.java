@@ -107,7 +107,7 @@ public class JWTTokenService {
          * Redis 데이터를 제거하기에는 해당 ino가 정상이라는 보장도 없을 뿐더러
          * 애초에 ino에는 정보가 들어가지 않는 난수 조합이기 때문에 문제가 없다고 판단.
         **/
-        if(tokenDTO.inoValue() == null) {
+        if(tokenDTO.inoValue() == null || tokenDTO.refreshTokenValue() == null) {
             jwtTokenProvider.deleteCookie(response);
             log.warn("JWTTokenService.reIssueToken :: ino Cookie is null");
             throw new CustomTokenStealingException(ErrorCode.TOKEN_STEALING, ErrorCode.TOKEN_STEALING.getMessage());

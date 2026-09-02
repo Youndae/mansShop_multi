@@ -403,8 +403,10 @@ Backend와 동일하게 도메인 기반 + 공통 레이어 분리 구조를 채
 
 ### 인증 인가
 
-인증 구조는 JWT 기반의 Refresh Token Rotation 방식에 기기 단위 식별자(ino)를 결합해 구성했습니다.
-여러 기기에서 동일 계정으로 로그인하는 환경을 고려해 인증 상태를 분리하고, 재사용, 조작, 탈취 같은 비정상 요청까지 구분할 수 있도록 Redis 기반의 2단계 검증 방식을 적용했습니다.
+인증 구조는 JWT 기반의 Refresh Token Rotation 방식에 기기 단위 식별자(ino)를 결합해 구성했습니다.   
+서버에서의 토큰 관리는 Redis에서 관리하도록 설계했으며 RefreshToken만을 저장해 관리하도록 설계했습니다.   
+
+초기 설계 단계에서는 AccessToken도 Redis에 저장해서 같이 관리하며 매 요청마다 Redis를 통한 2차 검증까지 수행했으나 최근 리팩토링을 통해 AccessToken은 저장하지 않은 상태에서 토큰 검증 결과를 전적으로 신뢰하는 방향으로 수정했습니다.   
 
 <br/>
 
@@ -412,14 +414,33 @@ Backend와 동일하게 도메인 기반 + 공통 레이어 분리 구조를 채
 초기부터 RTR 방식을 전제로 설계했으며, Multi-Device 환경에서 각 기기의 인증 상태를 명확히 구분할 필요가 있었습니다.
 Refresh Token을 Cookie에 저장하는 것만으로는 조작 여부 판단이 어려워, 서버에서 값 일관성을 검증할 수 있는 구조가 필요했습니다.
 
-이 요구를 바탕으로 각 기기에 고유한 ino를 발급하고 at{ino}{userId}(ex. atabc123tester), rt{ino}{userId} 형식으로 Redis Key를 생성해 서버에 저장된 토큰과 요청 토큰을 직접 비교할 수 있도록 구성했습니다.
+**1-1. 초기 설계 구조**   
+AccessToken과 RefreshToken을 모두 Redis에 저장하는 구조로 설계했습니다.   
+각 기기에는 UUID로 생성한 고유한 ino를 발급하고 각 토큰의 Redis 키 구조는 at{ino}{userId}, rt{ino}{userId} 구조로 설계해 디바이스별, 토큰별로 나눠 관리하는 방식을 채택했습니다.   
+
+AccessToken을 Redis에 저장하게 됨으로써 매 요청마다 AccessToken의 검증 결과만 신뢰하는것이 아닌 Redis와의 2차 검증을 통해 블랙리스트 없이 탈취까지 방어할 수 있는 구조를 설계했습니다.   
+또한, Filter에서 검증 전 RefreshToken Cookie의 존재 여부도 같이 파악해 정상적인 요청의 경우 ino, AccessToken, RefreshToken이 모두 존재해야만 검증을 수행하는 구조로 확실한 보안과 인증 / 인가를 구축했습니다.   
+
+**1-2. 개선된 설계 구조**   
+개선 포인트를 찾으며 고민하던 중 현재의 인증 / 인가 설계 구조가 어느정도의 효율성이 있는지 궁금해졌습니다.   
+처음에는 LLM과의 채팅을 통해 JWT를 사용하는 환경에서의 보편적인 설계 구조를 확인했고 그 결과, 초기 설계 구조의 경우 금융 도메인과 같은 보안에 굉장히 민감해야 하는 상황에서 주로 사용하고 대부분은 AccessToken 검증을 신뢰한다는 것을 알 수 있었습니다.   
+
+이후 코드 제공을 통한 토론 및 얻은 정보의 검증을 위해 여러 인터넷 강의와 블로그들을 통해 확신을 얻게 되었고 쇼핑몰이라는 도메인 특성에 맞는 AccessToken만을 검증하는 방향으로 개선하기로 결정하게 되었습니다.   
+이 과정에서 AccessToken의 반환은 Response Header의 Authorization에 담는 것 보다 Response Body에 담아 반환하는 것이 OAuth 2.0의 표준이며, 최근 JWT 환경 구축에서는 OAuth의 표준을 따라간다는 점도 알 수 있었습니다.   
+
+습득한 정보에 따라 리팩토링을 계획했고, 그 결과 AccessToken은 더이상 Redis에 저장하지 않고 검증 결과를 신뢰하는 방향으로 설계를 변경했습니다.   
+이 과정에서 AccessToken의 탈취에 대한 대응이 부족해진다는 리스크를 최소화 하기 위해 기존 1시간이었던 만료 시간을 15분으로 대폭 축소하는 방향으로 리스크를 최소화 했습니다.
+
+Redis Key 구조 역시 가장 앞에 붙었던 at, rt 라는 토큰의 Prefix를 제거하고, {userId}:{ino} 구조로 개선했습니다.
+
+이번 리팩토링 과정에서 요구사항과 도메인의 특성, 감당할 수 있는 비용에 따라 다른 설계를 선택할 수 있어야 한다는 안목을 기를 수 있었고, 단순한 설계 변경이 아닌 리스크를 최소화 하는 방법에 대해서 어떤 방식으로 고민을 해야 하는지에 대한 힌트와 경험을 얻을 수 있었습니다.
 
 <br/>
 
 **2. 토큰 저장 구조**
 - Access Token
-    - 만료 기간 1시간
-    - 클라이언트에서 LocalStorage에 저장
+    - 만료 기간 15분
+    - 클라이언트에서 Redux로 관리
 - Refresh Token
     - 만료 기간 2주
     - HttpOnly, Secure, SameSite=Strict Cookie로 저장
@@ -428,47 +449,41 @@ Refresh Token을 Cookie에 저장하는 것만으로는 조작 여부 판단이 
     - HttpOnly, Secure, SameSite=Strict Cookie로 저장
     - 비정상 요청 또는 로그아웃 시 삭제
 
-토큰이 모두 만료된 상황에서도 ino는 Cookie에 남아 있을 수 있습니다.   
-만료된 Access Token 역시 LocalStorage에 남아 있을 수 있으며, 이 경우 인증은 불가능합니다.   
-사용자가 다시 접근하면 Access Token을 decode해 구조적 유효성을 우선 확인하고, 기존 ino 기반으로 Redis 데이터를 조회하도록 구성했습니다.   
-이를 통해 탈취 여부를 판단할 수 있으며 Cookie와 LocalStorage 값을 초기화해 비로그인 상태로 전환할 수 있도록 했습니다.
+개선 과정에서 AccessToken의 저장 위치를 LocalStorage에서 Redux로 개선하게 되었습니다.   
+LocalStorage에 저장하는 방식은 XSS 방어를 하더라도 언제 취약점이 생길지 모른다는 문제가 있었기 때문입니다.   
+
+Redux의 경우는 새로고침을 하게 되면 데이터가 날아간다는 문제점이 있었으나, 이 문제는 App.tsx에서 useEffect를 통해 dispatch 상태값이 변경되었을 때 재발급 요청을 보내도록 처리하도록 하는 방법으로 해결했습니다.   
+
+AccessToken 검증을 신뢰하는 방법으로 개선하게 되며 AccessToken만으로는 탈취 판단을 내리기 어려워졌기에 RefreshToken을 통한 재발급 과정에서만 탈취 판단을 하게 됩니다.   
+재발급 요청 시 필수값인 ino가 없거나, RefreshToken 값이 Redis에 저장된 값이 다르다면 탈취로 판단하게 됩니다.   
+
+이때 ino가 존재하지 않거나 RefreshToken이 잘못된 토큰인 경우에는 Redis Key 값을 생성할 수 없기 때문에 데이터 제거를 진행하지 않지만, RefreshToken이 정상적인 토큰이지만 Redis 비교검증에서만 실패하게 되면 해당 key의 데이터를 제거할 수 있도록 설계했습니다.   
+탈취로 판단된 경우 서버에서는 ino, RefreshToken 쿠키를 만료시킨 상태로 응답을 반환하게 되며, 클라이언트에서는 해당 오류 발생 시 Redux 상태값을 변경해 로그아웃 상태로 전환하게 됩니다.
 
 <br/>
 
-**3. Redis 기반 2단계 검증 구조**   
-애플리케이션의 모든 요청은 JWTAuthorizationFilter를 통과하며 아래 단계를 거치게 됩니다.
-1. 1차 검증
-    - 서명, 만료, 구조적 유효성 확인
-2. 2차 검증
-    - 사용자 아이디 + ino 기반 Redis Key 생성 후 저장된 토큰과 요청 토큰 비교
-
-2단계의 검증을 통해 만료 여부뿐 아니라 재사용, 조작, Refresh Token 누락 같은 비정상 흐름까지 판단할 수 있습니다.
-
-<br/>
-
-**4. 비정상 토큰 처리 정책**
+**3. 비정상 토큰 처리 정책**
 - TOKEN_INVALID
     - 검증 또는 decode 불가, prefix 조작 등
     - 쿠키만 삭제 후 401 TOKEN_INVALID 반환
 - TOKEN_STEALING
-    - Redis와 토큰 불일치, RefreshToken 누락 등
-    - Redis 데이터와 Cookie 삭제 후 401 TOKEN_STEALING 반환
+    - 필수 쿠키인 ino 또는 RefreshToken 쿠키 누락
+    - RefreshToken 값과 Redis 저장 값의 불일치
+    - Redis Key 생성 가능 여부에 따라 Redis 데이터 및 Cookie 삭제 후 401 TOKEN_STEALING 반환
 - TOKEN_EXPIRED
-    - Access Token 자연 만료.
+    - Access Token 만료.
     - 재발급 요청 유도를 위해 401 TOKEN_EXPIRED 반환
 
-상태를 구분해 처리하는 이유는 각 상황에서 필요한 보안 조치가 다르기 때문입니다.
+클라이언트에서는 응답 메시지에 따라 분기를 나눠 대응하도록 설계했습니다.
 
 <br/>
 
-**5. 토큰 재발급 과정**   
-재발급 요청은 Filter에서 검증을 수행하지 않고 Service 계층에서 검증합니다.   
+**4. 토큰 재발급 과정**   
+재발급 요청은 Filter에서 요청 경로를 확인한 뒤 검증을 수행하지 않고 Service 계층에서 검증합니다.   
 주요 검증 단계는 다음과 같습니다.
 - ino 존재 여부
-- 만료된 Access Token decode 가능 여부
 - Refresh Token 유효성
 - Redis 저장 값과 Refresh Token 비교
-- Claim 정보 일치 여부
 
 모든 조건이 충족되면 Access Token과 Refresh Token을 새로 발급하며 Redis 값도 함께 갱신됩니다.   
 이때 ino는 갱신되지 않습니다.
@@ -479,49 +494,39 @@ Refresh Token을 Cookie에 저장하는 것만으로는 조작 여부 판단이 
     <summary><strong>✔️ 토큰 재발급 코드</strong></summary>
 
 ```java
-public void reIssueToken(TokenDTO tokenDTO, HttpServletResponse response) {
-    // ino가 존재하지 않는다면 무조건 탈취로 판단.
-    if(tokenDTO.inoVaule() == null) {
-        deleteCookieAndThrowException(Result.TOKEN_STEALING, response);
+public TokenIssueResponse reIssueToken(TokenReissueInfo tokenDTO, HttpServletResponse response) {
+    if(tokenDTO.inoValue() == null || tokenDTO.refreshTokenValue() == null) {
+        jwtTokenProvider.deleteCookie(response);
+        log.warn("JWTTokenService.reIssueToken :: ino Cookie is null");
+        throw new CustomTokenStealingException(ErrorCode.TOKEN_STEALING, ErrorCode.TOKEN_STEALING.getMessage());
     }else {
-        String accessTokenClaim = jwtTokenProvider.decodeToken(tokenDTO.accessTokenValue());
-        
-        // AccessToken이 잘못된 구조라면
-        if(accessTokenClaim.equals(Result.WRONG_TOKEN.getResultKey())) {
-            String refreshTokenClaim = jwtTokenProvider.decodeToken(tokenDTO.refreshTokenValue());
-            
-            // RefreshToken까지 잘못된 구조라면 쿠키만 제거
-            // RefreshToken은 정상이라면 Redis 데이터까지 제거
-            if(refreshTokenClaim.equals(Result.WRONG_TOKEN.getResultKey())) {
-                jwtTokenProvider.deleteCookie();
-            }else {
-                deleteTokenAndCookieAndThrowException(refreshTokenClaim, tokenDTO.inoValue(), response);
-            }
-            
+        try {
+            TokenVerifyResult result = jwtTokenProvider.verifyRefreshToken(tokenDTO.refreshTokenValue(), tokenDTO.inoValue());
+
+            return jwtTokenProvider.issueTokens(result.userId(), result.role(), tokenDTO.inoValue(), response);
+        } catch (TokenExpiredException | JWTDecodeException e) {
+            throw new CustomBadCredentialsException(ErrorCode.UNAUTHORIZED, ErrorCode.UNAUTHORIZED.getMessage());
+        } catch (CustomTokenStealingException e) {
+            log.warn("JWTTokenService.reIssueToken :: token stealing");
             throw new CustomTokenStealingException(ErrorCode.TOKEN_STEALING, ErrorCode.TOKEN_STEALING.getMessage());
-        }else {
-            String claimByRefreshToken = jwtTokenProvider.verifyRefreshToken(
-                    tokenDTO.refreshTokenValue(),
-                    tokenDTO.inoValue(),
-                    accessTokenClaim
-            );
-            
-            if(accessTokenClaim.equals(claimByRefreshToken)) {
-                jwtTokenProvider.issueTokens(accessTokenClaim, tokenDTO.inoValue(), response);
-            }else {
-                deleteTokenAndCookieAndThrowException(accessTokenClaim, tokenDTO.inoValue(), response);
-            }
         }
     }
-    
-    throw new CustomTokenStealingException(ErrorCode.TOKEN_STEALING, ErrorCode.TOKEN_STEALING.getMessage());
 }
 ```
 </details>
 
+ino만 존재하고 RefreshToken이 존재하지 않거나 잘못된 토큰인 경우에 Redis 데이터를 제거하지 않는 이유로는 Redis Key 생성이 불가능하기 때문입니다.   
+RefreshToken의 subject인 사용자 아이디와 ino가 조합되는 구조이기 때문에 Key 생성이 불가능합니다.   
+이 문제에 대한 리스크도 없다고 판단했습니다.   
+ino는 UUID로 만들어진 난수이며 특정 데이터를 나타내지 않고, 로그아웃 또는 탈취 판단인 경우 제거되었다가 로그인 시 다시 생성될 수 있는 값이기 때문입니다.   
+
+또한 RefreshToken 검증 결과가 TokenExpiredException이 발생할 수 없습니다.   
+RefreshToken 쿠키 역시 동일한 만료시간을 갖고 있기 때문에 정말 우연히 요청이 전달되는 시점에 딱 만료가 되지 않고서는 불가능합니다.   
+그렇기 때문에 TokenExpiredException이 발생하더라도 다르게 응답하는 것이 아닌 BadCredentialsException을 반환해 사용자가 재 로그인을 할 수 있도록 처리했습니다.
+
 <br/>
 
-**6. 비정상 토큰 응답 처리**   
+**5. 비정상 토큰 응답 처리**   
 Filter에서는 예외처리가 ControllerAdvice로 전달되지 않기 때문에 응답 객체에 직접 상태 코드와 메시지를 구성하는 방식을 사용했습니다.
 ErrorCode Enum 기반 공통 메서드를 통해 Invalid 또는 Stealing 상태에 따라 Cookie만 제거 혹은 Redis, Cookie 제거 여부를 분리해 처리합니다.
 
@@ -562,7 +567,7 @@ public class JWTTokenService {
         
         Map<String, Object> body = Map.of(
                 "code", errorCode.getHttpStatus().value(),
-                "message", errorCode.getMessage()
+                "errorMessage", errorCode.getMessage()
         );
         
         try{
@@ -577,13 +582,13 @@ public class JWTTokenService {
 
 <br/>
 
-**7. 로그아웃 처리**   
-로그아웃 시 해당 기기의 Redis 데이터와 Cookie를 제거하고, 클라이언트에서는 LocalStorage에 저장된 Access Token을 삭제해 인증 상태를 초기화합니다.
+**6. 로그아웃 처리**   
+로그아웃 시 해당 기기의 Redis 데이터와 Cookie를 제거하고, 클라이언트에서는 Redux에 저장된 정보들을 제거해 인증 상태를 초기화합니다.
 전체 기기 로그아웃은 향후 개선 포인트로 두고 있습니다.
 
 <br/>
 
-**8. 정리**   
+**7. 정리**   
 기기 단위 인증과 Redis 기반 2단계 검증 구조를 적용해 Multi-Device 환경에서도 토큰 재사용,조작,탈취 시도를 안정적으로 판단할 수 있도록 구성했습니다.   
 운영 환경에서 필요한 보안 요소를 고려해 개선해온 구조입니다.
 
