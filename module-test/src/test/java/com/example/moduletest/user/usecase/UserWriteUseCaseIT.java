@@ -1,14 +1,16 @@
 package com.example.moduletest.user.usecase;
 
+import com.example.moduleauthapi.model.dto.TokenIssueResponse;
 import com.example.moduleauthapi.service.JWTTokenProvider;
 import com.example.modulecommon.customException.CustomBadCredentialsException;
 import com.example.modulecommon.customException.CustomNotFoundException;
 import com.example.modulecommon.fixture.MemberAndAuthFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.entity.Member;
-import com.example.modulecommon.model.enumuration.Result;
+import com.example.modulecommon.model.enumuration.Role;
 import com.example.moduletest.ModuleTestApplication;
 import com.example.moduletest.utils.MailHogUtils;
+import com.example.moduleuser.model.dto.member.business.LoginUserInfo;
 import com.example.moduleuser.model.dto.member.in.*;
 import com.example.moduleuser.repository.AuthRepository;
 import com.example.moduleuser.repository.MemberRepository;
@@ -111,10 +113,19 @@ public class UserWriteUseCaseIT {
         Member member = memberList.get(0);
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
+        String highestRole = Role.getHighestRole(member.getAuths());
+        LoginUserInfo loginUserInfo = new LoginUserInfo(member.getUserId(), highestRole);
 
-        assertDoesNotThrow(() -> userWriteUseCase.loginProc(member.getUserId(), request, response));
+        TokenIssueResponse result = assertDoesNotThrow(() -> userWriteUseCase.loginProc(loginUserInfo, request, response));
 
-        String accessToken = response.getHeader("Authorization").substring(6);
+        assertNotNull(result);
+        assertNotNull(result.accessToken());
+        assertNotNull(result.userId());
+        assertNotNull(result.role());
+
+        assertEquals(result.userId(), member.getUserId());
+        assertEquals(result.role(), highestRole);
+
         Map<String, String> cookieMap = response.getHeaders("Set-Cookie").stream()
                 .map(header -> header.split(";", 2)[0])
                 .map(kv -> kv.split("=", 2))
@@ -124,18 +135,12 @@ public class UserWriteUseCaseIT {
         String refreshToken = cookieMap.get("Authorization_Refresh").substring(6);
         String ino = cookieMap.get("Authorization_ino");
 
-        String redisAtKey = "at" + ino + member.getUserId();
         String redisRtKey = "rt" + ino + member.getUserId();
-
-        String redisAtValue = redisTemplate.opsForValue().get(redisAtKey);
         String redisRtValue = redisTemplate.opsForValue().get(redisRtKey);
 
-        assertNotNull(redisAtValue);
         assertNotNull(redisRtValue);
-        assertEquals(accessToken, redisAtValue);
         assertEquals(refreshToken, redisRtValue);
 
-        redisTemplate.delete(redisAtKey);
         redisTemplate.delete(redisRtKey);
     }
 

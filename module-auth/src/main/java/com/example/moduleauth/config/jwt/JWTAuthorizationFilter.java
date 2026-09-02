@@ -1,15 +1,13 @@
 package com.example.moduleauth.config.jwt;
 
-import com.example.moduleauth.config.oauth.CustomOAuth2User;
-import com.example.moduleauth.config.user.CustomUser;
-import com.example.moduleauth.config.user.CustomUserDetails;
+import com.auth0.jwt.exceptions.JWTDecodeException;
+import com.auth0.jwt.exceptions.TokenExpiredException;
+import com.example.moduleauthapi.model.dto.TokenVerifyResult;
 import com.example.moduleauthapi.service.JWTTokenProvider;
 import com.example.moduleauthapi.service.JWTTokenService;
-import com.example.modulecommon.model.entity.Member;
-import com.example.modulecommon.model.enumuration.Result;
+import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.moduleconfig.properties.CookieProperties;
 import com.example.moduleconfig.properties.TokenProperties;
-import com.example.moduleuser.service.UserDataService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -33,8 +31,6 @@ import java.util.Collection;
 @Slf4j
 public class JWTAuthorizationFilter extends OncePerRequestFilter {
 
-    private final UserDataService userDataService;
-
     private final JWTTokenProvider jwtTokenProvider;
 
     private final JWTTokenService jwtTokenService;
@@ -45,73 +41,42 @@ public class JWTAuthorizationFilter extends OncePerRequestFilter {
 
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request
-            , HttpServletResponse response
-            , FilterChain chain) throws ServletException, IOException {
-        String accessToken = request.getHeader(tokenProperties.getAccess().getHeader());
-        Cookie refreshToken = WebUtils.getCookie(request, tokenProperties.getRefresh().getHeader());
-        Cookie inoToken = WebUtils.getCookie(request, cookieProperties.getIno().getHeader());
-        String username = null; // Authentication 객체 생성 시 필요한 사용자 아이디
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain chain) throws ServletException, IOException {
+        // reissue 경로 요청 시 RefreshToken이 없다면 잘못된 요청.
+        if("/api/reissue".equals(request.getRequestURI())) {
+            Cookie refreshToken = WebUtils.getCookie(request, tokenProperties.getRefresh().getHeader());
 
-        if(inoToken != null){
-            String inoValue = inoToken.getValue();
-            if(accessToken != null && refreshToken != null) {
-                String refreshTokenValue = refreshToken.getValue();
-                String accessTokenValue = accessToken.replace(tokenProperties.getPrefix(), "");
-
-                if(!jwtTokenProvider.checkTokenPrefix(accessToken)
-                        || !jwtTokenProvider.checkTokenPrefix(refreshTokenValue)){
-                    chain.doFilter(request, response);
-                    return;
-                }else {
-                    String claimByAccessToken = jwtTokenProvider.verifyAccessToken(accessTokenValue, inoValue);
-
-                    if(claimByAccessToken.equals(Result.WRONG_TOKEN.getResultKey())
-                            || claimByAccessToken.equals(Result.TOKEN_STEALING.getResultKey())){
-                        jwtTokenService.deleteCookieAndThrowException(Result.fromKey(claimByAccessToken), response);
-                        return;
-                    }else if(claimByAccessToken.equals(Result.TOKEN_EXPIRATION.getResultKey())){
-                        if(request.getRequestURI().equals("/api/reissue")) {
-                            chain.doFilter(request, response);
-                        }else
-                            jwtTokenService.tokenExpirationResponse(response);
-
-                        return;
-                    }else {
-                        username = claimByAccessToken;
-                    }
-                }
-            }else if(accessToken != null && refreshToken == null){
-                String decodeTokenClaim = jwtTokenProvider.decodeToken(accessToken.replace(tokenProperties.getPrefix(), ""));
-
-                jwtTokenService.deleteTokenAndCookieAndThrowException(decodeTokenClaim, inoValue, response);
-                return;
-            }else {
-                chain.doFilter(request, response);
+            if(refreshToken == null){
+                jwtTokenService.setExceptionResponse(ErrorCode.BAD_REQUEST, response);
                 return;
             }
+
+            chain.doFilter(request, response);
+            return;
         }
 
-        if(username != null){
-            Member memberEntity = userDataService.getMemberByUserIdFetchAuthsOrElseIllegal(username);
-            String userId;
-            Collection<? extends GrantedAuthority> authorities;
-            CustomUserDetails userDetails;
+        String accessToken = request.getHeader(tokenProperties.getAccess().getHeader());
+        Cookie inoToken = WebUtils.getCookie(request, cookieProperties.getIno().getHeader());
 
-            if(memberEntity.getProvider().equals("local"))
-                userDetails = new CustomUser(memberEntity);
-            else
-                userDetails = new CustomOAuth2User(
-                        memberEntity.toOAuth2DTOUseFilter()
-                );
+        if(inoToken != null && accessToken != null && jwtTokenProvider.checkTokenPrefix(accessToken)) {
+            String accessTokenValue = accessToken.replace(tokenProperties.getPrefix(), "");
 
-            userId = userDetails.getUserId();
-            authorities = userDetails.getAuthorities();
+            try {
+                TokenVerifyResult verifyResult = jwtTokenProvider.verifyAccessToken(accessTokenValue);
 
-            Authentication authentication =
-                    new UsernamePasswordAuthenticationToken(userId, null, authorities);
+                Collection<? extends GrantedAuthority> authorities = verifyResult.role().getAuthorities();
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+                Authentication authentication = new UsernamePasswordAuthenticationToken(verifyResult.userId(), null, authorities);
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            } catch(TokenExpiredException e) {
+                jwtTokenService.setExceptionResponse(ErrorCode.TOKEN_EXPIRED, response);
+                return;
+            } catch(JWTDecodeException e) {
+                jwtTokenService.setExceptionResponse(ErrorCode.TOKEN_INVALID, response);
+                return;
+            }
         }
 
         chain.doFilter(request, response);

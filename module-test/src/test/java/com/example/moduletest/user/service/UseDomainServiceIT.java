@@ -1,5 +1,7 @@
 package com.example.moduletest.user.service;
 
+import com.example.moduleauthapi.model.dto.TokenIssueResponse;
+import com.example.moduleauthapi.model.dto.TokenVerifyResult;
 import com.example.moduleauthapi.service.JWTTokenProvider;
 import com.example.modulecommon.customException.CustomAccessDeniedException;
 import com.example.modulecommon.customException.CustomBadCredentialsException;
@@ -7,8 +9,10 @@ import com.example.modulecommon.fixture.MemberAndAuthFixture;
 import com.example.modulecommon.model.dto.MemberAndAuthFixtureDTO;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.Result;
+import com.example.modulecommon.model.enumuration.Role;
 import com.example.moduleconfig.properties.TokenProperties;
 import com.example.moduletest.ModuleTestApplication;
+import com.example.moduleuser.model.dto.member.business.LoginUserInfo;
 import com.example.moduleuser.repository.AuthRepository;
 import com.example.moduleuser.repository.MemberRepository;
 import com.example.moduleuser.service.UserDomainService;
@@ -81,13 +85,20 @@ public class UseDomainServiceIT {
     void getLoginUserStatusResponse() {
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
+        String highestRole = Role.getHighestRole(member.getAuths());
+        LoginUserInfo loginUserInfo = new LoginUserInfo(member.getUserId(), highestRole);
 
-        String result = assertDoesNotThrow(() -> userDomainService.getLoginUserStatusResponse(member.getUserId(), request, response));
+        TokenIssueResponse result = assertDoesNotThrow(() -> userDomainService.getLoginUserStatusResponse(loginUserInfo, request, response));
 
         assertNotNull(result);
-        assertEquals(Result.OK.getResultKey(), result);
+        assertNotNull(result.accessToken());
+        assertNotNull(result.userId());
+        assertNotNull(result.role());
 
-        String accessToken = response.getHeader("Authorization").substring(6);
+        assertNotEquals("", result.accessToken());
+        assertEquals(result.userId(), member.getUserId());
+        assertEquals(result.role(), highestRole);
+
         Map<String, String> cookieMap = response.getHeaders("Set-Cookie").stream()
                 .map(header -> header.split(";", 2)[0])
                 .map(kv -> kv.split("=", 2))
@@ -97,18 +108,13 @@ public class UseDomainServiceIT {
         String refreshToken = cookieMap.get("Authorization_Refresh").substring(6);
         String ino = cookieMap.get("Authorization_ino");
 
-        String redisAtKey = "at" + ino + member.getUserId();
         String redisRtKey = "rt" + ino + member.getUserId();
 
-        String redisAtValue = redisTemplate.opsForValue().get(redisAtKey);
         String redisRtValue = redisTemplate.opsForValue().get(redisRtKey);
 
-        assertNotNull(redisAtValue);
         assertNotNull(redisRtValue);
-        assertEquals(accessToken, redisAtValue);
         assertEquals(refreshToken, redisRtValue);
 
-        redisTemplate.delete(redisAtKey);
         redisTemplate.delete(redisRtKey);
     }
 
@@ -122,10 +128,10 @@ public class UseDomainServiceIT {
 
         Cookie temporaryCookie = new Cookie(tokenProperties.getTemporary().getHeader(), temporaryToken);
 
-        String result = assertDoesNotThrow(() -> userDomainService.validateTemporaryClaimByUserId(temporaryCookie));
+        TokenVerifyResult result = assertDoesNotThrow(() -> userDomainService.validateTemporaryClaimByUserId(temporaryCookie));
 
         assertNotNull(result);
-        assertEquals(member.getUserId(), result);
+        assertEquals(member.getUserId(), result.userId());
 
         redisTemplate.delete(member.getUserId());
     }
@@ -146,12 +152,19 @@ public class UseDomainServiceIT {
     void issueOAuthUserToken() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
+        String highestRole = Role.getHighestRole(member.getAuths());
+        TokenVerifyResult tokenVerifyResult = new TokenVerifyResult(member.getUserId(), highestRole);
 
-        boolean result = assertDoesNotThrow(() -> userDomainService.issueOAuthUserToken(member.getUserId(), request, response));
+        TokenIssueResponse result = assertDoesNotThrow(() -> userDomainService.issueOAuthUserToken(tokenVerifyResult, request, response));
 
-        assertTrue(result);
+        assertNotNull(result);
+        assertNotNull(result.accessToken());
+        assertNotNull(result.userId());
+        assertNotNull(result.role());
 
-        String accessToken = response.getHeader("Authorization").substring(6);
+        assertEquals(result.userId(), member.getUserId());
+        assertEquals(result.role(), highestRole);
+
         Map<String, String> cookieMap = response.getHeaders("Set-Cookie").stream()
                 .map(header -> header.split(";", 2)[0])
                 .map(kv -> kv.split("=", 2))
@@ -161,18 +174,13 @@ public class UseDomainServiceIT {
         String refreshToken = cookieMap.get("Authorization_Refresh").substring(6);
         String ino = cookieMap.get("Authorization_ino");
 
-        String redisAtKey = "at" + ino + member.getUserId();
         String redisRtKey = "rt" + ino + member.getUserId();
 
-        String redisAtValue = redisTemplate.opsForValue().get(redisAtKey);
         String redisRtValue = redisTemplate.opsForValue().get(redisRtKey);
 
-        assertNotNull(redisAtValue);
         assertNotNull(redisRtValue);
-        assertEquals(accessToken, redisAtValue);
         assertEquals(refreshToken, redisRtValue);
 
-        redisTemplate.delete(redisAtKey);
         redisTemplate.delete(redisRtKey);
     }
 }

@@ -3,6 +3,7 @@ package com.example.moduleapi.fixture;
 
 import com.example.moduleauthapi.service.JWTTokenProvider;
 import com.example.modulecommon.model.entity.Member;
+import com.example.modulecommon.model.enumuration.Role;
 import com.example.moduleconfig.properties.CookieProperties;
 import com.example.moduleconfig.properties.JwtSecretProperties;
 import com.example.moduleconfig.properties.TokenProperties;
@@ -38,30 +39,36 @@ public class TokenFixture {
 
     private static final String REFRESH_KEY_NAME = "refreshKey";
 
+    private Role getUserRole(Member member) {
+        return Role.fromKey(Role.getHighestRole(member.getAuths()));
+    }
+
     public String createAccessToken(Member member) {
-        String token = tokenProvider.createToken(member.getUserId(), jwtSecretProperties.getAccess(), tokenProperties.getAccess().getExpiration());
+        Role userRole = getUserRole(member);
+        String token = tokenProvider.createToken(member.getUserId(), userRole, jwtSecretProperties.getAccess(), tokenProperties.getAccess().getExpiration());
 
         return tokenProperties.getPrefix() + token;
     }
 
     public String createExpirationToken(Member member) {
-        String token = tokenProvider.createToken(member.getUserId(), jwtSecretProperties.getAccess(), 1);
+        Role userRole = getUserRole(member);
+        String token = tokenProvider.createToken(member.getUserId(), userRole, jwtSecretProperties.getAccess(), 1);
 
         return tokenProperties.getPrefix() + token;
     }
 
     public Map<String, String> createAndSaveAllToken(Member member) {
+        Role userRole = getUserRole(member);
         Map<String, String> tokenMap = new HashMap<>();
         String ino = tokenProvider.createIno();
-        String accessToken = tokenProvider.createToken(member.getUserId(), jwtSecretProperties.getAccess(), tokenProperties.getAccess().getExpiration());
-        String refreshToken = tokenProvider.createToken(member.getUserId(), jwtSecretProperties.getRefresh(), tokenProperties.getRefresh().getExpiration());
+        String accessToken = tokenProvider.createToken(member.getUserId(), userRole, jwtSecretProperties.getAccess(), tokenProperties.getAccess().getExpiration());
+        String refreshToken = tokenProvider.createToken(member.getUserId(), userRole, jwtSecretProperties.getRefresh(), tokenProperties.getRefresh().getExpiration());
 
         Map<String, String> keyMap = getRedisKeyMap(member, ino);
 
         String accessKey = keyMap.get(ACCESS_KEY_NAME);
         String refreshKey = keyMap.get(REFRESH_KEY_NAME);
 
-        tokenProvider.saveTokenToRedis(accessKey, accessToken, Duration.ofHours(tokenRedisProperties.getAccess().getExpiration()));
         tokenProvider.saveTokenToRedis(refreshKey, refreshToken, Duration.ofDays(tokenRedisProperties.getRefresh().getExpiration()));
 
         tokenMap.put(cookieProperties.getIno().getHeader(), ino);
@@ -85,7 +92,8 @@ public class TokenFixture {
     }
 
     public String createTemporaryToken(Member oAuthMember) {
-        return tokenProvider.createToken(oAuthMember.getUserId(), jwtSecretProperties.getTemporary(), tokenProperties.getTemporary().getExpiration());
+        Role userRole = getUserRole(oAuthMember);
+        return tokenProvider.createToken(oAuthMember.getUserId(), userRole, jwtSecretProperties.getTemporary(), tokenProperties.getTemporary().getExpiration());
     }
 
     public String createAndRedisSaveTemporaryToken(Member oAuthMember) {
@@ -96,7 +104,8 @@ public class TokenFixture {
     }
 
     public String createAndRedisSaveExpirationTemporaryToken(Member oAuthMember) {
-        String token = tokenProvider.createToken(oAuthMember.getUserId(), jwtSecretProperties.getTemporary(), 1);
+        Role userRole = getUserRole(oAuthMember);
+        String token = tokenProvider.createToken(oAuthMember.getUserId(), userRole, jwtSecretProperties.getTemporary(), 1);
         tokenProvider.saveTokenToRedis(oAuthMember.getUserId(), token, Duration.ofMinutes(tokenRedisProperties.getTemporary().getExpiration()));
 
         return token;

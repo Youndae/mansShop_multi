@@ -1,5 +1,6 @@
 package com.example.moduleapi.config.webSocket;
 
+import com.example.moduleauthapi.model.dto.TokenVerifyResult;
 import com.example.moduleauthapi.service.JWTTokenProvider;
 import com.example.moduleconfig.properties.CookieProperties;
 import com.example.moduleconfig.properties.TokenProperties;
@@ -108,11 +109,14 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
                             if (token != null) {
                                 String tokenValue = token.replace(tokenProperties.getPrefix(), "");
-                                String userId = tokenProvider.verifyAccessToken(tokenValue, inoValue);
 
-                                if(userId != null && !userId.equals("WRONG_TOKEN") && !userId.equals("TOKEN_EXPIRATION") && !userId.equals("TOKEN_STEALING")) {
-                                    accessor.setUser(() -> userId);
-                                    log.info("WebSocket Principal set : {}", userId);
+                                try {
+                                    TokenVerifyResult result = tokenProvider.verifyAccessToken(tokenValue);
+                                    accessor.setUser(result::userId);
+                                    log.info("WebSocket Principal set : {}", result.userId());
+                                }catch(Exception e) {
+                                    log.info("WebSocket Principal Exception.");
+                                    e.printStackTrace();
                                 }
                             }
                         }

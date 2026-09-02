@@ -1,6 +1,11 @@
 package com.example.moduleauthapi.service;
 
-import com.example.moduleauthapi.model.dto.TokenDTO;
+import com.auth0.jwt.exceptions.JWTDecodeException;
+import com.auth0.jwt.exceptions.TokenExpiredException;
+import com.example.moduleauthapi.model.dto.TokenIssueResponse;
+import com.example.moduleauthapi.model.dto.TokenReissueInfo;
+import com.example.moduleauthapi.model.dto.TokenVerifyResult;
+import com.example.modulecommon.customException.CustomBadCredentialsException;
 import com.example.modulecommon.customException.CustomTokenStealingException;
 import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.modulecommon.model.enumuration.Result;
@@ -91,42 +96,32 @@ public class JWTTokenService {
      * @param response
      *
      * 토큰 재발급 요청 처리.
-     * AccessToken이 만료된 경우이기 때문에 AccessToken을 decode해서 Claim에 저장된 아이디를 알아내고
-     * RefreshToken을 검증한 뒤 동일하게 Claim에 저장된 아이디를 반환받아 두 Claim이 일치하는 경우에 재발급을 처리.
      * ino가 존재하지 않는다면 탈취로 판단.
      */
-    public void reIssueToken(TokenDTO tokenDTO, HttpServletResponse response) {
-        // ino가 존재하지 않는다면 무조건 탈취로 판단.
+    public TokenIssueResponse reIssueToken(TokenReissueInfo tokenDTO, HttpServletResponse response) {
+        /**
+         * ino가 존재하지 않는다면 무조건 탈취로 판단.
+         * controller 에서 검증하고 예외를 던지는 것도 괜찮다고 생각했지만
+         * 탈취자의 쿠키를 강제로 제거하기 위해 Service에서 쿠키를 전체 초기화하고 예외를 던지도록 설계.
+         * ino가 있음에도 토큰이 잘못된 경우 다른 처리 없이 예외 던짐
+         * Redis 데이터를 제거하기에는 해당 ino가 정상이라는 보장도 없을 뿐더러
+         * 애초에 ino에는 정보가 들어가지 않는 난수 조합이기 때문에 문제가 없다고 판단.
+        **/
         if(tokenDTO.inoValue() == null) {
             jwtTokenProvider.deleteCookie(response);
+            log.warn("JWTTokenService.reIssueToken :: ino Cookie is null");
+            throw new CustomTokenStealingException(ErrorCode.TOKEN_STEALING, ErrorCode.TOKEN_STEALING.getMessage());
         }else {
-            String accessTokenClaim = jwtTokenProvider.decodeToken(tokenDTO.accessTokenValue());
+            try {
+                TokenVerifyResult result = jwtTokenProvider.verifyRefreshToken(tokenDTO.refreshTokenValue(), tokenDTO.inoValue());
 
-            if(accessTokenClaim.equals(Result.WRONG_TOKEN.getResultKey())){
-                String refreshTokenClaim = jwtTokenProvider.decodeToken(tokenDTO.refreshTokenValue());
-
-                if(refreshTokenClaim.equals(Result.WRONG_TOKEN.getResultKey()))
-                    jwtTokenProvider.deleteCookie(response);
-                else
-                    jwtTokenProvider.deleteRedisDataAndCookie(refreshTokenClaim, tokenDTO.inoValue(), response);
-
+                return jwtTokenProvider.issueTokens(result.userId(), result.role(), tokenDTO.inoValue(), response);
+            } catch (TokenExpiredException | JWTDecodeException e) {
+                throw new CustomBadCredentialsException(ErrorCode.UNAUTHORIZED, ErrorCode.UNAUTHORIZED.getMessage());
+            } catch (CustomTokenStealingException e) {
+                log.warn("JWTTokenService.reIssueToken :: token stealing");
                 throw new CustomTokenStealingException(ErrorCode.TOKEN_STEALING, ErrorCode.TOKEN_STEALING.getMessage());
-            }else {
-                String claimByRefreshToken = jwtTokenProvider.verifyRefreshToken(
-                        tokenDTO.refreshTokenValue(),
-                        tokenDTO.inoValue(),
-                        accessTokenClaim
-                );
-
-                if(accessTokenClaim.equals(claimByRefreshToken)) {
-                    jwtTokenProvider.issueTokens(accessTokenClaim, tokenDTO.inoValue(), response);
-                    return;
-                }else {
-                    jwtTokenProvider.deleteRedisDataAndCookie(accessTokenClaim, tokenDTO.inoValue(), response);
-                }
             }
         }
-
-        throw new CustomTokenStealingException(ErrorCode.TOKEN_STEALING, ErrorCode.TOKEN_STEALING.getMessage());
     }
 }

@@ -5,6 +5,7 @@ import com.example.moduleapi.config.exception.ExceptionEntity;
 import com.example.moduleapi.config.exception.ValidationExceptionEntity;
 import com.example.moduleapi.fixture.TokenFixture;
 import com.example.moduleapi.utils.MailHogUtils;
+import com.example.moduleauthapi.model.dto.TokenIssueResponse;
 import com.example.modulecommon.customException.InvalidJoinPolicyException;
 import com.example.modulecommon.customException.InvalidPasswordPolicyException;
 import com.example.modulecommon.fixture.MemberAndAuthFixture;
@@ -169,40 +170,34 @@ public class MemberControllerIT {
 
         String content = result.getResponse().getContentAsString();
 
-        UserStatusResponseDTO response = om.readValue(
+        TokenIssueResponse response = om.readValue(
                 content,
                 new TypeReference<>() {}
         );
 
         assertNotNull(response);
-        assertEquals(member.getUserId(), response.getUserId());
-        assertEquals(Role.MEMBER.getRole(), response.getRole());
+        assertNotNull(response.accessToken());
+        assertNotNull(response.userId());
+        assertNotNull(response.role());
+        assertEquals(member.getUserId(), response.userId());
+        assertEquals(Role.MEMBER.getRole(), response.role());
 
-        String accessToken = tokenFixture.getResponseAuthorization(result);
         Map<String, String> cookieMap = tokenFixture.getCookieMap(result);
 
         String refreshToken = cookieMap.get(tokenProperties.getRefresh().getHeader()).substring(6);
         String ino = cookieMap.get(cookieProperties.getIno().getHeader());
 
-        assertNotNull(accessToken);
         assertNotNull(refreshToken);
         assertNotNull(ino);
 
         Map<String, String> keyMap = tokenFixture.getRedisKeyMap(member, ino);
 
-        String accessKey = keyMap.get("accessKey");
         String refreshKey = keyMap.get("refreshKey");
-
-        String redisAccessValue = redisTemplate.opsForValue().get(accessKey);
         String redisRefreshValue = redisTemplate.opsForValue().get(refreshKey);
 
-        assertNotNull(redisAccessValue);
         assertNotNull(redisRefreshValue);
-
-        assertEquals(accessToken.replace(tokenProperties.getPrefix(), ""), redisAccessValue);
         assertEquals(refreshToken.replace(tokenProperties.getPrefix(), ""), redisRefreshValue);
 
-        redisTemplate.delete(accessKey);
         redisTemplate.delete(refreshKey);
     }
 
@@ -1130,37 +1125,44 @@ public class MemberControllerIT {
     @DisplayName(value = "oAuth 사용자의 정식 토큰 발급 요청")
     void oAuthIssueToken() throws Exception {
         String temporaryToken = tokenFixture.createAndRedisSaveTemporaryToken(oAuthMember);
+        String highestRole = Role.getHighestRole(oAuthMember.getAuths());
 
         MvcResult result = mockMvc.perform(get(URL_PREFIX + "oAuth/token")
                         .cookie(new Cookie(tokenProperties.getTemporary().getHeader(), temporaryToken)))
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String accessToken = tokenFixture.getResponseAuthorization(result);
+        String content = result.getResponse().getContentAsString();
+
+        TokenIssueResponse response = om.readValue(
+                content,
+                new TypeReference<>() {}
+        );
+
+        assertNotNull(response);
+        assertNotNull(response.accessToken());
+        assertNotNull(response.userId());
+        assertNotNull(response.role());
+
+        assertEquals(response.userId(), oAuthMember.getUserId());
+        assertEquals(response.role(), highestRole);
+
         Map<String, String> tokenMap = tokenFixture.getCookieMap(result);
 
         String refreshToken = tokenMap.get(tokenProperties.getRefresh().getHeader()).substring(6);
         String ino = tokenMap.get(cookieProperties.getIno().getHeader());
 
-        assertNotNull(accessToken);
         assertNotNull(refreshToken);
         assertNotNull(ino);
 
         Map<String, String> keyMap = tokenFixture.getRedisKeyMap(oAuthMember, ino);
 
-        String accessKey = keyMap.get("accessKey");
         String refreshKey = keyMap.get("refreshKey");
-
-        String redisAccessValue = redisTemplate.opsForValue().get(accessKey);
         String redisRefreshValue = redisTemplate.opsForValue().get(refreshKey);
 
-        assertNotNull(redisAccessValue);
         assertNotNull(redisRefreshValue);
-
-        assertEquals(accessToken.replace(tokenProperties.getPrefix(), ""), redisAccessValue);
         assertEquals(refreshToken.replace(tokenProperties.getPrefix(), ""), redisRefreshValue);
 
-        redisTemplate.delete(accessKey);
         redisTemplate.delete(refreshKey);
     }
 

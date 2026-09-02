@@ -4,17 +4,21 @@ import com.example.modulecommon.model.entity.Auth;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Getter
 @RequiredArgsConstructor
 public enum Role {
 
     MEMBER("ROLE_MEMBER", "member"),
-    ADMIN("ROLE_ADMIN", "admin"),
     MANAGER("ROLE_MANAGER", "manager"),
+    ADMIN("ROLE_ADMIN", "admin"),
     ANONYMOUS("", "Anonymous");
 
     private final String key;
@@ -37,5 +41,27 @@ public enum Role {
             case 2 -> MANAGER.role;
             default -> MEMBER.role;
         };
+    }
+
+    public static Role fromKey(String role) {
+        return Arrays.stream(values())
+                .filter(r -> r.getRole().equals(role))
+                .findFirst()
+                .orElse(ANONYMOUS);
+    }
+
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return switch(this) {
+            case ADMIN -> createAuthorities(ADMIN.key, MANAGER.key, MEMBER.key);
+            case MANAGER -> createAuthorities(MANAGER.key, MEMBER.key);
+            case MEMBER -> createAuthorities(MEMBER.key);
+            default -> Collections.emptyList();
+        };
+    }
+
+    private static List<GrantedAuthority> createAuthorities(String... keys) {
+        return Arrays.stream(keys)
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
     }
 }

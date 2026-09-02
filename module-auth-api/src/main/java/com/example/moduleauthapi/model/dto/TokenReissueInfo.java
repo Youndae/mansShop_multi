@@ -1,10 +1,6 @@
 package com.example.moduleauthapi.model.dto;
 
-import jakarta.servlet.http.Cookie;
-import lombok.Builder;
-
-@Builder
-public record TokenDTO(
+public record TokenReissueInfo(
         String refreshTokenValue,
         String inoValue
 ) {

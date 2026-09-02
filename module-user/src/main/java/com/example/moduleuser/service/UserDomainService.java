@@ -1,16 +1,17 @@
 package com.example.moduleuser.service;
 
+import com.example.moduleauthapi.model.dto.TokenIssueResponse;
+import com.example.moduleauthapi.model.dto.TokenVerifyResult;
 import com.example.moduleauthapi.service.JWTTokenProvider;
 import com.example.modulecommon.customException.CustomBadCredentialsException;
-import com.example.modulecommon.customException.CustomTokenStealingException;
 import com.example.modulecommon.model.entity.Auth;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.modulecommon.model.enumuration.MailSuffix;
-import com.example.modulecommon.model.enumuration.Result;
 import com.example.modulecommon.model.enumuration.Role;
 import com.example.moduleconfig.properties.CookieProperties;
 import com.example.moduleconfig.properties.TokenProperties;
+import com.example.moduleuser.model.dto.member.business.LoginUserInfo;
 import com.example.moduleuser.model.dto.member.in.JoinDTO;
 import com.example.moduleuser.model.dto.member.out.MyPageInfoDTO;
 import jakarta.servlet.http.Cookie;
@@ -18,7 +19,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.WebUtils;
 
@@ -46,50 +46,55 @@ public class UserDomainService {
         return memberEntity;
     }
 
-    public String getLoginUserStatusResponse(String userId,
-                                                            HttpServletRequest request,
-                                                            HttpServletResponse response) {
+    public TokenIssueResponse getLoginUserStatusResponse(LoginUserInfo loginUserInfo,
+                                                         HttpServletRequest request,
+                                                         HttpServletResponse response) {
 
-        if(checkInoAndIssueToken(userId, request, response))
-            return Result.OK.getResultKey();
+        try {
+            TokenIssueResponse result = checkInoAndIssueToken(loginUserInfo, request, response);
 
-        return Result.FAIL.getResultKey();
+            if(result.accessToken() == null){
+                log.warn("UserDomainService.getLoginUserStatusResponse :: AccessToken is null. Issue token result : {}", result);
+                throw new CustomBadCredentialsException(ErrorCode.UNAUTHORIZED, ErrorCode.UNAUTHORIZED.getMessage());
+            }
+
+            return result;
+        } catch(Exception e) {
+            log.warn("UserDomainService.getLoginUserStatusResponse :: Exception");
+            e.printStackTrace();
+        }
+
+        return null;
     }
 
-    private boolean checkInoAndIssueToken(String userId,
-                                          HttpServletRequest request,
-                                          HttpServletResponse response){
+    private TokenIssueResponse checkInoAndIssueToken(LoginUserInfo loginInfo,
+                                                     HttpServletRequest request,
+                                                     HttpServletResponse response){
         Cookie inoCookie = WebUtils.getCookie(request, cookieProperties.getIno().getHeader());
 
         if(inoCookie == null)
-            jwtTokenProvider.issueAllTokens(userId, response);
+            return jwtTokenProvider.issueAllTokens(loginInfo.userId(), loginInfo.role(),  response);
         else
-            jwtTokenProvider.issueTokens(userId, inoCookie.getValue(), response);
-
-        return true;
+            return jwtTokenProvider.issueTokens(loginInfo.userId(), loginInfo.role(), inoCookie.getValue(), response);
     }
 
     public Cookie getOAuthTemporaryCookie(HttpServletRequest request) {
         return WebUtils.getCookie(request, tokenProperties.getTemporary().getHeader());
     }
 
-    public String validateTemporaryClaimByUserId(Cookie temporaryCookie) {
+    public TokenVerifyResult validateTemporaryClaimByUserId(Cookie temporaryCookie) {
         String temporaryValue = temporaryCookie.getValue();
-        String temporaryClaimByUserId = jwtTokenProvider.verifyTemporaryToken(temporaryValue);
-        System.out.println("validateTemporaryClaimByUserID :: temporaryClaim : " + temporaryClaimByUserId);
-        if(temporaryClaimByUserId.equals(Result.WRONG_TOKEN.getResultKey())
-                || temporaryClaimByUserId.equals(Result.TOKEN_EXPIRATION.getResultKey()))
-            throw new CustomBadCredentialsException(ErrorCode.UNAUTHORIZED, ErrorCode.UNAUTHORIZED.getMessage());
-        else if(temporaryClaimByUserId.equals(Result.TOKEN_STEALING.getResultKey()))
-            throw new CustomTokenStealingException(ErrorCode.TOKEN_STEALING, ErrorCode.TOKEN_STEALING.getMessage());
 
-        return temporaryClaimByUserId;
+        return jwtTokenProvider.verifyTemporaryToken(temporaryValue);
     }
 
-    public boolean issueOAuthUserToken(String temporaryClaim,
+    public TokenIssueResponse issueOAuthUserToken(TokenVerifyResult verifyResult,
                                        HttpServletRequest request,
                                        HttpServletResponse response) {
-        return checkInoAndIssueToken(temporaryClaim, request, response);
+
+        LoginUserInfo loginUserInfo = new LoginUserInfo(verifyResult.userId(), verifyResult.role());
+
+        return checkInoAndIssueToken(loginUserInfo, request, response);
     }
 
     public int createCertificationNumber() {

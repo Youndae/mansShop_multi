@@ -1,12 +1,13 @@
 package com.example.moduleuser.usecase;
 
+import com.example.moduleauthapi.model.dto.TokenIssueResponse;
+import com.example.moduleauthapi.model.dto.TokenVerifyResult;
 import com.example.modulecommon.customException.CustomBadCredentialsException;
 import com.example.modulecommon.customException.CustomConflictException;
 import com.example.modulecommon.customException.CustomNotFoundException;
-import com.example.modulecommon.model.entity.Auth;
 import com.example.modulecommon.model.entity.Member;
 import com.example.modulecommon.model.enumuration.ErrorCode;
-import com.example.modulecommon.model.enumuration.Result;
+import com.example.moduleuser.model.dto.member.business.LoginUserInfo;
 import com.example.moduleuser.model.dto.member.in.*;
 import com.example.moduleuser.model.dto.member.out.UserStatusResponseDTO;
 import com.example.moduleuser.service.UserDataService;
@@ -20,8 +21,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -49,36 +48,38 @@ public class UserWriteUseCase {
         }
     }
 
-    public void loginProc(String userId,
-                           HttpServletRequest request,
-                           HttpServletResponse response) {
+    public TokenIssueResponse loginProc(LoginUserInfo loginInfo,
+                                        HttpServletRequest request,
+                                        HttpServletResponse response) {
 
-        try {
-            String statusResponse = userDomainService.getLoginUserStatusResponse(userId, request, response);
+        TokenIssueResponse result = userDomainService.getLoginUserStatusResponse(loginInfo, request, response);
 
-            if(statusResponse.equals(Result.FAIL.getResultKey()))
-                throw new CustomBadCredentialsException(ErrorCode.UNAUTHORIZED, ErrorCode.UNAUTHORIZED.getMessage());
-        }catch (Exception e) {
-            log.info("login fail : {}", e.getMessage());
-            throw new CustomBadCredentialsException(ErrorCode.UNAUTHORIZED, ErrorCode.UNAUTHORIZED.getMessage());
+        if(result == null){
+            log.warn("UserWriteUseCase.loginProc :: TokenIssueResponse is null.");
+            throw new IllegalArgumentException();
         }
+
+        return result;
     }
 
-    public UserStatusResponseDTO issueOAuthUserToken(HttpServletRequest request, HttpServletResponse response) {
+    public TokenIssueResponse issueOAuthUserToken(HttpServletRequest request, HttpServletResponse response) {
         Cookie temporaryCookie = userDomainService.getOAuthTemporaryCookie(request);
 
         if(temporaryCookie == null)
             throw new CustomBadCredentialsException(ErrorCode.UNAUTHORIZED, ErrorCode.UNAUTHORIZED.getMessage());
 
-        String temporaryClaim = userDomainService.validateTemporaryClaimByUserId(temporaryCookie);
-        System.out.println("=============issueOAuthUserToken.temporaryClaim : " + temporaryClaim);
-        userDataService.deleteTemporaryTokenAndCookie(temporaryClaim, response);
-        if(!userDomainService.issueOAuthUserToken(temporaryClaim, request, response))
+        TokenVerifyResult tokenVerifyResult = userDomainService.validateTemporaryClaimByUserId(temporaryCookie);
+
+        userDataService.deleteTemporaryTokenAndCookie(tokenVerifyResult.userId(), response);
+
+        TokenIssueResponse tokenIssueResult = userDomainService.issueOAuthUserToken(tokenVerifyResult, request, response);
+
+        if(tokenIssueResult == null || tokenIssueResult.accessToken() == null) {
+            log.info("UserWriteUseCase.issueOauthUserToken :: tokenIssueResult or AccessToken is null. issueResult: {}", tokenIssueResult);
             throw new CustomBadCredentialsException(ErrorCode.UNAUTHORIZED, ErrorCode.UNAUTHORIZED.getMessage());
+        }
 
-        List<Auth> oAuthUserAuths = userDataService.getMemberAuths(temporaryClaim);
-
-        return new UserStatusResponseDTO(temporaryClaim, oAuthUserAuths);
+        return tokenIssueResult;
     }
 
     public void logoutProc(LogoutDTO dto, HttpServletResponse response) {

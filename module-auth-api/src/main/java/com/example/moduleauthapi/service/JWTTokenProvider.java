@@ -4,7 +4,14 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.exceptions.TokenExpiredException;
+import com.auth0.jwt.interfaces.DecodedJWT;
+import com.example.moduleauthapi.model.dto.TokenIssueResponse;
+import com.example.moduleauthapi.model.dto.TokenVerifyResult;
+import com.example.modulecommon.customException.CustomBadCredentialsException;
+import com.example.modulecommon.customException.CustomTokenStealingException;
+import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.modulecommon.model.enumuration.Result;
+import com.example.modulecommon.model.enumuration.Role;
 import com.example.moduleconfig.properties.CookieProperties;
 import com.example.moduleconfig.properties.JwtSecretProperties;
 import com.example.moduleconfig.properties.TokenProperties;
@@ -46,11 +53,12 @@ public class JWTTokenProvider {
      *
      * 토큰 생성
      */
-    public String createToken(String userId, String secretKey, long expiration) {
+    public String createToken(String userId, Role role, String secretKey, long expiration) {
         return JWT.create()
-                .withSubject("cocoMansShopToken")
+                .withIssuer("Man's shop")
+                .withSubject(userId)
                 .withExpiresAt(new Date(System.currentTimeMillis() + expiration))
-                .withClaim("userId", userId)
+                .withClaim("role", role.getRole())
                 .sign(Algorithm.HMAC512(secretKey));
     }
 
@@ -76,40 +84,19 @@ public class JWTTokenProvider {
     /**
      *
      * @param accessTokenValue
-     * @param inoValue
-     * @return userId || WRONG_TOKEN || TOKEN_EXPIRATION || TOKEN_STEALING
+     * @return TokenVerifyResult( userId, Role )
      *
      * AccessToken 검증
-     * 검증 결과에 따라 정상이 아닐 경우 WRONG_TOKEN 또는 TOKEN_EXPIRATION 반환
      *
-     * 정상인 경우 Redis 데이터와 비교.
-     * 일치한다면 userId 반환
-     * 불일치한다면 토큰은 정상이기 때문에 탈취로 판단. redis 데이터 삭제 후 TOKEN_STEALING 반환
      */
-    public String verifyAccessToken(String accessTokenValue, String inoValue) {
-        String claimByUserId = getClaimByUserId(accessTokenValue, jwtSecretProperties.getAccess());
-        if(claimByUserId.equals(Result.WRONG_TOKEN.getResultKey())
-                || claimByUserId.equals(Result.TOKEN_EXPIRATION.getResultKey())) {
-
-            return claimByUserId;
-        }
-
-        String redisKey = setRedisKey(tokenRedisProperties.getAccess().getPrefix(), inoValue, claimByUserId);
-        String redisValue = getTokenValueToRedis(redisKey);
-
-        if(accessTokenValue.equals(redisValue))
-            return claimByUserId;
-        else{
-            deleteTokenValueToRedis(claimByUserId, inoValue);
-            return Result.TOKEN_STEALING.getResultKey();
-        }
+    public TokenVerifyResult verifyAccessToken(String accessTokenValue) {
+        return verifyToken(accessTokenValue, jwtSecretProperties.getAccess());
     }
 
     /**
      *
      * @param refreshTokenValue
      * @param inoValue
-     * @param accessTokenClaim
      * @return userId || WRONG_TOKEN || TOKEN_EXPIRATION || TOKEN_STEALING
      *
      * RefreshToken을 검증하는 경우는 AccessToken의 만료로 인한 재발급 요청시에만 수행.
@@ -123,30 +110,20 @@ public class JWTTokenProvider {
      * Redis 데이터와 일치한다면 아이디 반환
      * 일치하지 않는다면 TOKEN_STEALING 반환
      */
-    public String verifyRefreshToken(String refreshTokenValue, String inoValue, String accessTokenClaim) {
-        String claimByUserId = getClaimByUserId(refreshTokenValue, jwtSecretProperties.getRefresh());
+    public TokenVerifyResult verifyRefreshToken(String refreshTokenValue, String inoValue) {
 
-        if(claimByUserId.equals(Result.WRONG_TOKEN.getResultKey())
-                || claimByUserId.equals(Result.TOKEN_EXPIRATION.getResultKey())) {
+        TokenVerifyResult result = verifyToken(refreshTokenValue, jwtSecretProperties.getRefresh());
 
-            return claimByUserId;
-        }else if(!claimByUserId.equals(accessTokenClaim)){
-            deleteTokenValueToRedis(claimByUserId, inoValue);
-            deleteTokenValueToRedis(accessTokenClaim, inoValue);
-
-            return Result.TOKEN_STEALING.getResultKey();
-        }
-
-        String redisKey = setRedisKey(tokenRedisProperties.getRefresh().getPrefix(), inoValue, claimByUserId);
+        String redisKey = setRedisKey(tokenRedisProperties.getRefresh().getPrefix(), inoValue, result.userId());
         String redisValue = getTokenValueToRedis(redisKey);
 
         if(refreshTokenValue.equals(redisValue))
-            return claimByUserId;
+            return result;
         else {
-            deleteTokenValueToRedis(claimByUserId, inoValue);
-            return Result.TOKEN_STEALING.getResultKey();
+            deleteRefreshTokenByRedis(result.userId(), inoValue);
+            log.warn("token stealing!!");
+            throw new CustomTokenStealingException(ErrorCode.TOKEN_STEALING, ErrorCode.TOKEN_STEALING.getMessage());
         }
-
     }
 
     /**
@@ -160,23 +137,19 @@ public class JWTTokenProvider {
      *
      * 만료와 DocodeException은 catch부분에서 잡아 각 오류 응답을 반환.
      */
-    private String getClaimByUserId(String tokenValue, String secret) {
+    public TokenVerifyResult verifyToken(String tokenValue, String secret) {
+        DecodedJWT decodedToken = JWT.require(Algorithm.HMAC512(secret))
+                .build()
+                .verify(tokenValue);
 
-        try{
-            String claimByUserId = JWT.require(Algorithm.HMAC512(secret))
-                    .build()
-                    .verify(tokenValue)
-                    .getClaim("userId")
-                    .asString();
+        String userId = decodedToken.getSubject();
 
-            System.out.println("===============getClaimByUserId : " + claimByUserId + "=========================");
+        if(userId == null || userId.isBlank())
+            throw new JWTDecodeException("Subject is missing");
 
-            return claimByUserId == null ? Result.WRONG_TOKEN.getResultKey() : claimByUserId;
-        }catch (TokenExpiredException e){
-            return Result.TOKEN_EXPIRATION.getResultKey();
-        }catch (JWTDecodeException e) {
-            return Result.WRONG_TOKEN.getResultKey();
-        }
+        String role = decodedToken.getClaim("role").asString();
+
+        return new TokenVerifyResult(userId, role);
     }
 
     /**
@@ -211,8 +184,6 @@ public class JWTTokenProvider {
     public void saveTokenToRedis(String key, String value, Duration redisExpiration) {
         ValueOperations<String, String> stringValueOperations = redisTemplate.opsForValue();
 
-        System.out.println("===============saveTokenToRedis=================");
-        System.out.println("key : " + key);
         stringValueOperations.set(key, value, redisExpiration);
     }
 
@@ -245,11 +216,9 @@ public class JWTTokenProvider {
      * AccessToken과 RefreshToken 모두 삭제.
      *
      */
-    public void deleteTokenValueToRedis(String userId, String inoValue) {
-        String accessKey = setRedisKey(tokenRedisProperties.getAccess().getPrefix(), inoValue, userId);
+    public void deleteRefreshTokenByRedis(String userId, String inoValue) {
         String refreshKey = setRedisKey(tokenRedisProperties.getRefresh().getPrefix(), inoValue, userId);
 
-        redisTemplate.delete(accessKey);
         redisTemplate.delete(refreshKey);
     }
 
@@ -264,7 +233,6 @@ public class JWTTokenProvider {
      * 구조 변환 시 누락되는 실수를 대비하기 위해 메소드로 처리
      */
     public String setRedisKey(String prefix, String ino, String userId){
-        System.out.println("prefix : " + prefix + ", ino : " + ino + ", userId: " + userId);
         return prefix + ino + userId;
     }
 
@@ -349,7 +317,7 @@ public class JWTTokenProvider {
      * 개별적으로 처리해야하는 경우를 제외하고는 이 메소드 호출로 처리.
      */
     public void deleteRedisDataAndCookie(String userId, String ino, HttpServletResponse response){
-        deleteTokenValueToRedis(userId, ino);
+        deleteRefreshTokenByRedis(userId, ino);
         deleteCookie(response);
     }
 
@@ -360,11 +328,13 @@ public class JWTTokenProvider {
      *
      * issue ino, AccessToken, RefreshToken
      */
-    public void issueAllTokens(String userId, HttpServletResponse response) {
+    public TokenIssueResponse issueAllTokens(String userId, Role role, HttpServletResponse response) {
         String ino = createIno();
-        issueTokens(userId, ino, response);
+        TokenIssueResponse tokenIssueResponse = issueTokens(userId, role, ino, response);
 
         setTokenCookie(cookieProperties.getIno().getHeader(), ino, Duration.ofDays(cookieProperties.getIno().getAge()), response);
+
+        return tokenIssueResponse;
     }
 
     /**
@@ -375,21 +345,20 @@ public class JWTTokenProvider {
      *
      * issue AccessToken, RefreshToken
      */
-    public void issueTokens(String userId, String ino, HttpServletResponse response) {
-        String accessToken = createToken(userId, jwtSecretProperties.getAccess(), tokenProperties.getAccess().getExpiration());
-        String refreshToken = createToken(userId, jwtSecretProperties.getRefresh(), tokenProperties.getRefresh().getExpiration());
-        String accessKey = setRedisKey(tokenRedisProperties.getAccess().getPrefix(), ino, userId);
+    public TokenIssueResponse issueTokens(String userId, Role role, String ino, HttpServletResponse response) {
+        String accessToken = createToken(userId, role, jwtSecretProperties.getAccess(), tokenProperties.getAccess().getExpiration());
+        String refreshToken = createToken(userId, role, jwtSecretProperties.getRefresh(), tokenProperties.getRefresh().getExpiration());
         String refreshKey = setRedisKey(tokenRedisProperties.getRefresh().getPrefix(), ino, userId);
-        Duration accessTokenExpiration = Duration.ofHours(tokenRedisProperties.getAccess().getExpiration());
         Duration tokenExpiration = Duration.ofDays(tokenRedisProperties.getRefresh().getExpiration());
-        saveTokenToRedis(accessKey, accessToken, accessTokenExpiration);
         saveTokenToRedis(refreshKey, refreshToken, tokenExpiration);
 
         accessToken = tokenProperties.getPrefix() + accessToken;
         refreshToken = tokenProperties.getPrefix() + refreshToken;
 
-        setAccessTokenToResponseHeader(accessToken, response);
         setTokenCookie(tokenProperties.getRefresh().getHeader(), refreshToken, Duration.ofDays(tokenRedisProperties.getRefresh().getExpiration()), response);
+
+        return new TokenIssueResponse(accessToken, userId, role.getRole());
+
     }
 
     /**
@@ -402,10 +371,8 @@ public class JWTTokenProvider {
      * response.sendRedirect로 처리되기 때문에 AccessToken 저장 처리를 Client에서 수행할 수 없기 때문에 임시 토큰 발행.
      */
     public void createTemporaryToken(String userId, HttpServletResponse response) {
-        String temporaryToken = createToken(userId, jwtSecretProperties.getTemporary(), tokenProperties.getTemporary().getExpiration());
-        System.out.println("==================temporaryToken==============");
-        System.out.println("==================userId============== : " + userId);
-        System.out.println("=============ttl=============== : " + tokenRedisProperties.getTemporary().getExpiration());
+        String temporaryToken = createToken(userId, Role.MEMBER, jwtSecretProperties.getTemporary(), tokenProperties.getTemporary().getExpiration());
+
         saveTokenToRedis(userId, temporaryToken, Duration.ofMinutes(tokenRedisProperties.getTemporary().getExpiration()));
         setTokenCookie(tokenProperties.getTemporary().getHeader(), temporaryToken, Duration.ofMinutes(tokenRedisProperties.getTemporary().getExpiration()), response);
     }
@@ -420,26 +387,25 @@ public class JWTTokenProvider {
      * 위장 토큰이 생성되었고 해당 토큰이 정상적으로 Claim을 반환한다는 것은 SecretKey 유출로 볼 수 있다고 생각해 로그를 남겨 확인할 수 있도록 처리.
      *
      */
-    public String verifyTemporaryToken(String temporaryTokenValue) {
-        String claimByUserId = getClaimByUserId(temporaryTokenValue, jwtSecretProperties.getTemporary());
-        System.out.println("===============verifyTemporaryToken================ id : " + claimByUserId);
+    public TokenVerifyResult verifyTemporaryToken(String temporaryTokenValue) {
+        try {
+            TokenVerifyResult result = verifyToken(temporaryTokenValue, jwtSecretProperties.getTemporary());
 
-        if(claimByUserId.equals(Result.WRONG_TOKEN.getResultKey())
-                || claimByUserId.equals(Result.TOKEN_EXPIRATION.getResultKey())) {
+            String redisValue = getTokenValueToRedis(result.userId());
 
-            return claimByUserId;
-        }
-
-        String redisValue = getTokenValueToRedis(claimByUserId);
-
-        System.out.println("========verify temporaryToken : " + temporaryTokenValue + "==============");
-        System.out.println("========verify redisValue : " + redisValue + "==============");
-
-        if(temporaryTokenValue.equals(redisValue))
-            return claimByUserId;
-        else{
-            log.warn("Temporary token claim is not the same as Redis data");
-            return Result.TOKEN_STEALING.getResultKey();
+            if(temporaryTokenValue.equals(redisValue))
+                return result;
+            else{
+                log.warn("Temporary token claim is not the same as Redis data");
+                throw new CustomTokenStealingException(ErrorCode.TOKEN_STEALING, ErrorCode.TOKEN_STEALING.getMessage());
+            }
+        } catch(TokenExpiredException | JWTDecodeException ex) {
+            throw new CustomBadCredentialsException(ErrorCode.UNAUTHORIZED, ErrorCode.UNAUTHORIZED.getMessage());
+        } catch(CustomTokenStealingException e) {
+          throw e;
+        } catch(Exception e) {
+            log.warn("JWTTokenProvider.verifyTemporaryToken :: verifyToken Exception. error: {}", e);
+            throw new IllegalArgumentException();
         }
     }
 
@@ -452,8 +418,6 @@ public class JWTTokenProvider {
      * 임시 토큰의 쿠키 및 Redis 데이터 삭제
      */
     public void deleteTemporaryTokenAndCookie(String userId, HttpServletResponse response) {
-        System.out.println("================deleteTemporaryTokenAndCookie=======");
-
         redisTemplate.delete(userId);
 
         Cookie cookie = new Cookie(tokenProperties.getTemporary().getHeader(), null);

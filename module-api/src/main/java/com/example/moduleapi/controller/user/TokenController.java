@@ -2,9 +2,9 @@ package com.example.moduleapi.controller.user;
 
 import com.example.moduleapi.annotation.swagger.DefaultApiResponse;
 import com.example.moduleapi.annotation.swagger.SwaggerAuthentication;
-import com.example.moduleauthapi.model.dto.TokenDTO;
+import com.example.moduleauthapi.model.dto.TokenIssueResponse;
+import com.example.moduleauthapi.model.dto.TokenReissueInfo;
 import com.example.moduleauthapi.service.JWTTokenService;
-import com.example.modulecommon.model.dto.response.ResponseMessageDTO;
 import com.example.moduleconfig.properties.CookieProperties;
 import com.example.moduleconfig.properties.TokenProperties;
 import io.swagger.v3.oas.annotations.Operation;
@@ -44,24 +44,18 @@ public class TokenController {
     @DefaultApiResponse
     @SwaggerAuthentication
     @GetMapping("/reissue")
-    public ResponseEntity<ResponseMessageDTO> reIssueToken(HttpServletRequest request, HttpServletResponse response) {
-        String accessToken = request.getHeader(tokenProperties.getAccess().getHeader())
-                                    .replace(tokenProperties.getPrefix(), "");
+    public ResponseEntity<TokenIssueResponse> reIssueToken(HttpServletRequest request, HttpServletResponse response) {
         Cookie refreshToken = WebUtils.getCookie(request, tokenProperties.getRefresh().getHeader());
         Cookie ino = WebUtils.getCookie(request, cookieProperties.getIno().getHeader());
 
-        TokenDTO tokenDTO = TokenDTO.builder()
-                .accessTokenValue(accessToken)
-                .refreshTokenValue(
-                        refreshToken == null ?
-                                null :
-                                refreshToken.getValue().replace(tokenProperties.getPrefix(), "")
-                )
-                .inoValue(ino == null ? null : ino.getValue())
-                .build();
+        String refreshTokenValue = refreshToken == null ?
+                null :
+                refreshToken.getValue().replace(tokenProperties.getPrefix(), "");
+        String inoValue = ino == null ? null : ino.getValue();
 
-        tokenService.reIssueToken(tokenDTO, response);
+        TokenReissueInfo reissueInfo = new TokenReissueInfo(refreshTokenValue, inoValue);
+        TokenIssueResponse responseBody = tokenService.reIssueToken(reissueInfo, response);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(responseBody);
     }
 }

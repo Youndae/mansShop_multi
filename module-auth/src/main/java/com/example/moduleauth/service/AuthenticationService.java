@@ -1,8 +1,8 @@
 package com.example.moduleauth.service;
 
 import com.example.moduleauth.config.user.CustomUser;
+import com.example.moduleuser.model.dto.member.business.LoginUserInfo;
 import com.example.moduleuser.model.dto.member.in.LoginDTO;
-import com.example.moduleuser.model.dto.member.out.UserStatusResponseDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -15,12 +15,12 @@ public class AuthenticationService {
 
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
 
-    public UserStatusResponseDTO loginAuthenticated(LoginDTO loginDTO) {
+    public LoginUserInfo loginAuthenticated(LoginDTO loginDTO) {
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(loginDTO.userId(), loginDTO.userPw());
         Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
         CustomUser customUser = (CustomUser) authentication.getPrincipal();
 
-        return new UserStatusResponseDTO(customUser.getUserId(), customUser.getAuthorities());
+        return new LoginUserInfo(customUser.getUserId(), customUser.getAuthorities());
     }
 }

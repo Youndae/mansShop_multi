@@ -5,10 +5,12 @@ import com.example.moduleapi.annotation.swagger.SwaggerAuthentication;
 import com.example.moduleapi.config.exception.ExceptionEntity;
 import com.example.moduleapi.validator.MemberRequestValidator;
 import com.example.moduleauth.service.AuthenticationService;
+import com.example.moduleauthapi.model.dto.TokenIssueResponse;
 import com.example.modulecommon.customException.CustomAccessDeniedException;
 import com.example.modulecommon.model.enumuration.ErrorCode;
 import com.example.moduleconfig.properties.CookieProperties;
 import com.example.moduleconfig.properties.TokenProperties;
+import com.example.moduleuser.model.dto.member.business.LoginUserInfo;
 import com.example.moduleuser.model.dto.member.in.*;
 import com.example.moduleuser.model.dto.member.out.UserStatusResponseDTO;
 import com.example.moduleuser.usecase.UserReadUseCase;
@@ -78,15 +80,13 @@ public class MemberController {
             )
     })
     @PostMapping("/login")
-    public ResponseEntity<UserStatusResponseDTO> loginProc(@RequestBody LoginDTO loginDTO,
-                                                           HttpServletRequest request,
-                                                           HttpServletResponse response){
+    public ResponseEntity<TokenIssueResponse> loginProc(@RequestBody LoginDTO loginDTO,
+                                                        HttpServletRequest request,
+                                                        HttpServletResponse response){
+        LoginUserInfo loginUserInfo = authenticationService.loginAuthenticated(loginDTO);
+        TokenIssueResponse responseBody = userWriteUseCase.loginProc(loginUserInfo, request, response);
 
-        UserStatusResponseDTO responseDTO = authenticationService.loginAuthenticated(loginDTO);
-
-        userWriteUseCase.loginProc(responseDTO.getUserId(), request, response);
-
-        return ResponseEntity.ok(responseDTO);
+        return ResponseEntity.ok(responseBody);
     }
 
     /**
@@ -162,10 +162,9 @@ public class MemberController {
     )
     @DefaultApiResponse
     @GetMapping("/oAuth/token")
-    public ResponseEntity<UserStatusResponseDTO> oAuthIssueToken(HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<TokenIssueResponse> oAuthIssueToken(HttpServletRequest request, HttpServletResponse response) {
 
-
-        UserStatusResponseDTO responseDTO = userWriteUseCase.issueOAuthUserToken(request, response);
+        TokenIssueResponse responseDTO = userWriteUseCase.issueOAuthUserToken(request, response);
 
         return ResponseEntity.ok(responseDTO);
     }
